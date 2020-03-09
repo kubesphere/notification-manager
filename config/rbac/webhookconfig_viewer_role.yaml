@@ -1,0 +1,20 @@
+# permissions for end users to view webhookconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: webhookconfig-viewer-role
+rules:
+- apiGroups:
+  - notification.kubesphere.io
+  resources:
+  - webhookconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - notification.kubesphere.io
+  resources:
+  - webhookconfigs/status
+  verbs:
+  - get

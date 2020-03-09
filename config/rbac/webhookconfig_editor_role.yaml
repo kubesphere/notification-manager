@@ -1,0 +1,24 @@
+# permissions for end users to edit webhookconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: webhookconfig-editor-role
+rules:
+- apiGroups:
+  - notification.kubesphere.io
+  resources:
+  - webhookconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - notification.kubesphere.io
+  resources:
+  - webhookconfigs/status
+  verbs:
+  - get

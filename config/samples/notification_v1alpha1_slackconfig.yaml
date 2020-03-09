@@ -1,0 +1,7 @@
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: SlackConfig
+metadata:
+  name: slackconfig-sample
+spec:
+  # Add fields here
+  foo: bar

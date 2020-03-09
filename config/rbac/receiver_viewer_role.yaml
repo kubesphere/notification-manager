@@ -1,0 +1,20 @@
+# permissions for end users to view receivers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: receiver-viewer-role
+rules:
+- apiGroups:
+  - notification.kubesphere.io
+  resources:
+  - receivers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - notification.kubesphere.io
+  resources:
+  - receivers/status
+  verbs:
+  - get

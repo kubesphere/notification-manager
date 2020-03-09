@@ -1,0 +1,24 @@
+# permissions for end users to edit emailconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: emailconfig-editor-role
+rules:
+- apiGroups:
+  - notification.kubesphere.io
+  resources:
+  - emailconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - notification.kubesphere.io
+  resources:
+  - emailconfigs/status
+  verbs:
+  - get

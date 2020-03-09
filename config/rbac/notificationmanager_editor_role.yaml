@@ -1,0 +1,24 @@
+# permissions for end users to edit notificationmanagers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: notificationmanager-editor-role
+rules:
+- apiGroups:
+  - notification.kubesphere.io
+  resources:
+  - notificationmanagers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - notification.kubesphere.io
+  resources:
+  - notificationmanagers/status
+  verbs:
+  - get

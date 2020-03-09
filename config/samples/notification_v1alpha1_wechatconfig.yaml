@@ -1,0 +1,7 @@
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: WechatConfig
+metadata:
+  name: wechatconfig-sample
+spec:
+  # Add fields here
+  foo: bar
