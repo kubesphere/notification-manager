@@ -1,6 +1,7 @@
 VERSION?=$(shell cat VERSION | tr -d " \t\n\r")
 # Image URL to use all building/pushing image targets
 IMG ?= notification-manager-operator:v$(VERSION)
+NM_IMG ?= notification-manager:v$(VERSION)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -20,6 +21,10 @@ test: generate fmt vet manifests
 # Build manager binary
 manager: generate fmt vet
 	go build -o bin/manager cmd/operator/main.go
+
+# Build notification-manager binary
+nm: fmt vet
+	go build -o bin/notification-manager cmd/notification-manager/main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
@@ -61,6 +66,10 @@ docker-build: test
 # Push the docker image
 docker-push:
 	docker push ${IMG}
+
+# Build the docker image for notification-manager
+docker-nm:
+	docker build -f cmd/notification-manager/Dockerfile . -t ${NM_IMG} --network host
 
 # find or download controller-gen
 # download controller-gen if necessary
