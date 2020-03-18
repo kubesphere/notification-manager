@@ -1,7 +1,7 @@
 VERSION?=$(shell cat VERSION | tr -d " \t\n\r")
 # Image URL to use all building/pushing image targets
-IMG ?= notification-manager-operator:v$(VERSION)
-NM_IMG ?= notification-manager:v$(VERSION)
+IMG ?= benjaminhuo/notification-manager-operator:$(VERSION)
+NM_IMG ?= benjaminhuo/notification-manager:$(VERSION)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -20,7 +20,7 @@ test: generate fmt vet manifests
 
 # Build manager binary
 manager: generate fmt vet
-	go build -o bin/manager cmd/operator/main.go
+	go build -o bin/notification-manager-operator cmd/operator/main.go
 
 # Build notification-manager binary
 nm: fmt vet
@@ -40,8 +40,14 @@ uninstall: manifests
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
-	cd config/manager && kustomize edit set image controller=${IMG}
+	cd config/manager && kustomize edit set image controller=${IMG} && cd ../../
+	kustomize build config/default > config/bundle.yaml
 	kustomize build config/default | kubectl apply -f -
+
+# Deploy custom resources in the configured Kubernetes cluster
+deploy-samples:
+	kustomize build config/samples > config/samples/bundle.yaml
+	kustomize build config/samples | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
@@ -63,13 +69,14 @@ generate: controller-gen
 docker-build: test
 	docker build -f cmd/operator/Dockerfile . -t ${IMG} --network host
 
+# Build the docker image
+docker-build-nm: test
+	docker build -f cmd/notification-manager/Dockerfile . -t ${NM_IMG} --network host
+
 # Push the docker image
 docker-push:
 	docker push ${IMG}
-
-# Build the docker image for notification-manager
-docker-nm:
-	docker build -f cmd/notification-manager/Dockerfile . -t ${NM_IMG} --network host
+	docker push ${NM_IMG}
 
 # find or download controller-gen
 # download controller-gen if necessary

@@ -106,7 +106,7 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 		}
 	}(h.semCh, h.wkrTimeout)
 
-	h.handle(w, &response{http.StatusOK, "Notification created"})
+	h.handle(w, &response{http.StatusOK, "Notification request accepted"})
 }
 
 func (h *HttpHandler) ServeMetrics(w http.ResponseWriter, r *http.Request) {

@@ -22,6 +22,16 @@ import (
 
 // NotificationManagerSpec defines the desired state of NotificationManager
 type NotificationManagerSpec struct {
+	// Docker Image used to start Notification Manager container,
+	// for example kubesphere/notification-manager:v0.1.0
+	Image *string `json:"image,omitempty"`
+	// Number of instances to deploy for Notification Manager deployment.
+	Replicas *int32 `json:"replicas,omitempty"`
+	// ServiceAccountName is the name of the ServiceAccount to use to run Notification Manager Pods.
+	// ServiceAccount 'default' in notification manager's namespace will be used if not specified
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// Port name used for the pods and service, defaults to webhook
+	PortName string `json:"portName,omitempty"`
 	// Global default receiver configs, used if corresponding items in Receivers are not specified
 	Global *GlobalSpec `json:"global,omitempty"`
 	// Receivers to send notifications to

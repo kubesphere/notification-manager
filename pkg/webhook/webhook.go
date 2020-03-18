@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	whv1 "github.com/kubesphere/notification-manager/webhook/v1"
+	whv1 "github.com/kubesphere/notification-manager/pkg/webhook/v1"
 	"net/http"
 	"time"
 )

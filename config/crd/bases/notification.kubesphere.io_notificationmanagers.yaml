@@ -216,6 +216,13 @@ spec:
                       type: object
                   type: object
               type: object
+            image:
+              description: Docker Image used to start Notification Manager container,
+                for example kubesphere/notification-manager:v0.1.0
+              type: string
+            portName:
+              description: Port name used for the pods and service, defaults to webhook
+              type: string
             receivers:
               description: Receivers to send notifications to
               properties:
@@ -270,6 +277,16 @@ spec:
               required:
               - receiverSelector
               type: object
+            replicas:
+              description: Number of instances to deploy for Notification Manager
+                deployment.
+              format: int32
+              type: integer
+            serviceAccountName:
+              description: ServiceAccountName is the name of the ServiceAccount to
+                use to run Notification Manager Pods. ServiceAccount 'default' in
+                notification manager's namespace will be used if not specified
+              type: string
           required:
           - receivers
           type: object

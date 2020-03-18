@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/webhook"
+	"github.com/kubesphere/notification-manager/pkg/webhook"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/promlog/flag"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -18,7 +18,7 @@ func main() {
 		listenAddress = kingpin.Flag(
 			"webhook.address",
 			"The address to listen on for incoming alerts or notifications.",
-		).Default(":9193").String()
+		).Default(":19093").String()
 		webhookTimeout = kingpin.Flag(
 			"webhook.timeout",
 			"Webhook timeout for each incoming request",

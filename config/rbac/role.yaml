@@ -9,6 +9,15 @@ rules:
 - apiGroups:
   - notification.kubesphere.io
   resources:
+  - EmailConfig
+  - EmailReceiver
+  - Receiver
+  - SlackConfig
+  - SlackReceiver
+  - WebhookConfig
+  - WebhookReceiver
+  - WechatConfig
+  - WechatReceiver
   - notificationmanagers
   verbs:
   - create
