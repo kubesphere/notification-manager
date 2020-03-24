@@ -1,7 +1,20 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: Receiver
 metadata:
-  name: receiver-sample
+  name: user1-receiver
+  labels:
+    sender: kubesphere
+    user: user1
 spec:
-  # Add fields here
-  foo: bar
+  emailReceiverSelector:
+    matchLabels:
+      user: user1
+  wechatReceiverSelector:
+    matchLabels:
+      user: user1
+  slackReceiverSelector:
+    matchLabels:
+      user: user1
+  webhookReceiverSelector:
+    matchLabels:
+      user: user1

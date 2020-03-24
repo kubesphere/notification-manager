@@ -1,7 +1,18 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: SlackConfig
 metadata:
-  name: slackconfig-sample
+  name: global-slack-config
+  labels:
+    scope: global
+    # or
+    #scope: tenant
+    #user: user1
 spec:
-  # Add fields here
-  foo: bar
+  slackApiUrlSecret:
+    key: slack-api-url
+    name: slack-api-url-secret
+  slackApiUrl: slack_url_xxx
+  httpConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1

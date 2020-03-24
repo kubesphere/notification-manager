@@ -1,7 +1,15 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WechatConfig
 metadata:
-  name: wechatconfig-sample
+  name: global-wechat-config
+  labels:
+    scope: global
+    # or
+    #scope: tenant
+    #user: user1
 spec:
-  # Add fields here
-  foo: bar
+  wechatApiUrl: wechat-api-url
+  wechatApiSecret:
+    key: wechat
+    name: wechat-api-secret
+  wechatApiCorpId: wechat-api-corp-id

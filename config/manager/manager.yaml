@@ -24,11 +24,11 @@ spec:
     spec:
       containers:
       - command:
-        - /manager
+        - /notification-manager-operator
         args:
         - --enable-leader-election
         image: controller:latest
-        name: manager
+        name: notification-manager-operator
         resources:
           limits:
             cpu: 100m

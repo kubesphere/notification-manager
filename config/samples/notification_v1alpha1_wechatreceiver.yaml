@@ -1,7 +1,16 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WechatReceiver
 metadata:
-  name: wechatreceiver-sample
+  name: user1-wechat
+  labels:
+    user: user1
 spec:
-  # Add fields here
-  foo: bar
+  wechatConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1
+  message: wechat-test-message
+  agentId: wechat-agent-id
+  toUser: benjamin
+  toParty: wechat-party
+  toTag: wechat-tag

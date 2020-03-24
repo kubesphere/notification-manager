@@ -1,7 +1,11 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WebhookReceiver
 metadata:
-  name: webhookreceiver-sample
+  name: user1-webhook
+  labels:
+    user: user1
 spec:
-  # Add fields here
-  foo: bar
+  webhookConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1

@@ -1,7 +1,18 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WebhookConfig
 metadata:
-  name: webhookconfig-sample
+  name: global-webhook-config
+  labels:
+    scope: global
+    # or
+    #scope: tenant
+    #user: user1
 spec:
-  # Add fields here
-  foo: bar
+  url: xxx
+  urlSecret:
+    key: webhook-url
+    name: webhook-url-secret
+  httpConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1

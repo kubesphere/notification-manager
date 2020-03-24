@@ -1,7 +1,14 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: EmailReceiver
 metadata:
-  name: emailreceiver-sample
+  name: user1-email
+  labels:
+    user: user1
 spec:
-  # Add fields here
-  foo: bar
+  to:
+  - abc2@xyz.com
+  - abc3@xyz.com
+  emailConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1

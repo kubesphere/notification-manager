@@ -1,0 +1,181 @@
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: EmailConfig
+metadata:
+  labels:
+    app: notification-manager
+    scope: global
+  name: global-email-config
+  namespace: kubesphere-monitoring-system
+spec:
+  from: abc@xyz.com
+  smartHost: imap.xyz.com:25
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: EmailReceiver
+metadata:
+  labels:
+    app: notification-manager
+    user: user1
+  name: user1-email
+  namespace: kubesphere-monitoring-system
+spec:
+  emailConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1
+  to:
+  - abc2@xyz.com
+  - abc3@xyz.com
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: NotificationManager
+metadata:
+  labels:
+    app: notification-manager
+  name: notificationmanager-sample
+  namespace: kubesphere-monitoring-system
+spec:
+  global:
+    emailConfigSelector:
+      matchLabels:
+        scope: global
+    slackConfigSelector:
+      matchLabels:
+        scope: global
+    webhookConfigSelector:
+      matchLabels:
+        scope: global
+    wechatConfigSelector:
+      matchLabels:
+        scope: global
+  image: benjaminhuo/notification-manager:latest
+  portName: webhook
+  receivers:
+    receiverSelector:
+      matchLabels:
+        sender: kubesphere
+    tenantKey: user
+  replicas: 1
+  serviceAccountName: default
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: Receiver
+metadata:
+  labels:
+    app: notification-manager
+    sender: kubesphere
+    user: user1
+  name: user1-receiver
+  namespace: kubesphere-monitoring-system
+spec:
+  emailReceiverSelector:
+    matchLabels:
+      user: user1
+  slackReceiverSelector:
+    matchLabels:
+      user: user1
+  webhookReceiverSelector:
+    matchLabels:
+      user: user1
+  wechatReceiverSelector:
+    matchLabels:
+      user: user1
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: SlackConfig
+metadata:
+  labels:
+    app: notification-manager
+    scope: global
+  name: global-slack-config
+  namespace: kubesphere-monitoring-system
+spec:
+  httpConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1
+  slackApiUrl: slack_url_xxx
+  slackApiUrlSecret:
+    key: slack-api-url
+    name: slack-api-url-secret
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: SlackReceiver
+metadata:
+  labels:
+    app: notification-manager
+    user: user1
+  name: user1-slack
+  namespace: kubesphere-monitoring-system
+spec:
+  channel: slack_channel_x
+  slackConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: WebhookConfig
+metadata:
+  labels:
+    app: notification-manager
+    scope: global
+  name: global-webhook-config
+  namespace: kubesphere-monitoring-system
+spec:
+  httpConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1
+  url: xxx
+  urlSecret:
+    key: webhook-url
+    name: webhook-url-secret
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: WebhookReceiver
+metadata:
+  labels:
+    app: notification-manager
+    user: user1
+  name: user1-webhook
+  namespace: kubesphere-monitoring-system
+spec:
+  webhookConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: WechatConfig
+metadata:
+  labels:
+    app: notification-manager
+    scope: global
+  name: global-wechat-config
+  namespace: kubesphere-monitoring-system
+spec:
+  wechatApiCorpId: wechat-api-corp-id
+  wechatApiSecret:
+    key: wechat
+    name: wechat-api-secret
+  wechatApiUrl: wechat-api-url
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: WechatReceiver
+metadata:
+  labels:
+    app: notification-manager
+    user: user1
+  name: user1-wechat
+  namespace: kubesphere-monitoring-system
+spec:
+  agentId: wechat-agent-id
+  message: wechat-test-message
+  toParty: wechat-party
+  toTag: wechat-tag
+  toUser: benjamin
+  wechatConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1

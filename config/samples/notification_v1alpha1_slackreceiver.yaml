@@ -1,7 +1,12 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: SlackReceiver
 metadata:
-  name: slackreceiver-sample
+  name: user1-slack
+  labels:
+    user: user1
 spec:
-  # Add fields here
-  foo: bar
+  slackConfigSelector:
+    matchLabels:
+      scope: tenant
+      user: user1
+  channel: slack_channel_x

@@ -1,8 +1,16 @@
 resources:
-- manager.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-images:
-- name: controller
-  newName: benjaminhuo/notification-manager-operator
-  newTag: v0.1.0
+- notification_v1alpha1_emailconfig.yaml
+- notification_v1alpha1_emailreceiver.yaml
+- notification_v1alpha1_notificationmanager.yaml
+- notification_v1alpha1_receiver.yaml
+- notification_v1alpha1_slackconfig.yaml
+- notification_v1alpha1_slackreceiver.yaml
+- notification_v1alpha1_webhookconfig.yaml
+- notification_v1alpha1_webhookreceiver.yaml
+- notification_v1alpha1_wechatconfig.yaml
+- notification_v1alpha1_wechatreceiver.yaml
+
+namespace: kubesphere-monitoring-system
+
+commonLabels:
+  app: notification-manager

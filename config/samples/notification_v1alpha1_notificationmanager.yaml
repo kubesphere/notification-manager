@@ -3,5 +3,25 @@ kind: NotificationManager
 metadata:
   name: notificationmanager-sample
 spec:
-  # Add fields here
-  foo: bar
+  replicas: 1
+  image: benjaminhuo/notification-manager:latest
+  serviceAccountName: default
+  portName: webhook
+  global:
+    emailConfigSelector:
+      matchLabels:
+        scope: global
+    wechatConfigSelector:
+      matchLabels:
+        scope: global
+    slackConfigSelector:
+      matchLabels:
+        scope: global
+    webhookConfigSelector:
+      matchLabels:
+        scope: global
+  receivers:
+    tenantKey: user
+    receiverSelector:
+      matchLabels:
+        sender: kubesphere

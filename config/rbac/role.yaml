@@ -7,18 +7,43 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - notification.kubesphere.io
   resources:
-  - EmailConfig
-  - EmailReceiver
-  - Receiver
-  - SlackConfig
-  - SlackReceiver
-  - WebhookConfig
-  - WebhookReceiver
-  - WechatConfig
-  - WechatReceiver
+  - emailconfigs
+  - emailreceivers
   - notificationmanagers
+  - receivers
+  - slackconfigs
+  - slackreceivers
+  - webhookconfigs
+  - webhookreceivers
+  - wechatconfigs
+  - wechatreceivers
   verbs:
   - create
   - delete
