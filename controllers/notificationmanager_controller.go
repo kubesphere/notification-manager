@@ -68,23 +68,36 @@ func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 
 	for _, nm := range nms.Items {
 		// Check if the NotificationManager Deployment already exists
-		deploy := &appsv1.Deployment{}
-		nmNamespacedName := types.NamespacedName{Namespace: nm.Namespace, Name: nm.Name}
-		err := r.Get(ctx, nmNamespacedName, deploy)
+		old := &appsv1.Deployment{}
+		oldName := types.NamespacedName{Namespace: nm.Namespace, Name: nm.Name + "-deployment"}
+		err := r.Get(ctx, oldName, old)
+
+		// Check if the reconcile is triggered by a NotificationManager CR
+		// or config CRs like Receivers, EmailConfigs etc.
+		newName := types.NamespacedName{Namespace: nm.Namespace, Name: nm.Name}
+		configChange := !reflect.DeepEqual(newName, req.NamespacedName)
 
 		switch {
+		// Found deployment for NotificationManager CR
+		// Update the deployment if the reconcile is not triggered by config CRs
 		case err == nil:
-			if err := r.update(ctx, &nm, deploy, !reflect.DeepEqual(nmNamespacedName, req.NamespacedName)); err != nil {
+			if err := r.update(ctx, &nm, old, configChange); err != nil {
 				log.Error(err, "Failed to update Notification Manager")
 				return ctrl.Result{}, err
 			}
-		case errors.IsNotFound(err):
+		// Cannot found deployment for NotificationManager CR
+		// Create one if the reconcile is not triggered by config CRs
+		case errors.IsNotFound(err) && !configChange:
 			if err := r.create(ctx, &nm); err != nil {
 				log.Error(err, "Failed to create Notification Manager")
 				return ctrl.Result{}, err
 			}
+		// Cannot found deployment for NotificationManager CR
+		// Ignore config CRs changes
+		case errors.IsNotFound(err) && configChange:
+			return ctrl.Result{}, nil
 		default:
-			log.Error(err, "Failed to get Notification Manager:"+nmNamespacedName.Namespace+"/"+nmNamespacedName.Name)
+			log.Error(err, "Failed to get Notification Manager deployment:"+oldName.Namespace+"/"+oldName.Name)
 			return ctrl.Result{}, err
 		}
 	}
@@ -98,7 +111,7 @@ func (r *NotificationManagerReconciler) create(ctx context.Context, nm *nmv1alph
 		log.Error(err, "Unable to create ConfigMap")
 	}
 
-	deploy, err := operator.MakeDeployment(*nm)
+	deploy, err := operator.MakeDeployment(*nm, nil)
 	if err != nil {
 		log.Error(err, "Make deployment failed")
 		return commonerrors.Wrap(err, "Make deployment failed")
@@ -125,7 +138,7 @@ func (r *NotificationManagerReconciler) create(ctx context.Context, nm *nmv1alph
 	return nil
 }
 
-func (r *NotificationManagerReconciler) update(ctx context.Context, nm *nmv1alpha1.NotificationManager, existing *appsv1.Deployment, configChanged bool) error {
+func (r *NotificationManagerReconciler) update(ctx context.Context, nm *nmv1alpha1.NotificationManager, old *appsv1.Deployment, configChanged bool) error {
 	if configChanged {
 		err := r.updateConfigMap(ctx, nm)
 		if err != nil {
@@ -134,7 +147,7 @@ func (r *NotificationManagerReconciler) update(ctx context.Context, nm *nmv1alph
 		return err
 	}
 
-	deploy, err := operator.MakeDeployment(*nm)
+	deploy, err := operator.MakeDeployment(*nm, old)
 	if err != nil {
 		log.Error(err, "Make deployment failed")
 		return commonerrors.Wrap(err, "Make deployment failed")
@@ -146,7 +159,8 @@ func (r *NotificationManagerReconciler) update(ctx context.Context, nm *nmv1alph
 	}
 
 	// Update the found object and write the result back if there are any changes
-	if !reflect.DeepEqual(deploy.Spec, existing.Spec) {
+	if !reflect.DeepEqual(deploy.Spec, old.Spec) {
+		log.V(10).Info("Updating deployment", "New Spec:", deploy.Spec, "Old Spec:", old.Spec)
 		err = r.Update(ctx, deploy)
 		if err != nil {
 			log.Error(err, "Update deployment failed")

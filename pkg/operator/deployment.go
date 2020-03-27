@@ -2,11 +2,11 @@ package operator
 
 import (
 	nmv1alpha1 "github.com/kubesphere/notification-manager/api/v1alpha1"
-	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 )
 
@@ -18,9 +18,10 @@ const (
 var (
 	minReplicas int32  = 1
 	image       string = "kubesphere/notification-manager:v0.1.0"
+	log                = ctrl.Log.WithName("NotificationManager").WithName("Deployment")
 )
 
-func MakeDeployment(nm nmv1alpha1.NotificationManager) (*appsv1.Deployment, error) {
+func MakeDeployment(nm nmv1alpha1.NotificationManager, old *appsv1.Deployment) (*appsv1.Deployment, error) {
 	nm = *nm.DeepCopy()
 
 	if (nm.Spec.Image == nil) || (nm.Spec.Image != nil && *nm.Spec.Image == "") {
@@ -39,9 +40,12 @@ func MakeDeployment(nm nmv1alpha1.NotificationManager) (*appsv1.Deployment, erro
 		nm.Spec.ServiceAccountName = defaultServiceAccountName
 	}
 
-	spec, err := makeDeploymentSpec(nm)
-	if err != nil {
-		return nil, errors.Wrap(err, "make Deployment spec")
+	var spec *appsv1.DeploymentSpec = nil
+
+	if old == nil {
+		spec = makeDeploymentSpec(nm)
+	} else {
+		spec = updateDeploymentSpec(nm, &old.Spec)
 	}
 
 	// Define the desired NotificationManager Deployment object
@@ -57,7 +61,7 @@ func MakeDeployment(nm nmv1alpha1.NotificationManager) (*appsv1.Deployment, erro
 	return &deploy, nil
 }
 
-func makeDeploymentSpec(nm nmv1alpha1.NotificationManager) (*appsv1.DeploymentSpec, error) {
+func makeDeploymentSpec(nm nmv1alpha1.NotificationManager) *appsv1.DeploymentSpec {
 	nm = *nm.DeepCopy()
 
 	podLabels := map[string]string{}
@@ -117,7 +121,45 @@ func makeDeploymentSpec(nm nmv1alpha1.NotificationManager) (*appsv1.DeploymentSp
 			},
 		},
 	}
-	return deploySpec, nil
+	return deploySpec
+}
+
+func updateDeploymentSpec(nm nmv1alpha1.NotificationManager, old *appsv1.DeploymentSpec) *appsv1.DeploymentSpec {
+	nm = *nm.DeepCopy()
+
+	podLabels := map[string]string{}
+	podLabels["app"] = "notification-manager"
+	podLabels["notification-manager"] = nm.Name
+
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "notification-manager-config",
+			ReadOnly:  true,
+			MountPath: "/etc/notification-manager/config",
+		},
+	}
+
+	deploySpec := (*old).DeepCopy()
+
+	deploySpec.Replicas = nm.Spec.Replicas
+	deploySpec.Selector = &metav1.LabelSelector{
+		MatchLabels: podLabels,
+	}
+	deploySpec.Template.ObjectMeta = metav1.ObjectMeta{
+		Labels: podLabels,
+	}
+	deploySpec.Template.Spec.Containers[0].Name = "notification-manager"
+	deploySpec.Template.Spec.Containers[0].Image = *nm.Spec.Image
+	deploySpec.Template.Spec.Containers[0].ImagePullPolicy = "Always"
+	deploySpec.Template.Spec.Containers[0].Ports[0].Name = nm.Spec.PortName
+	deploySpec.Template.Spec.Containers[0].Ports[0].ContainerPort = 19093
+	deploySpec.Template.Spec.Containers[0].Ports[0].Protocol = corev1.ProtocolTCP
+	deploySpec.Template.Spec.Containers[0].VolumeMounts = volumeMounts
+	deploySpec.Template.Spec.ServiceAccountName = nm.Spec.ServiceAccountName
+	deploySpec.Template.Spec.Volumes[0].Name = "notification-manager-config"
+	deploySpec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.LocalObjectReference.Name = nm.Name + "-config"
+
+	return deploySpec
 }
 
 func MakeDeploymentService(nm nmv1alpha1.NotificationManager) *corev1.Service {

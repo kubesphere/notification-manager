@@ -41,17 +41,23 @@ uninstall: manifests
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
 	cd config/manager && kustomize edit set image controller=${IMG} && cd ../../
-	kustomize build config/default > config/bundle.yaml
 	kustomize build config/default | kubectl apply -f -
 
 # Deploy custom resources in the configured Kubernetes cluster
-deploy-samples:
-	kustomize build config/samples > config/samples/bundle.yaml
+deploy-samples: manifests
 	kustomize build config/samples | kubectl apply -f -
+
+# Delete samples, crds and operator
+undeploy:
+	kustomize build config/samples | kubectl delete -f -
+	kustomize build config/default | kubectl delete -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	cd config/manager && kustomize edit set image controller=${IMG} && cd ../../
+	kustomize build config/default > config/bundle.yaml
+	kustomize build config/samples > config/samples/bundle.yaml
 
 # Run go fmt against code
 fmt:
@@ -64,6 +70,9 @@ vet:
 # Generate code
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+# Build all docker images
+docker-all: docker-build docker-build-nm
 
 # Build the docker image
 docker-build: test
