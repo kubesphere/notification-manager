@@ -1,12 +1,11 @@
-package operator
+package controllers
 
 import (
-	nmv1alpha1 "github.com/kubesphere/notification-manager/api/v1alpha1"
+	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 )
 
@@ -18,7 +17,6 @@ const (
 var (
 	minReplicas int32  = 1
 	image       string = "kubesphere/notification-manager:v0.1.0"
-	log                = ctrl.Log.WithName("NotificationManager").WithName("Deployment")
 )
 
 func MakeDeployment(nm nmv1alpha1.NotificationManager, old *appsv1.Deployment) (*appsv1.Deployment, error) {

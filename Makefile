@@ -87,6 +87,9 @@ docker-push:
 	docker push ${IMG}
 	docker push ${NM_IMG}
 
+#docker-clean:
+#	docker rmi `docker image ls|awk '{print $2,$3}'|grep none|awk '{print $2}'|tr "\n" " "`
+
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:

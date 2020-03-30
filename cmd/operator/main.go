@@ -26,8 +26,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	notificationv1alpha1 "github.com/kubesphere/notification-manager/api/v1alpha1"
-	"github.com/kubesphere/notification-manager/controllers"
+	notificationv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
+	"github.com/kubesphere/notification-manager/pkg/controllers"
 	// +kubebuilder:scaffold:imports
 )
 

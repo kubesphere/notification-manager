@@ -21,8 +21,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	nmv1alpha1 "github.com/kubesphere/notification-manager/api/v1alpha1"
-	operator "github.com/kubesphere/notification-manager/pkg/operator"
+	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
 	commonerrors "github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -111,7 +110,7 @@ func (r *NotificationManagerReconciler) create(ctx context.Context, nm *nmv1alph
 		log.Error(err, "Unable to create ConfigMap")
 	}
 
-	deploy, err := operator.MakeDeployment(*nm, nil)
+	deploy, err := MakeDeployment(*nm, nil)
 	if err != nil {
 		log.Error(err, "Make deployment failed")
 		return commonerrors.Wrap(err, "Make deployment failed")
@@ -125,7 +124,7 @@ func (r *NotificationManagerReconciler) create(ctx context.Context, nm *nmv1alph
 		return err
 	}
 
-	svc := operator.MakeDeploymentService(*nm)
+	svc := MakeDeploymentService(*nm)
 	if err := ctrl.SetControllerReference(nm, svc, r.Scheme); err != nil {
 		log.Error(err, "SetControllerReference failed for service")
 		return err
@@ -147,7 +146,7 @@ func (r *NotificationManagerReconciler) update(ctx context.Context, nm *nmv1alph
 		return err
 	}
 
-	deploy, err := operator.MakeDeployment(*nm, old)
+	deploy, err := MakeDeployment(*nm, old)
 	if err != nil {
 		log.Error(err, "Make deployment failed")
 		return commonerrors.Wrap(err, "Make deployment failed")
@@ -172,7 +171,7 @@ func (r *NotificationManagerReconciler) update(ctx context.Context, nm *nmv1alph
 }
 
 func (r *NotificationManagerReconciler) createConfigMap(ctx context.Context, nm *nmv1alpha1.NotificationManager) error {
-	cm := operator.MakeConfigMap(*nm)
+	cm := MakeConfigMap(*nm)
 	if err := ctrl.SetControllerReference(nm, cm, r.Scheme); err != nil {
 		log.Error(err, "SetControllerReference failed for ConfigMap")
 		return err
@@ -185,7 +184,7 @@ func (r *NotificationManagerReconciler) createConfigMap(ctx context.Context, nm 
 }
 
 func (r *NotificationManagerReconciler) updateConfigMap(ctx context.Context, nm *nmv1alpha1.NotificationManager) error {
-	cm := operator.MakeConfigMap(*nm)
+	cm := MakeConfigMap(*nm)
 	if err := ctrl.SetControllerReference(nm, cm, r.Scheme); err != nil {
 		log.Error(err, "SetControllerReference failed for ConfigMap")
 		return err
