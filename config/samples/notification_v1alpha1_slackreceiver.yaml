@@ -3,6 +3,7 @@ kind: SlackReceiver
 metadata:
   name: user1-slack
   labels:
+    scope: tenant
     user: user1
 spec:
   slackConfigSelector:

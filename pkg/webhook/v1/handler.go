@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/prometheus/alertmanager/template"
 	"io"
 	"net/http"
@@ -16,6 +17,7 @@ type HttpHandler struct {
 	semCh          chan struct{}
 	webhookTimeout time.Duration
 	wkrTimeout     time.Duration
+	notifierCfg    *config.Config
 }
 
 type response struct {
@@ -23,12 +25,13 @@ type response struct {
 	Message string
 }
 
-func New(logger log.Logger, semCh chan struct{}, webhookTimeout time.Duration, wkrTimeout time.Duration) *HttpHandler {
+func New(logger log.Logger, semCh chan struct{}, webhookTimeout time.Duration, wkrTimeout time.Duration, cfg *config.Config) *HttpHandler {
 	h := &HttpHandler{
 		logger:         logger,
 		semCh:          semCh,
 		webhookTimeout: webhookTimeout,
 		wkrTimeout:     wkrTimeout,
+		notifierCfg:    cfg,
 	}
 	return h
 }
@@ -52,9 +55,9 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 	defer cancel()
 	select {
 	case h.semCh <- struct{}{}:
-		level.Debug(h.logger).Log("msg", "Acquired worker queue lock...")
+		_ = level.Debug(h.logger).Log("msg", "Acquired worker queue lock...")
 	case <-ctx.Done():
-		level.Warn(h.logger).Log("msg", "Running out of queue capacity in "+h.webhookTimeout.String(), "error", ctx.Err())
+		_ = level.Warn(h.logger).Log("msg", "Running out of queue capacity in "+h.webhookTimeout.String(), "error", ctx.Err())
 		h.handle(w, &response{http.StatusInternalServerError, "Running out of queue capacity with error: " + ctx.Err().Error()})
 	}
 
@@ -66,24 +69,24 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 		go func() {
 			defer close(wkrCh)
 			// time.Sleep(10 * time.Second)
-			level.Info(h.logger).Log("msg", "Worker: notification sent")
+			_ = level.Info(h.logger).Log("msg", "Worker: notification sent")
 		}()
 
 		select {
 		case <-ctx.Done():
 			err = ctx.Err()
-			level.Warn(h.logger).Log("msg", "Worker: sending notification timeout in "+h.wkrTimeout.String(), "error", err.Error())
+			_ = level.Warn(h.logger).Log("msg", "Worker: sending notification timeout in "+h.wkrTimeout.String(), "error", err.Error())
 		case <-wkrCh:
-			level.Debug(h.logger).Log("msg", "Worker: exiting")
+			_ = level.Debug(h.logger).Log("msg", "Worker: exiting")
 		}
 
-		level.Debug(h.logger).Log("msg", "Worker: exit")
+		_ = level.Debug(h.logger).Log("msg", "Worker: exit")
 		return err
 	}
 
 	// launch one worker goroutine for each received alert to create notification for it
 	go func(semCh chan struct{}, timeout time.Duration) {
-		level.Debug(h.logger).Log("msg", "Begins to send notification...")
+		_ = level.Debug(h.logger).Log("msg", "Begins to send notification...")
 
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
@@ -96,11 +99,11 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 		for i := 0; i < 2; i += 1 {
 			select {
 			case wkload := <-wkloadCh:
-				worker(ctx, wkload, stopCh)
+				_ = worker(ctx, wkload, stopCh)
 			case <-stopCh:
 				<-h.semCh
 				elapsed := time.Since(t).String()
-				level.Debug(h.logger).Log("msg", "Worker exit after "+elapsed)
+				_ = level.Debug(h.logger).Log("msg", "Worker exit after "+elapsed)
 				return
 			}
 		}
@@ -133,11 +136,11 @@ func (h *HttpHandler) handle(w http.ResponseWriter, resp *response) {
 	bytes, _ := json.Marshal(resp)
 	msg := string(bytes[:])
 	w.WriteHeader(resp.Status)
-	io.WriteString(w, msg)
+	_, _ = io.WriteString(w, msg)
 
 	if resp.Status != http.StatusOK {
-		level.Error(h.logger).Log("msg", resp.Message)
+		_ = level.Error(h.logger).Log("msg", resp.Message)
 	} else {
-		level.Debug(h.logger).Log("msg", resp.Message)
+		_ = level.Debug(h.logger).Log("msg", resp.Message)
 	}
 }

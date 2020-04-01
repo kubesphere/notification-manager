@@ -15,6 +15,7 @@ kind: EmailReceiver
 metadata:
   labels:
     app: notification-manager
+    scope: tenant
     user: user1
   name: user1-email
   namespace: kubesphere-monitoring-system
@@ -59,29 +60,6 @@ spec:
   serviceAccountName: default
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
-kind: Receiver
-metadata:
-  labels:
-    app: notification-manager
-    sender: kubesphere
-    user: user1
-  name: user1-receiver
-  namespace: kubesphere-monitoring-system
-spec:
-  emailReceiverSelector:
-    matchLabels:
-      user: user1
-  slackReceiverSelector:
-    matchLabels:
-      user: user1
-  webhookReceiverSelector:
-    matchLabels:
-      user: user1
-  wechatReceiverSelector:
-    matchLabels:
-      user: user1
----
-apiVersion: notification.kubesphere.io/v1alpha1
 kind: SlackConfig
 metadata:
   labels:
@@ -104,6 +82,7 @@ kind: SlackReceiver
 metadata:
   labels:
     app: notification-manager
+    scope: tenant
     user: user1
   name: user1-slack
   namespace: kubesphere-monitoring-system
@@ -137,6 +116,7 @@ kind: WebhookReceiver
 metadata:
   labels:
     app: notification-manager
+    scope: tenant
     user: user1
   name: user1-webhook
   namespace: kubesphere-monitoring-system
@@ -166,6 +146,7 @@ kind: WechatReceiver
 metadata:
   labels:
     app: notification-manager
+    scope: tenant
     user: user1
   name: user1-wechat
   namespace: kubesphere-monitoring-system

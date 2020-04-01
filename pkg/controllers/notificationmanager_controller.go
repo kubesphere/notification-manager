@@ -312,7 +312,6 @@ func (r *NotificationManagerReconciler) SetupWithManager(mgr ctrl.Manager) error
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&nmv1alpha1.NotificationManager{}).
 		Owns(&appsv1.Deployment{}).
-		Watches(&source.Kind{Type: &nmv1alpha1.Receiver{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &nmv1alpha1.EmailConfig{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &nmv1alpha1.EmailReceiver{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &nmv1alpha1.WebhookConfig{}}, &handler.EnqueueRequestForObject{}).

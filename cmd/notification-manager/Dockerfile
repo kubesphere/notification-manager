@@ -12,14 +12,14 @@ RUN GOPROXY="https://goproxy.io" go mod download
 
 # Copy the go source
 COPY cmd/notification-manager/main.go main.go
-COPY pkg/webhook/ pkg/webhook/
+COPY pkg/ pkg/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o notification-manager main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.azk8s.cn/distroless/static:nonroot
+FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/notification-manager .
 USER nonroot:nonroot

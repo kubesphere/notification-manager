@@ -3,6 +3,7 @@ kind: EmailReceiver
 metadata:
   name: user1-email
   labels:
+    scope: tenant
     user: user1
 spec:
   to:

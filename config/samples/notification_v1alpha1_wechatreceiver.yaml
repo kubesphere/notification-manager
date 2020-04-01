@@ -3,6 +3,7 @@ kind: WechatReceiver
 metadata:
   name: user1-wechat
   labels:
+    scope: tenant
     user: user1
 spec:
   wechatConfigSelector:

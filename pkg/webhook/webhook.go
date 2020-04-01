@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	whv1 "github.com/kubesphere/notification-manager/pkg/webhook/v1"
 	"net/http"
 	"time"
@@ -25,7 +26,7 @@ type Webhook struct {
 	handler *whv1.HttpHandler
 }
 
-func New(logger log.Logger, o *Options) *Webhook {
+func New(logger log.Logger, notifierCfg *config.Config, o *Options) *Webhook {
 	webhookTimeout, _ := time.ParseDuration(o.WebhookTimeout)
 	wkrTimeout, _ := time.ParseDuration(o.WorkerTimeout)
 
@@ -35,7 +36,7 @@ func New(logger log.Logger, o *Options) *Webhook {
 	}
 
 	semCh := make(chan struct{}, h.options.WorkerQueue)
-	h.handler = whv1.New(logger, semCh, webhookTimeout, wkrTimeout)
+	h.handler = whv1.New(logger, semCh, webhookTimeout, wkrTimeout, notifierCfg)
 	h.router = chi.NewRouter()
 
 	h.router.Use(middleware.RequestID)
@@ -66,19 +67,19 @@ func (h *Webhook) Run(ctx context.Context) error {
 			// We received an interrupt signal, shut down.
 			if err := httpSrv.Shutdown(ctx); err != nil {
 				// Error from closing listeners, or context timeout:
-				level.Error(h.logger).Log("msg", "Shutdown HTTP server", "err", err)
+				_ = level.Error(h.logger).Log("msg", "Shutdown HTTP server", "err", err)
 			}
-			level.Info(h.logger).Log("msg", "Shutdown HTTP server")
+			_ = level.Info(h.logger).Log("msg", "Shutdown HTTP server")
 			close(srvClosed)
 		}
 	}()
 
 	if err = httpSrv.ListenAndServe(); err != http.ErrServerClosed {
 		// Error starting or closing listener:
-		level.Error(h.logger).Log("msg", "HTTP server ListenAndServe", "err", err)
+		_ = level.Error(h.logger).Log("msg", "HTTP server ListenAndServe", "err", err)
 	}
 
-	level.Error(h.logger).Log("msg", "HTTP server exit", "err", err)
+	_ = level.Error(h.logger).Log("msg", "HTTP server exit", "err", err)
 	<-srvClosed
 
 	return err

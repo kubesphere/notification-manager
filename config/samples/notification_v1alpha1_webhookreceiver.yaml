@@ -3,6 +3,7 @@ kind: WebhookReceiver
 metadata:
   name: user1-webhook
   labels:
+    scope: tenant
     user: user1
 spec:
   webhookConfigSelector:
