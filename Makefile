@@ -56,8 +56,8 @@ undeploy:
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=controller-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 	cd config/manager && kustomize edit set image controller=${IMG} && cd ../../
-	kustomize build config/default > config/bundle.yaml
-	kustomize build config/samples > config/samples/bundle.yaml
+	kustomize build config/default | sed -e '/creationTimestamp/d' > config/bundle.yaml
+	kustomize build config/samples | sed -e '/creationTimestamp/d' > config/samples/bundle.yaml
 
 # Run go fmt against code
 fmt:

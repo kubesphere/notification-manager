@@ -3,7 +3,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
   name: emailconfigs.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -107,7 +106,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
   name: emailreceivers.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -208,7 +206,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
   name: notificationmanagers.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -514,7 +511,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
   name: receivers.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -741,7 +737,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
   name: slackconfigs.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -857,7 +852,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
   name: slackreceivers.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -957,7 +951,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
   name: webhookconfigs.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -1072,7 +1065,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
   name: webhookreceivers.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -1168,7 +1160,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
   name: wechatconfigs.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -1246,7 +1237,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
   name: wechatreceivers.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -1389,7 +1379,6 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: notification-manager-controller-role
 rules:
 - apiGroups:

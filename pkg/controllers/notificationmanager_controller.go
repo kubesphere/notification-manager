@@ -18,11 +18,13 @@ package controllers
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"time"
 
 	"github.com/go-logr/logr"
 	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
-	commonerrors "github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -35,10 +37,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+const (
+	notificationManager                = "notification-manager"
+	notificationManagerConfig          = "notification-manager-config"
+	notificationManagerConfigMountPath = "/etc/notification-manager/config"
+	defaultPortName                    = "webhook"
+	defaultServiceAccountName          = "default"
+)
+
 var (
-	ownerKey = ".metadata.controller"
-	apiGVStr = nmv1alpha1.GroupVersion.String()
-	log      logr.Logger
+	ownerKey    = ".metadata.controller"
+	apiGVStr    = nmv1alpha1.GroupVersion.String()
+	log         logr.Logger
+	minReplicas int32  = 1
+	image       string = "kubesphere/notification-manager:v0.1.0"
 )
 
 // NotificationManagerReconciler reconciles a NotificationManager object
@@ -66,65 +78,72 @@ func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 	}
 
 	for _, nm := range nms.Items {
-		// Check if the NotificationManager Deployment already exists
-		old := &appsv1.Deployment{}
-		oldName := types.NamespacedName{Namespace: nm.Namespace, Name: nm.Name + "-deployment"}
-		err := r.Get(ctx, oldName, old)
-
+		var err error
+		result := controllerutil.OperationResultNone
 		// Check if the reconcile is triggered by a NotificationManager CR
 		// or config CRs like Receivers, EmailConfigs etc.
 		newName := types.NamespacedName{Namespace: nm.Namespace, Name: nm.Name}
-		configChange := !reflect.DeepEqual(newName, req.NamespacedName)
-
-		switch {
-		// Found deployment for NotificationManager CR
-		// Update the deployment if the reconcile is not triggered by config CRs
-		case err == nil:
-			if err := r.update(ctx, &nm, old, configChange); err != nil {
-				log.Error(err, "Failed to update Notification Manager")
-				return ctrl.Result{}, err
-			}
-		// Cannot found deployment for NotificationManager CR
-		// Create one if the reconcile is not triggered by config CRs
-		case errors.IsNotFound(err) && !configChange:
-			if err := r.create(ctx, &nm); err != nil {
-				log.Error(err, "Failed to create Notification Manager")
-				return ctrl.Result{}, err
-			}
-		// Cannot found deployment for NotificationManager CR
-		// Ignore config CRs changes
-		case errors.IsNotFound(err) && configChange:
-			return ctrl.Result{}, nil
-		default:
-			log.Error(err, "Failed to get Notification Manager deployment:"+oldName.Namespace+"/"+oldName.Name)
+		configChanged := !reflect.DeepEqual(newName, req.NamespacedName)
+		// Create or update configmap
+		cm := &corev1.ConfigMap{}
+		cm.ObjectMeta.Name = nm.Name + "-config"
+		cm.ObjectMeta.Namespace = nm.Namespace
+		if result, err = controllerutil.CreateOrUpdate(ctx, r.Client, cm, r.mutateConfigMap(cm, configChanged, &nm)); err != nil {
+			log.Error(err, "Failed to CreateOrUpdate configmap", "result", result)
 			return ctrl.Result{}, err
 		}
+		log.V(10).Info("CreateOrUpdate configmap returns", "result", result)
+
+		if configChanged {
+			continue
+		}
+
+		// Create deployment service
+		if err = r.createDeploymentSvc(ctx, &nm); err != nil {
+			log.Error(err, "Failed to create svc")
+			return ctrl.Result{}, err
+		}
+
+		// Create or update deployment
+		result = controllerutil.OperationResultNone
+		deploy := &appsv1.Deployment{}
+		deploy.ObjectMeta.Name = nm.Name + "-deployment"
+		deploy.ObjectMeta.Namespace = nm.Namespace
+		if result, err = controllerutil.CreateOrUpdate(ctx, r.Client, deploy, r.mutateDeployment(deploy, cm, &nm)); err != nil {
+			log.Error(err, "Failed to CreateOrUpdate deployment", "result", result)
+			return ctrl.Result{}, err
+		}
+		log.V(10).Info("CreateOrUpdate deployment returns", "result", result)
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *NotificationManagerReconciler) create(ctx context.Context, nm *nmv1alpha1.NotificationManager) error {
-	err := r.createConfigMap(ctx, nm)
-	if err != nil {
-		log.Error(err, "Unable to create ConfigMap")
+func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context, nm *nmv1alpha1.NotificationManager) error {
+	nm = nm.DeepCopy()
+	if nm.Spec.PortName == "" {
+		nm.Spec.PortName = defaultPortName
 	}
 
-	deploy, err := MakeDeployment(*nm, nil)
-	if err != nil {
-		log.Error(err, "Make deployment failed")
-		return commonerrors.Wrap(err, "Make deployment failed")
-	}
-	if err := ctrl.SetControllerReference(nm, deploy, r.Scheme); err != nil {
-		log.Error(err, "SetControllerReference failed for deployment")
-		return err
-	}
-	if err := r.Create(ctx, deploy); err != nil && !errors.IsAlreadyExists(err) {
-		log.Error(err, "Create deployment failed")
-		return err
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      nm.Name + "-svc",
+			Namespace: nm.Namespace,
+			Labels:    *r.makeCommonLabels(nm),
+		},
+		Spec: corev1.ServiceSpec{
+			Type: "ClusterIP",
+			Ports: []corev1.ServicePort{
+				{
+					Name:       nm.Spec.PortName,
+					Port:       19093,
+					TargetPort: intstr.FromString(nm.Spec.PortName),
+				},
+			},
+			Selector: *r.makeCommonLabels(nm),
+		},
 	}
 
-	svc := MakeDeploymentService(*nm)
 	if err := ctrl.SetControllerReference(nm, svc, r.Scheme); err != nil {
 		log.Error(err, "SetControllerReference failed for service")
 		return err
@@ -137,65 +156,124 @@ func (r *NotificationManagerReconciler) create(ctx context.Context, nm *nmv1alph
 	return nil
 }
 
-func (r *NotificationManagerReconciler) update(ctx context.Context, nm *nmv1alpha1.NotificationManager, old *appsv1.Deployment, configChanged bool) error {
-	if configChanged {
-		err := r.updateConfigMap(ctx, nm)
-		if err != nil {
-			log.Error(err, "Unable to update ConfigMap")
+func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployment, cm *corev1.ConfigMap, nm *nmv1alpha1.NotificationManager) controllerutil.MutateFn {
+	return func() error {
+		nm = nm.DeepCopy()
+
+		if (nm.Spec.Image == nil) || (nm.Spec.Image != nil && *nm.Spec.Image == "") {
+			nm.Spec.Image = &image
 		}
-		return err
-	}
 
-	deploy, err := MakeDeployment(*nm, old)
-	if err != nil {
-		log.Error(err, "Make deployment failed")
-		return commonerrors.Wrap(err, "Make deployment failed")
-	}
-
-	if err := ctrl.SetControllerReference(nm, deploy, r.Scheme); err != nil {
-		log.Error(err, "SetControllerReference failed for deployment")
-		return err
-	}
-
-	// Update the found object and write the result back if there are any changes
-	if !reflect.DeepEqual(deploy.Spec, old.Spec) {
-		log.V(10).Info("Updating deployment", "New Spec:", deploy.Spec, "Old Spec:", old.Spec)
-		err = r.Update(ctx, deploy)
-		if err != nil {
-			log.Error(err, "Update deployment failed")
-			return err
+		if (nm.Spec.Replicas == nil) || (nm.Spec.Replicas != nil && *nm.Spec.Replicas <= int32(0)) {
+			nm.Spec.Replicas = &minReplicas
 		}
-	}
 
-	return nil
+		if nm.Spec.PortName == "" {
+			nm.Spec.PortName = defaultPortName
+		}
+
+		if nm.Spec.ServiceAccountName == "" {
+			nm.Spec.ServiceAccountName = defaultServiceAccountName
+		}
+
+		deploy.ObjectMeta.Labels = *r.makeCommonLabels(nm)
+		deploy.Spec.Replicas = nm.Spec.Replicas
+		podLabels := deploy.ObjectMeta.Labels
+		deploy.Spec.Selector = &metav1.LabelSelector{
+			MatchLabels: podLabels,
+		}
+		deploy.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+			Labels: podLabels,
+		}
+
+		deploy.Spec.Template.Spec.ServiceAccountName = nm.Spec.ServiceAccountName
+
+		// Define configmap volume mounts
+		volumeMounts := []corev1.VolumeMount{
+			{
+				Name:      notificationManagerConfig,
+				ReadOnly:  true,
+				MountPath: notificationManagerConfigMountPath,
+			},
+		}
+
+		// Define expected container
+		newC := corev1.Container{
+			Name:            "notification-manager",
+			Image:           *nm.Spec.Image,
+			ImagePullPolicy: "Always",
+			Ports: []corev1.ContainerPort{
+				{
+					Name:          nm.Spec.PortName,
+					ContainerPort: 19093,
+					Protocol:      corev1.ProtocolTCP,
+				},
+			},
+			VolumeMounts: volumeMounts,
+		}
+
+		// Make sure existing Containers match expected Containers
+		for i, c := range deploy.Spec.Template.Spec.Containers {
+			if c.Name == newC.Name {
+				deploy.Spec.Template.Spec.Containers[i].Image = newC.Image
+				deploy.Spec.Template.Spec.Containers[i].ImagePullPolicy = newC.ImagePullPolicy
+				deploy.Spec.Template.Spec.Containers[i].Ports = newC.Ports
+				deploy.Spec.Template.Spec.Containers[i].VolumeMounts = newC.VolumeMounts
+				break
+			}
+		}
+
+		// Create new Containers if no existing Containers exist
+		if len(deploy.Spec.Template.Spec.Containers) == 0 {
+			deploy.Spec.Template.Spec.Containers = []corev1.Container{newC}
+		}
+
+		// Define volume for ConfigMap
+		newVol := corev1.Volume{
+			Name: notificationManagerConfig,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cm.ObjectMeta.Name,
+					},
+				},
+			},
+		}
+
+		// Make sure existing volumes match expected volumes
+		for i, v := range deploy.Spec.Template.Spec.Volumes {
+			if v.Name == newVol.Name {
+				if v.ConfigMap != nil {
+					deploy.Spec.Template.Spec.Volumes[i].ConfigMap.LocalObjectReference =
+						newVol.ConfigMap.LocalObjectReference
+				}
+				break
+			}
+		}
+
+		// Create new volumes if no existing volumes exist
+		if len(deploy.Spec.Template.Spec.Volumes) == 0 {
+			deploy.Spec.Template.Spec.Volumes = []corev1.Volume{newVol}
+		}
+
+		deploy.SetOwnerReferences(nil)
+		return ctrl.SetControllerReference(nm, deploy, r.Scheme)
+	}
 }
 
-func (r *NotificationManagerReconciler) createConfigMap(ctx context.Context, nm *nmv1alpha1.NotificationManager) error {
-	cm := MakeConfigMap(*nm)
-	if err := ctrl.SetControllerReference(nm, cm, r.Scheme); err != nil {
-		log.Error(err, "SetControllerReference failed for ConfigMap")
-		return err
+func (r *NotificationManagerReconciler) mutateConfigMap(cm *corev1.ConfigMap, configChanged bool, nm *nmv1alpha1.NotificationManager) controllerutil.MutateFn {
+	return func() error {
+		cm.ObjectMeta.Labels = *r.makeCommonLabels(nm)
+		if configChanged {
+			cm.Data = map[string]string{"UpdateTime": time.Now().String()}
+		}
+		cm.SetOwnerReferences(nil)
+		return ctrl.SetControllerReference(nm, cm, r.Scheme)
 	}
-	if err := r.Create(ctx, cm); err != nil && !errors.IsAlreadyExists(err) {
-		log.Error(err, "Create ConfigMap failed")
-		return err
-	}
-	return nil
 }
 
-func (r *NotificationManagerReconciler) updateConfigMap(ctx context.Context, nm *nmv1alpha1.NotificationManager) error {
-	cm := MakeConfigMap(*nm)
-	if err := ctrl.SetControllerReference(nm, cm, r.Scheme); err != nil {
-		log.Error(err, "SetControllerReference failed for ConfigMap")
-		return err
-	}
-	// Update the found object and write the result back if there are any changes
-	err := r.Update(ctx, cm)
-	if err != nil {
-		log.Error(err, "Update ConfigMap failed")
-		return err
-	}
-	return nil
+func (r *NotificationManagerReconciler) makeCommonLabels(nm *nmv1alpha1.NotificationManager) *map[string]string {
+	return &map[string]string{"app": notificationManager, notificationManager: nm.Name}
 }
 
 func (r *NotificationManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -234,7 +312,6 @@ func (r *NotificationManagerReconciler) SetupWithManager(mgr ctrl.Manager) error
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&nmv1alpha1.NotificationManager{}).
 		Owns(&appsv1.Deployment{}).
-		// Owns(&corev1.Service{}).
 		Watches(&source.Kind{Type: &nmv1alpha1.Receiver{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &nmv1alpha1.EmailConfig{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &nmv1alpha1.EmailReceiver{}}, &handler.EnqueueRequestForObject{}).
