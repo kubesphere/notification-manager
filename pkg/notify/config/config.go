@@ -456,6 +456,7 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 		to += v + ","
 	}
 	to = strings.TrimSuffix(to, ",")
+	rcvr.EmailConfig = &config.EmailConfig{}
 	rcvr.EmailConfig.To = to
 
 	return rcvr
