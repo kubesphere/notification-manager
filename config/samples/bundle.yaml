@@ -14,6 +14,26 @@ kind: EmailConfig
 metadata:
   labels:
     app: notification-manager
+    scope: tenant
+    user: admin
+  name: admin-email-config
+  namespace: kubesphere-monitoring-system
+spec:
+  authPassword:
+    key: password
+    name: global-email-secret
+    namespace: kubesphere-monitoring-system
+  authUsername: abc
+  from: abc@xyz.com
+  smartHost:
+    host: imap.xyz.com
+    port: "25"
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: EmailConfig
+metadata:
+  labels:
+    app: notification-manager
     scope: global
   name: global-email-config
   namespace: kubesphere-monitoring-system
