@@ -8,6 +8,7 @@ resources:
 - notification_v1alpha1_webhookreceiver.yaml
 - notification_v1alpha1_wechatconfig.yaml
 - notification_v1alpha1_wechatreceiver.yaml
+- global_email_secret.yaml
 
 namespace: kubesphere-monitoring-system
 

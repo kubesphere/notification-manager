@@ -1,3 +1,14 @@
+apiVersion: v1
+data:
+  password: dGVzdA==
+kind: Secret
+metadata:
+  labels:
+    app: notification-manager
+  name: global-email-secret
+  namespace: kubesphere-monitoring-system
+type: Opaque
+---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: EmailConfig
 metadata:
