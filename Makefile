@@ -72,18 +72,18 @@ generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # Build all docker images
-docker-all: docker-build docker-build-nm
+build: build-op build-nm
 
 # Build the docker image
-docker-build: test
+build-op: test
 	docker build -f cmd/operator/Dockerfile . -t ${IMG} --network host
 
 # Build the docker image
-docker-build-nm: test
+build-nm: test
 	docker build -f cmd/notification-manager/Dockerfile . -t ${NM_IMG} --network host
 
 # Push the docker image
-docker-push:
+push:
 	docker push ${IMG}
 	docker push ${NM_IMG}
 
