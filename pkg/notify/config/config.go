@@ -204,12 +204,13 @@ func (c *Config) sync(p *param) {
 			rcvrKey := fmt.Sprintf("%s/%s/%s", emailReceiver, p.Namespace, p.Name)
 			if _, exist := c.Receivers[p.TenantID]; exist {
 				c.Receivers[p.TenantID][rcvrKey] = p.Receiver
-			} else {
+			} else if len(p.TenantID) > 0 {
 				c.Receivers[p.TenantID] = make(map[string]*Receiver)
 				c.Receivers[p.TenantID][rcvrKey] = p.Receiver
 			}
 		case emailConfig:
 			// Update EmailConfig of the recerver with the same TenantID
+			// TODO: adjust EmailConfig update logic to only change the emailconfig part of an emailreceiver
 			if _, exist := c.Receivers[p.TenantID]; exist {
 				for k := range c.Receivers[p.TenantID] {
 					c.Receivers[p.TenantID][k].EmailConfig = p.Receiver.EmailConfig
@@ -233,6 +234,7 @@ func (c *Config) sync(p *param) {
 			}
 		case emailConfig:
 			// Delete EmailConfig of the recerver with the same TenantID by setting the EmailConfig to nil
+			// TODO: Add logic to reset emailconfig part of an emailreceiver instead of setting the entire EmailConfig to nil
 			if _, exist := c.Receivers[p.TenantID]; exist {
 				for k := range c.Receivers[p.TenantID] {
 					c.Receivers[p.TenantID][k].EmailConfig = nil
@@ -470,10 +472,14 @@ func (c *Config) OnMailRcvrAdd(obj interface{}) {
 		p.Name = mr.Name
 		p.Namespace = mr.Namespace
 		p.Type = emailReceiver
-		p.Receiver = c.generateMailReceiver(mr)
-		p.done = make(chan interface{}, 1)
-		c.ch <- p
-		<-p.done
+		if len(p.TenantID) > 0 {
+			p.Receiver = c.generateMailReceiver(mr)
+			p.done = make(chan interface{}, 1)
+			c.ch <- p
+			<-p.done
+		} else {
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty TenantID", "TenantKey", c.TenantKey)
+		}
 	}
 }
 
@@ -485,9 +491,13 @@ func (c *Config) OnMailRcvrDel(obj interface{}) {
 		p.Name = mr.Name
 		p.Namespace = mr.Namespace
 		p.Type = emailReceiver
-		p.done = make(chan interface{}, 1)
-		c.ch <- p
-		<-p.done
+		if len(p.TenantID) > 0 {
+			p.done = make(chan interface{}, 1)
+			c.ch <- p
+			<-p.done
+		} else {
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty TenantID", "TenantKey", c.TenantKey)
+		}
 	}
 }
 
@@ -558,9 +568,13 @@ func (c *Config) OnMailConfAdd(obj interface{}) {
 		} else {
 			return
 		}
-		p.done = make(chan interface{}, 1)
-		c.ch <- p
-		<-p.done
+		if len(p.TenantID) > 0 {
+			p.done = make(chan interface{}, 1)
+			c.ch <- p
+			<-p.done
+		} else {
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty TenantID", "TenantKey", c.TenantKey)
+		}
 	}
 }
 
@@ -586,8 +600,12 @@ func (c *Config) OnMailConfDel(obj interface{}) {
 		} else {
 			return
 		}
-		p.done = make(chan interface{}, 1)
-		c.ch <- p
-		<-p.done
+		if len(p.TenantID) > 0 {
+			p.done = make(chan interface{}, 1)
+			c.ch <- p
+			<-p.done
+		} else {
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty TenantID", "TenantKey", c.TenantKey)
+		}
 	}
 }
