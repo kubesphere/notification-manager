@@ -52,9 +52,9 @@ type GlobalSpec struct {
 
 type ReceiversSpec struct {
 	// Key used to identify tenant, default to be "namespace" if not specified
-	TenantKey string `json:"tenantKey,omitempty"`
+	TenantKey string `json:"tenantKey"`
 	// Selector to find all notification receivers
-	ReceiverSelector *metav1.LabelSelector `json:"receiverSelector"`
+	ReceiverSelector *metav1.LabelSelector `json:"receiverSelector,omitempty"`
 }
 
 // NotificationManagerStatus defines the observed state of NotificationManager

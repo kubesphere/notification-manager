@@ -22,6 +22,6 @@ spec:
         scope: global
   receivers:
     tenantKey: user
-    receiverSelector:
-      matchLabels:
-        sender: kubesphere
+#    receiverSelector:
+#      matchLabels:
+#        sender: kubesphere

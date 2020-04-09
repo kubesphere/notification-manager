@@ -1,17 +1,17 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WechatReceiver
 metadata:
-  name: user1-wechat
+  name: admin-wechat
   labels:
     scope: tenant
-    user: user1
+    user: admin
 spec:
   wechatConfigSelector:
     matchLabels:
       scope: tenant
-      user: user1
+      user: admin
   message: wechat-test-message
   agentId: wechat-agent-id
-  toUser: benjamin
+  toUser: abc
   toParty: wechat-party
   toTag: wechat-tag

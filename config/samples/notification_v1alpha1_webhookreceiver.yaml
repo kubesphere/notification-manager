@@ -1,12 +1,12 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WebhookReceiver
 metadata:
-  name: user1-webhook
+  name: admin-webhook
   labels:
     scope: tenant
-    user: user1
+    user: admin
 spec:
   webhookConfigSelector:
     matchLabels:
       scope: tenant
-      user: user1
+      user: admin

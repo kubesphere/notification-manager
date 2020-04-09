@@ -1,13 +1,13 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: SlackReceiver
 metadata:
-  name: user1-slack
+  name: admin-slack
   labels:
     scope: tenant
-    user: user1
+    user: admin
 spec:
   slackConfigSelector:
     matchLabels:
       scope: tenant
-      user: user1
+      user: admin
   channel: slack_channel_x

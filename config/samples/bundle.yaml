@@ -7,8 +7,15 @@ metadata:
   name: global-email-config
   namespace: kubesphere-monitoring-system
 spec:
+  authPassword:
+    key: password
+    name: global-email-secret
+    namespace: kubesphere-monitoring-system
+  authUsername: abc
   from: abc@xyz.com
-  smartHost: imap.xyz.com:25
+  smartHost:
+    host: imap.xyz.com
+    port: "25"
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: EmailReceiver
@@ -16,14 +23,14 @@ metadata:
   labels:
     app: notification-manager
     scope: tenant
-    user: user1
-  name: user1-email
+    user: admin
+  name: admin-email
   namespace: kubesphere-monitoring-system
 spec:
   emailConfigSelector:
     matchLabels:
       scope: tenant
-      user: user1
+      user: admin
   to:
   - abc2@xyz.com
   - abc3@xyz.com
@@ -52,9 +59,6 @@ spec:
   image: benjaminhuo/notification-manager:latest
   portName: webhook
   receivers:
-    receiverSelector:
-      matchLabels:
-        sender: kubesphere
     tenantKey: user
   replicas: 1
   serviceAccountName: default
@@ -71,7 +75,7 @@ spec:
   httpConfigSelector:
     matchLabels:
       scope: tenant
-      user: user1
+      user: admin
   slackApiUrl: slack_url_xxx
   slackApiUrlSecret:
     key: slack-api-url
@@ -83,15 +87,15 @@ metadata:
   labels:
     app: notification-manager
     scope: tenant
-    user: user1
-  name: user1-slack
+    user: admin
+  name: admin-slack
   namespace: kubesphere-monitoring-system
 spec:
   channel: slack_channel_x
   slackConfigSelector:
     matchLabels:
       scope: tenant
-      user: user1
+      user: admin
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WebhookConfig
@@ -105,7 +109,7 @@ spec:
   httpConfigSelector:
     matchLabels:
       scope: tenant
-      user: user1
+      user: admin
   url: xxx
   urlSecret:
     key: webhook-url
@@ -117,14 +121,14 @@ metadata:
   labels:
     app: notification-manager
     scope: tenant
-    user: user1
-  name: user1-webhook
+    user: admin
+  name: admin-webhook
   namespace: kubesphere-monitoring-system
 spec:
   webhookConfigSelector:
     matchLabels:
       scope: tenant
-      user: user1
+      user: admin
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WechatConfig
@@ -147,16 +151,16 @@ metadata:
   labels:
     app: notification-manager
     scope: tenant
-    user: user1
-  name: user1-wechat
+    user: admin
+  name: admin-wechat
   namespace: kubesphere-monitoring-system
 spec:
   agentId: wechat-agent-id
   message: wechat-test-message
   toParty: wechat-party
   toTag: wechat-tag
-  toUser: benjamin
+  toUser: abc
   wechatConfigSelector:
     matchLabels:
       scope: tenant
-      user: user1
+      user: admin

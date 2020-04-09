@@ -9,4 +9,11 @@ metadata:
     #user: user1
 spec:
   from: abc@xyz.com
-  smartHost: imap.xyz.com:25
+  smartHost:
+    host: imap.xyz.com
+    port: "25"
+  authUsername: abc
+  authPassword:
+    namespace: kubesphere-monitoring-system
+    name: global-email-secret
+    key: password

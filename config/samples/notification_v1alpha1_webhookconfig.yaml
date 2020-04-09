@@ -15,4 +15,4 @@ spec:
   httpConfigSelector:
     matchLabels:
       scope: tenant
-      user: user1
+      user: admin

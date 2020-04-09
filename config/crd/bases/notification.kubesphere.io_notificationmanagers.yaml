@@ -275,7 +275,7 @@ spec:
                     if not specified
                   type: string
               required:
-              - receiverSelector
+              - tenantKey
               type: object
             replicas:
               description: Number of instances to deploy for Notification Manager
