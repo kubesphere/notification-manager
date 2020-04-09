@@ -5,7 +5,6 @@ resources:
 - bases/notification.kubesphere.io_notificationmanagers.yaml
 - bases/notification.kubesphere.io_emailconfigs.yaml
 - bases/notification.kubesphere.io_emailreceivers.yaml
-- bases/notification.kubesphere.io_receivers.yaml
 - bases/notification.kubesphere.io_slackconfigs.yaml
 - bases/notification.kubesphere.io_slackreceivers.yaml
 - bases/notification.kubesphere.io_webhookconfigs.yaml
@@ -20,7 +19,6 @@ patchesStrategicMerge:
 #- patches/webhook_in_notificationmanagers.yaml
 #- patches/webhook_in_emailconfigs.yaml
 #- patches/webhook_in_emailreceivers.yaml
-#- patches/webhook_in_receivers.yaml
 #- patches/webhook_in_slackconfigs.yaml
 #- patches/webhook_in_slackreceivers.yaml
 #- patches/webhook_in_webhookconfigs.yaml
@@ -34,7 +32,6 @@ patchesStrategicMerge:
 #- patches/cainjection_in_notificationmanagers.yaml
 #- patches/cainjection_in_emailconfigs.yaml
 #- patches/cainjection_in_emailreceivers.yaml
-#- patches/cainjection_in_receivers.yaml
 #- patches/cainjection_in_slackconfigs.yaml
 #- patches/cainjection_in_slackreceivers.yaml
 #- patches/cainjection_in_webhookconfigs.yaml
