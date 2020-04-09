@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -355,10 +354,7 @@ func (c *Config) generateEmailGlobalConfig(nm *nmv1alpha1.NotificationManager) (
 				_ = level.Warn(c.logger).Log("msg", "Unable to get AuthPassword secret", "err", err)
 				return nil, client.IgnoreNotFound(err)
 			}
-			data, err := base64.StdEncoding.DecodeString(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
-			if err == nil {
-				global.SMTPAuthPassword = config.Secret(string(data))
-			}
+			global.SMTPAuthPassword = config.Secret(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
 		}
 
 		if mc.Spec.AuthSecret != nil {
@@ -367,10 +363,7 @@ func (c *Config) generateEmailGlobalConfig(nm *nmv1alpha1.NotificationManager) (
 				_ = level.Warn(c.logger).Log("msg", "Unable to get AuthSecret secret", "err", err)
 				return nil, client.IgnoreNotFound(err)
 			}
-			data, err := base64.StdEncoding.DecodeString(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
-			if err == nil {
-				global.SMTPAuthSecret = config.Secret(string(data))
-			}
+			global.SMTPAuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
 		}
 		break
 	}
@@ -413,6 +406,7 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 	}
 
 	rcvr := &Receiver{}
+	rcvr.EmailConfig = &config.EmailConfig{}
 	for _, mc := range mcList.Items {
 		rcvr.EmailConfig.From = mc.Spec.From
 		if mc.Spec.Hello != nil {
@@ -433,10 +427,7 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 				_ = level.Error(c.logger).Log("msg", "Unable to get AuthPassword secret", "err", err)
 				return nil
 			}
-			data, err := base64.StdEncoding.DecodeString(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
-			if err == nil {
-				rcvr.EmailConfig.AuthPassword = config.Secret(string(data))
-			}
+			rcvr.EmailConfig.AuthPassword = config.Secret(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
 		}
 
 		if mc.Spec.AuthSecret != nil {
@@ -445,10 +436,7 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 				_ = level.Error(c.logger).Log("msg", "Unable to get AuthSecret secret", "err", err)
 				return nil
 			}
-			data, err := base64.StdEncoding.DecodeString(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
-			if err == nil {
-				rcvr.EmailConfig.AuthSecret = config.Secret(string(data))
-			}
+			rcvr.EmailConfig.AuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
 		}
 		break
 	}
@@ -458,7 +446,6 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 		to += v + ","
 	}
 	to = strings.TrimSuffix(to, ",")
-	rcvr.EmailConfig = &config.EmailConfig{}
 	rcvr.EmailConfig.To = to
 
 	return rcvr
@@ -503,6 +490,7 @@ func (c *Config) OnMailRcvrDel(obj interface{}) {
 
 func (c *Config) generateMailConfig(mc *nmv1alpha1.EmailConfig) *Receiver {
 	rcvr := &Receiver{}
+	rcvr.EmailConfig = &config.EmailConfig{}
 	rcvr.EmailConfig.From = mc.Spec.From
 
 	if mc.Spec.Hello != nil {
@@ -524,10 +512,7 @@ func (c *Config) generateMailConfig(mc *nmv1alpha1.EmailConfig) *Receiver {
 			_ = level.Error(c.logger).Log("msg", "Unable to get AuthPassword secret", "err", err)
 			return nil
 		}
-		data, err := base64.StdEncoding.DecodeString(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
-		if err == nil {
-			rcvr.EmailConfig.AuthPassword = config.Secret(string(data))
-		}
+		rcvr.EmailConfig.AuthPassword = config.Secret(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
 	}
 
 	if mc.Spec.AuthSecret != nil {
@@ -536,10 +521,7 @@ func (c *Config) generateMailConfig(mc *nmv1alpha1.EmailConfig) *Receiver {
 			_ = level.Error(c.logger).Log("msg", "Unable to get AuthSecret secret", "err", err)
 			return nil
 		}
-		data, err := base64.StdEncoding.DecodeString(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
-		if err == nil {
-			rcvr.EmailConfig.AuthSecret = config.Secret(string(data))
-		}
+		rcvr.EmailConfig.AuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
 	}
 
 	return rcvr
