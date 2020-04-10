@@ -63,11 +63,35 @@ type Config struct {
 	ch chan *param
 }
 
-type Receiver struct {
-	EmailConfig   *config.EmailConfig
+type Email struct {
+	To          string
+	EmailConfig *config.EmailConfig
+}
+
+type Wechat struct {
+	Message      string
+	AgentId      string
+	ToUser       string
+	ToParty      string
+	ToTag        string
+	WechatConfig *config.WechatConfig
+}
+
+type Slack struct {
+	// The channel or user to send notifications to.
+	Channel      string
+	SlackConfigs *config.SlackConfig
+}
+
+type Webhook struct {
 	WebhookConfig *config.WebhookConfig
-	WechatConfig  *config.WechatConfig
-	SlackConfigs  *config.SlackConfig
+}
+
+type Receiver struct {
+	Email   *Email
+	Wechat  *Wechat
+	Slack   *Slack
+	Webhook *Webhook
 }
 
 type param struct {
@@ -209,10 +233,9 @@ func (c *Config) sync(p *param) {
 			}
 		case emailConfig:
 			// Update EmailConfig of the recerver with the same TenantID
-			// TODO: adjust EmailConfig update logic to only change the emailconfig part of an emailreceiver
 			if _, exist := c.Receivers[p.TenantID]; exist {
 				for k := range c.Receivers[p.TenantID] {
-					c.Receivers[p.TenantID][k].EmailConfig = p.Receiver.EmailConfig
+					c.Receivers[p.TenantID][k].Email.EmailConfig = p.Receiver.Email.EmailConfig
 				}
 			}
 		default:
@@ -233,10 +256,9 @@ func (c *Config) sync(p *param) {
 			}
 		case emailConfig:
 			// Delete EmailConfig of the recerver with the same TenantID by setting the EmailConfig to nil
-			// TODO: Add logic to reset emailconfig part of an emailreceiver instead of setting the entire EmailConfig to nil
 			if _, exist := c.Receivers[p.TenantID]; exist {
 				for k := range c.Receivers[p.TenantID] {
-					c.Receivers[p.TenantID][k].EmailConfig = nil
+					c.Receivers[p.TenantID][k].Email.EmailConfig = nil
 				}
 			}
 		default:
@@ -406,19 +428,20 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 	}
 
 	rcv := &Receiver{}
-	rcv.EmailConfig = &config.EmailConfig{}
+	rcv.Email = &Email{}
+	rcv.Email.EmailConfig = &config.EmailConfig{}
 	for _, mc := range mcList.Items {
-		rcv.EmailConfig.From = mc.Spec.From
+		rcv.Email.EmailConfig.From = mc.Spec.From
 		if mc.Spec.Hello != nil {
-			rcv.EmailConfig.Hello = *mc.Spec.Hello
+			rcv.Email.EmailConfig.Hello = *mc.Spec.Hello
 		}
-		rcv.EmailConfig.Smarthost = config.HostPort(mc.Spec.SmartHost)
+		rcv.Email.EmailConfig.Smarthost = config.HostPort(mc.Spec.SmartHost)
 		if mc.Spec.AuthUsername != nil {
-			rcv.EmailConfig.AuthUsername = *mc.Spec.AuthUsername
+			rcv.Email.EmailConfig.AuthUsername = *mc.Spec.AuthUsername
 		}
 
 		if mc.Spec.AuthIdentify != nil {
-			rcv.EmailConfig.AuthIdentity = *mc.Spec.AuthIdentify
+			rcv.Email.EmailConfig.AuthIdentity = *mc.Spec.AuthIdentify
 		}
 
 		if mc.Spec.AuthPassword != nil {
@@ -427,7 +450,7 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 				_ = level.Error(c.logger).Log("msg", "Unable to get AuthPassword secret", "err", err)
 				return nil
 			}
-			rcv.EmailConfig.AuthPassword = config.Secret(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
+			rcv.Email.EmailConfig.AuthPassword = config.Secret(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
 		}
 
 		if mc.Spec.AuthSecret != nil {
@@ -436,7 +459,7 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 				_ = level.Error(c.logger).Log("msg", "Unable to get AuthSecret secret", "err", err)
 				return nil
 			}
-			rcv.EmailConfig.AuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
+			rcv.Email.EmailConfig.AuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
 		}
 		break
 	}
@@ -446,7 +469,7 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 		to += v + ","
 	}
 	to = strings.TrimSuffix(to, ",")
-	rcv.EmailConfig.To = to
+	rcv.Email.To = to
 
 	return rcv
 }
@@ -490,20 +513,21 @@ func (c *Config) OnMailRcvDel(obj interface{}) {
 
 func (c *Config) generateMailConfig(mc *nmv1alpha1.EmailConfig) *Receiver {
 	rcv := &Receiver{}
-	rcv.EmailConfig = &config.EmailConfig{}
-	rcv.EmailConfig.From = mc.Spec.From
+	rcv.Email = &Email{}
+	rcv.Email.EmailConfig = &config.EmailConfig{}
+	rcv.Email.EmailConfig.From = mc.Spec.From
 
 	if mc.Spec.Hello != nil {
-		rcv.EmailConfig.Hello = *mc.Spec.Hello
+		rcv.Email.EmailConfig.Hello = *mc.Spec.Hello
 	}
 
-	rcv.EmailConfig.Smarthost = config.HostPort(mc.Spec.SmartHost)
+	rcv.Email.EmailConfig.Smarthost = config.HostPort(mc.Spec.SmartHost)
 	if mc.Spec.AuthUsername != nil {
-		rcv.EmailConfig.AuthUsername = *mc.Spec.AuthUsername
+		rcv.Email.EmailConfig.AuthUsername = *mc.Spec.AuthUsername
 	}
 
 	if mc.Spec.AuthIdentify != nil {
-		rcv.EmailConfig.AuthIdentity = *mc.Spec.AuthIdentify
+		rcv.Email.EmailConfig.AuthIdentity = *mc.Spec.AuthIdentify
 	}
 
 	if mc.Spec.AuthPassword != nil {
@@ -512,7 +536,7 @@ func (c *Config) generateMailConfig(mc *nmv1alpha1.EmailConfig) *Receiver {
 			_ = level.Error(c.logger).Log("msg", "Unable to get AuthPassword secret", "err", err)
 			return nil
 		}
-		rcv.EmailConfig.AuthPassword = config.Secret(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
+		rcv.Email.EmailConfig.AuthPassword = config.Secret(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
 	}
 
 	if mc.Spec.AuthSecret != nil {
@@ -521,7 +545,7 @@ func (c *Config) generateMailConfig(mc *nmv1alpha1.EmailConfig) *Receiver {
 			_ = level.Error(c.logger).Log("msg", "Unable to get AuthSecret secret", "err", err)
 			return nil
 		}
-		rcv.EmailConfig.AuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
+		rcv.Email.EmailConfig.AuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
 	}
 
 	return rcv
