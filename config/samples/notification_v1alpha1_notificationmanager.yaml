@@ -8,20 +8,11 @@ spec:
   serviceAccountName: default
   portName: webhook
   global:
-    emailConfigSelector:
-      matchLabels:
-        scope: global
-    wechatConfigSelector:
-      matchLabels:
-        scope: global
-    slackConfigSelector:
-      matchLabels:
-        scope: global
-    webhookConfigSelector:
+    configSelector:
       matchLabels:
         scope: global
   receivers:
     tenantKey: user
 #    receiverSelector:
 #      matchLabels:
-#        sender: kubesphere
+#        scope: tenant

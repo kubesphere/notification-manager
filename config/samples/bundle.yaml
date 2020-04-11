@@ -75,16 +75,7 @@ metadata:
   namespace: kubesphere-monitoring-system
 spec:
   global:
-    emailConfigSelector:
-      matchLabels:
-        scope: global
-    slackConfigSelector:
-      matchLabels:
-        scope: global
-    webhookConfigSelector:
-      matchLabels:
-        scope: global
-    wechatConfigSelector:
+    configSelector:
       matchLabels:
         scope: global
   image: benjaminhuo/notification-manager:latest

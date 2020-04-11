@@ -348,7 +348,7 @@ func (c *Config) RcvsFromNs(namespace *string) []*Receiver {
 func (c *Config) generateEmailGlobalConfig(nm *nmv1alpha1.NotificationManager) (*config.GlobalConfig, error) {
 	global := &config.GlobalConfig{}
 	mcList := nmv1alpha1.EmailConfigList{}
-	selector, _ := metav1.LabelSelectorAsSelector(nm.Spec.Global.EmailConfigSelector)
+	selector, _ := metav1.LabelSelectorAsSelector(nm.Spec.Global.ConfigSelector)
 	if err := c.cache.List(c.ctx, &mcList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list EmailConfig", "err", err)
 		return nil, err

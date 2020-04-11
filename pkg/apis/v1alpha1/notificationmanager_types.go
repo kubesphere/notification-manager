@@ -40,14 +40,8 @@ type NotificationManagerSpec struct {
 
 // Global default receiver configs
 type GlobalSpec struct {
-	// Global default EmailConfig to be selected
-	EmailConfigSelector *metav1.LabelSelector `json:"emailConfigSelector,omitempty"`
-	// Global default WechatConfig to be selected
-	WechatConfigSelector *metav1.LabelSelector `json:"wechatConfigSelector,omitempty"`
-	// Global default SlackConfig to be selected
-	SlackConfigSelector *metav1.LabelSelector `json:"slackConfigSelector,omitempty"`
-	// Global default WebhookConfig to be selected
-	WebhookConfigSelector *metav1.LabelSelector `json:"webhookConfigSelector,omitempty"`
+	// Global default Email/Wechat/Slack/Webhook Config to be selected
+	ConfigSelector *metav1.LabelSelector `json:"configSelector,omitempty"`
 }
 
 type ReceiversSpec struct {
