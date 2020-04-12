@@ -32,16 +32,10 @@ type NotificationManagerSpec struct {
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 	// Port name used for the pods and service, defaults to webhook
 	PortName string `json:"portName,omitempty"`
-	// Global default receiver configs, used if corresponding items in Receivers are not specified
-	Global *GlobalSpec `json:"global,omitempty"`
+	// Global default Email/Wechat/Slack/Webhook Config to be selected
+	GlobalConfigSelector *metav1.LabelSelector `json:"globalConfigSelector,omitempty"`
 	// Receivers to send notifications to
 	Receivers *ReceiversSpec `json:"receivers"`
-}
-
-// Global default receiver configs
-type GlobalSpec struct {
-	// Global default Email/Wechat/Slack/Webhook Config to be selected
-	ConfigSelector *metav1.LabelSelector `json:"configSelector,omitempty"`
 }
 
 type ReceiversSpec struct {

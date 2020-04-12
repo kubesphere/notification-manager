@@ -74,10 +74,9 @@ metadata:
   name: notificationmanager-sample
   namespace: kubesphere-monitoring-system
 spec:
-  global:
-    configSelector:
-      matchLabels:
-        scope: global
+  globalConfigSelector:
+    matchLabels:
+      scope: global
   image: benjaminhuo/notification-manager:latest
   portName: webhook
   receivers:

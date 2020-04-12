@@ -7,10 +7,9 @@ spec:
   image: benjaminhuo/notification-manager:latest
   serviceAccountName: default
   portName: webhook
-  global:
-    configSelector:
-      matchLabels:
-        scope: global
+  globalConfigSelector:
+    matchLabels:
+      scope: global
   receivers:
     tenantKey: user
 #    receiverSelector:
