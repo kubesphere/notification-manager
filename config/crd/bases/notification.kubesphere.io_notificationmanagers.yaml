@@ -89,8 +89,10 @@ spec:
             receivers:
               description: Receivers to send notifications to
               properties:
-                receiverSelector:
-                  description: Selector to find all notification receivers
+                globalReceiverSelector:
+                  description: Selector to find global notification receivers which
+                    will be used when tenant receivers cannot be found. Only matchLabels
+                    expression is allowed.
                   properties:
                     matchExpressions:
                       description: matchExpressions is a list of label selector requirements.
@@ -137,8 +139,55 @@ spec:
                   description: Key used to identify tenant, default to be "namespace"
                     if not specified
                   type: string
+                tenantReceiverSelector:
+                  description: Selector to find tenant notification receivers. Only
+                    matchLabels expression is allowed.
+                  properties:
+                    matchExpressions:
+                      description: matchExpressions is a list of label selector requirements.
+                        The requirements are ANDed.
+                      items:
+                        description: A label selector requirement is a selector that
+                          contains values, a key, and an operator that relates the
+                          key and values.
+                        properties:
+                          key:
+                            description: key is the label key that the selector applies
+                              to.
+                            type: string
+                          operator:
+                            description: operator represents a key's relationship
+                              to a set of values. Valid operators are In, NotIn, Exists
+                              and DoesNotExist.
+                            type: string
+                          values:
+                            description: values is an array of string values. If the
+                              operator is In or NotIn, the values array must be non-empty.
+                              If the operator is Exists or DoesNotExist, the values
+                              array must be empty. This array is replaced during a
+                              strategic merge patch.
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - key
+                        - operator
+                        type: object
+                      type: array
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: matchLabels is a map of {key,value} pairs. A single
+                        {key,value} in the matchLabels map is equivalent to an element
+                        of matchExpressions, whose key field is "key", the operator
+                        is "In", and the values array contains only "value". The requirements
+                        are ANDed.
+                      type: object
+                  type: object
               required:
+              - globalReceiverSelector
               - tenantKey
+              - tenantReceiverSelector
               type: object
             replicas:
               description: Number of instances to deploy for Notification Manager
@@ -148,7 +197,7 @@ spec:
             serviceAccountName:
               description: ServiceAccountName is the name of the ServiceAccount to
                 use to run Notification Manager Pods. ServiceAccount 'default' in
-                notification manager's namespace will be used if not specified
+                notification manager's namespace will be used if not specified.
               type: string
           required:
           - receivers

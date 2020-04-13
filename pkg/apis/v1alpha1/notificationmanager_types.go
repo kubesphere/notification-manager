@@ -28,7 +28,7 @@ type NotificationManagerSpec struct {
 	// Number of instances to deploy for Notification Manager deployment.
 	Replicas *int32 `json:"replicas,omitempty"`
 	// ServiceAccountName is the name of the ServiceAccount to use to run Notification Manager Pods.
-	// ServiceAccount 'default' in notification manager's namespace will be used if not specified
+	// ServiceAccount 'default' in notification manager's namespace will be used if not specified.
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 	// Port name used for the pods and service, defaults to webhook
 	PortName string `json:"portName,omitempty"`
@@ -41,8 +41,13 @@ type NotificationManagerSpec struct {
 type ReceiversSpec struct {
 	// Key used to identify tenant, default to be "namespace" if not specified
 	TenantKey string `json:"tenantKey"`
-	// Selector to find all notification receivers
-	ReceiverSelector *metav1.LabelSelector `json:"receiverSelector,omitempty"`
+	// Selector to find global notification receivers
+	// which will be used when tenant receivers cannot be found.
+	// Only matchLabels expression is allowed.
+	GlobalReceiverSelector *metav1.LabelSelector `json:"globalReceiverSelector"`
+	// Selector to find tenant notification receivers.
+	// Only matchLabels expression is allowed.
+	TenantReceiverSelector *metav1.LabelSelector `json:"tenantReceiverSelector"`
 }
 
 // NotificationManagerStatus defines the observed state of NotificationManager

@@ -80,7 +80,13 @@ spec:
   image: benjaminhuo/notification-manager:latest
   portName: webhook
   receivers:
+    globalReceiverSelector:
+      matchLabels:
+        scope: global
     tenantKey: user
+    tenantReceiverSelector:
+      matchLabels:
+        scope: tenant
   replicas: 1
   serviceAccountName: default
 ---

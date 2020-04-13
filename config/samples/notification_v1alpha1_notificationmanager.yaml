@@ -12,6 +12,9 @@ spec:
       scope: global
   receivers:
     tenantKey: user
-#    receiverSelector:
-#      matchLabels:
-#        scope: tenant
+    globalReceiverSelector:
+      matchLabels:
+        scope: global
+    tenantReceiverSelector:
+      matchLabels:
+        scope: tenant
