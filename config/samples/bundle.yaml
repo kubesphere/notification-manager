@@ -25,6 +25,7 @@ spec:
     namespace: kubesphere-monitoring-system
   authUsername: abc
   from: abc@xyz.com
+  requireTLS: true
   smartHost:
     host: imap.xyz.com
     port: "25"
@@ -44,6 +45,7 @@ spec:
     namespace: kubesphere-monitoring-system
   authUsername: abc
   from: abc@xyz.com
+  requireTLS: true
   smartHost:
     host: imap.xyz.com
     port: "25"

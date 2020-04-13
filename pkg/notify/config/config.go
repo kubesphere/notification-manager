@@ -429,6 +429,11 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 			}
 			rcv.Email.EmailConfig.AuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
 		}
+
+		if mc.Spec.RequireTLS != nil {
+			rcv.Email.EmailConfig.RequireTLS = mc.Spec.RequireTLS
+		}
+
 		break
 	}
 
@@ -563,6 +568,10 @@ func (c *Config) generateMailConfig(mc *nmv1alpha1.EmailConfig) *Receiver {
 		rcv.Email.EmailConfig.AuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
 	}
 
+	if mc.Spec.RequireTLS != nil {
+		rcv.Email.EmailConfig.RequireTLS = mc.Spec.RequireTLS
+	}
+
 	return rcv
 }
 
@@ -600,6 +609,11 @@ func (c *Config) generateEmailGlobalConfig(mc *nmv1alpha1.EmailConfig) (*config.
 		}
 		global.SMTPAuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
 	}
+
+	if mc.Spec.RequireTLS != nil {
+		global.SMTPRequireTLS = *mc.Spec.RequireTLS
+	}
+
 	return global, nil
 }
 

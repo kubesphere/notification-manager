@@ -72,6 +72,9 @@ spec:
             hello:
               description: The hostname to use when identifying to the SMTP server.
               type: string
+            requireTLS:
+              description: The default SMTP TLS requirement.
+              type: boolean
             smartHost:
               description: The address of the SMTP server.
               properties:

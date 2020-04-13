@@ -36,6 +36,8 @@ type EmailConfigSpec struct {
 	AuthPassword *SecretKeyRef `json:"authPassword,omitempty"`
 	// The secret contains the SMTP secret for CRAM-MD5 authentication.
 	AuthSecret *SecretKeyRef `json:"authSecret,omitempty"`
+	// The default SMTP TLS requirement.
+	RequireTLS *bool `json:"requireTLS,omitempty"`
 }
 
 type HostPort struct {

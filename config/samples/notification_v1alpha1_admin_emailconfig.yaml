@@ -15,3 +15,4 @@ spec:
     namespace: kubesphere-monitoring-system
     name: global-email-secret
     key: password
+  requireTLS: true
