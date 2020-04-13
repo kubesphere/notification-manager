@@ -1,0 +1,13 @@
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: EmailReceiver
+metadata:
+  name: global-email
+  labels:
+    scope: global
+spec:
+  to:
+  - abc1@xyz.com
+  - abc12@xyz.com
+  emailConfigSelector:
+    matchLabels:
+      scope: global

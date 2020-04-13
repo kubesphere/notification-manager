@@ -23,8 +23,8 @@ spec:
     key: password
     name: global-email-secret
     namespace: kubesphere-monitoring-system
-  authUsername: abc
-  from: abc@xyz.com
+  authUsername: abc1
+  from: abc1@xyz.com
   requireTLS: true
   smartHost:
     host: imap.xyz.com
@@ -67,6 +67,22 @@ spec:
   to:
   - abc2@xyz.com
   - abc3@xyz.com
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: EmailReceiver
+metadata:
+  labels:
+    app: notification-manager
+    scope: global
+  name: global-email
+  namespace: kubesphere-monitoring-system
+spec:
+  emailConfigSelector:
+    matchLabels:
+      scope: global
+  to:
+  - abc1@xyz.com
+  - abc12@xyz.com
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: NotificationManager

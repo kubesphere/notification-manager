@@ -6,11 +6,11 @@ metadata:
     scope: tenant
     user: admin
 spec:
-  from: abc@xyz.com
+  from: abc1@xyz.com
   smartHost:
     host: imap.xyz.com
     port: "25"
-  authUsername: abc
+  authUsername: abc1
   authPassword:
     namespace: kubesphere-monitoring-system
     name: global-email-secret

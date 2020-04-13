@@ -4,9 +4,6 @@ metadata:
   name: global-email-config
   labels:
     scope: global
-    # or
-    #scope: tenant
-    #user: user1
 spec:
   from: abc@xyz.com
   smartHost:
