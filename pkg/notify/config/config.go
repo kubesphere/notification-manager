@@ -616,25 +616,34 @@ func (c *Config) OnMailConfAdd(obj interface{}) {
 		p.Op = opAdd
 		p.Type = emailConfig
 
-		if _, exists := mc.ObjectMeta.Labels[scope]; exists {
-			switch mc.ObjectMeta.Labels[scope] {
-			case global:
-				p.GlobalEmailConfig, _ = c.generateEmailGlobalConfig(mc)
-				p.TenantID = globalTenantID
-				p.Receiver = c.generateMailConfig(mc)
-			case tenant:
-				if _, exists := mc.ObjectMeta.Labels[c.TenantKey]; exists {
-					p.TenantID = mc.ObjectMeta.Labels[c.TenantKey]
+		// If EmailConfig's label matches GlobalReceiverSelector such as "scope = global",
+		// then this is a global EmailConfig, and TenantID should be set to an unique TenantID
+		if c.GlobalReceiverSelector != nil {
+			for k, expected := range c.GlobalReceiverSelector.MatchLabels {
+				if v, exists := mc.ObjectMeta.Labels[k]; exists && v == expected {
+					p.GlobalEmailConfig, _ = c.generateEmailGlobalConfig(mc)
+					p.TenantID = globalTenantID
 					p.Receiver = c.generateMailConfig(mc)
-				} else {
-					return
+					break
 				}
-			default:
-				return
 			}
-		} else {
-			return
 		}
+		// If EmailConfig's label matches TenantReceiverSelector such as "scope = tenant",
+		// then EmailConfig's TenantKey's value should be used as TenantID,
+		// For example, if TenantKey is "user" and label "user=admin" exists,
+		// then "admin" should be used as TenantID
+		if c.TenantReceiverSelector != nil {
+			for k, expected := range c.TenantReceiverSelector.MatchLabels {
+				if v, exists := mc.ObjectMeta.Labels[k]; exists && v == expected {
+					if v, exists := mc.ObjectMeta.Labels[c.TenantKey]; exists {
+						p.TenantID = v
+						p.Receiver = c.generateMailConfig(mc)
+					}
+					break
+				}
+			}
+		}
+
 		if len(p.TenantID) > 0 {
 			p.done = make(chan interface{}, 1)
 			c.ch <- p
@@ -651,23 +660,32 @@ func (c *Config) OnMailConfDel(obj interface{}) {
 		p.Op = opDel
 		p.Type = emailConfig
 
-		if _, exists := mc.ObjectMeta.Labels[scope]; exists {
-			switch mc.ObjectMeta.Labels[scope] {
-			case global:
-				p.GlobalEmailConfig = &config.GlobalConfig{}
-				p.TenantID = globalTenantID
-			case tenant:
-				if _, exists := mc.ObjectMeta.Labels[c.TenantKey]; exists {
-					p.TenantID = mc.ObjectMeta.Labels[c.TenantKey]
-				} else {
-					return
+		// If EmailConfig's label matches GlobalReceiverSelector such as "scope = global",
+		// then this is a global EmailConfig, and TenantID should be set to an unique TenantID
+		if c.GlobalReceiverSelector != nil {
+			for k, expected := range c.GlobalReceiverSelector.MatchLabels {
+				if v, exists := mc.ObjectMeta.Labels[k]; exists && v == expected {
+					p.GlobalEmailConfig = &config.GlobalConfig{}
+					p.TenantID = globalTenantID
+					break
 				}
-			default:
-				return
 			}
-		} else {
-			return
 		}
+		// If EmailConfig's label matches TenantReceiverSelector such as "scope = tenant",
+		// then EmailConfig's TenantKey's value should be used as TenantID,
+		// For example, if TenantKey is "user" and label "user=admin" exists,
+		// then "admin" should be used as TenantID
+		if c.TenantReceiverSelector != nil {
+			for k, expected := range c.TenantReceiverSelector.MatchLabels {
+				if v, exists := mc.ObjectMeta.Labels[k]; exists && v == expected {
+					if v, exists := mc.ObjectMeta.Labels[c.TenantKey]; exists {
+						p.TenantID = v
+					}
+					break
+				}
+			}
+		}
+
 		if len(p.TenantID) > 0 {
 			p.done = make(chan interface{}, 1)
 			c.ch <- p
