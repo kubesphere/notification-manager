@@ -17,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	kconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
-	"strings"
 )
 
 const (
@@ -66,7 +65,7 @@ type Config struct {
 }
 
 type Email struct {
-	To          string
+	To          []string
 	EmailConfig *config.EmailConfig
 }
 
@@ -436,13 +435,7 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 
 		break
 	}
-
-	to := ""
-	for _, v := range mr.Spec.To {
-		to += v + ","
-	}
-	to = strings.TrimSuffix(to, ",")
-	rcv.Email.To = to
+	rcv.Email.To = mr.Spec.To
 
 	return rcv
 }
