@@ -1088,6 +1088,7 @@ rules:
   - ""
   resources:
   - configmaps
+  - rolebindings
   - secrets
   - services
   verbs:
