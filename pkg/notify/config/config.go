@@ -214,10 +214,10 @@ func (c *Config) Run() error {
 func (c *Config) sync(p *param) {
 	switch p.Op {
 	case opGet:
-		// Return all receivers of the specified tenant (*map[Type/Namespace/Name]*Receiver)
+		// Return all receivers of the specified tenant (map[Type/Namespace/Name]*Receiver)
 		// via the done channel if exists
 		if v, exist := c.Receivers[p.TenantID]; exist {
-			p.done <- &v
+			p.done <- v
 			// Return empty struct if receivers of the specified tenant cannot be found
 		} else {
 			p.done <- struct{}{}
