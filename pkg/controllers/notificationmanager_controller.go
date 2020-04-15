@@ -19,9 +19,7 @@ package controllers
 import (
 	"context"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"time"
 
 	"github.com/go-logr/logr"
 	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
@@ -30,19 +28,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
-	notificationManager                = "notification-manager"
-	notificationManagerConfig          = "notification-manager-config"
-	notificationManagerConfigMountPath = "/etc/notification-manager/config"
-	defaultPortName                    = "webhook"
-	defaultServiceAccountName          = "default"
+	notificationManager       = "notification-manager"
+	defaultPortName           = "webhook"
+	defaultServiceAccountName = "default"
 )
 
 var (
@@ -65,57 +58,39 @@ type NotificationManagerReconciler struct {
 // +kubebuilder:rbac:groups=notification.kubesphere.io,resources=notificationmanagers;receivers;emailconfigs;emailreceivers;webhookconfigs;webhookreceivers;wechatconfigs;wechatreceivers;slackconfigs;slackreceivers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=notification.kubesphere.io,resources=notificationmanagers/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=services;configmaps;secrets;,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;
 
 func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log = r.Log.WithValues("NotificationManager Operator", req.NamespacedName)
 
-	var nms nmv1alpha1.NotificationManagerList
-	if err := r.List(ctx, &nms); err != nil {
-		log.Error(err, "Unable to list NotificationManager")
+	var nm nmv1alpha1.NotificationManager
+	if err := r.Get(ctx, req.NamespacedName, &nm); err != nil {
+		log.Error(err, "Unable to get NotificationManager", "Req", req.NamespacedName.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	for _, nm := range nms.Items {
-		var err error
-		result := controllerutil.OperationResultNone
-		// Check if the reconcile is triggered by a NotificationManager CR
-		// or config CRs like Receivers, EmailConfigs etc.
-		newName := types.NamespacedName{Namespace: nm.Namespace, Name: nm.Name}
-		configChanged := !reflect.DeepEqual(newName, req.NamespacedName)
-		// Create or update configmap
-		cm := &corev1.ConfigMap{}
-		cm.ObjectMeta.Name = nm.Name + "-config"
-		cm.ObjectMeta.Namespace = nm.Namespace
-		if result, err = controllerutil.CreateOrUpdate(ctx, r.Client, cm, r.mutateConfigMap(cm, configChanged, &nm)); err != nil {
-			log.Error(err, "Failed to CreateOrUpdate configmap", "result", result)
-			return ctrl.Result{}, err
-		}
-		log.V(10).Info("CreateOrUpdate configmap returns", "result", result)
+	var err error
+	result := controllerutil.OperationResultNone
 
-		if configChanged {
-			continue
-		}
-
-		// Create deployment service
-		if err = r.createDeploymentSvc(ctx, &nm); err != nil {
-			log.Error(err, "Failed to create svc")
-			return ctrl.Result{}, err
-		}
-
-		// Create or update deployment
-		result = controllerutil.OperationResultNone
-		deploy := &appsv1.Deployment{}
-		deploy.ObjectMeta.Name = nm.Name + "-deployment"
-		deploy.ObjectMeta.Namespace = nm.Namespace
-		if result, err = controllerutil.CreateOrUpdate(ctx, r.Client, deploy, r.mutateDeployment(deploy, cm, &nm)); err != nil {
-			log.Error(err, "Failed to CreateOrUpdate deployment", "result", result)
-			return ctrl.Result{}, err
-		}
-		log.V(10).Info("CreateOrUpdate deployment returns", "result", result)
+	// Create deployment service
+	if err = r.createDeploymentSvc(ctx, &nm); err != nil {
+		log.Error(err, "Failed to create svc")
+		return ctrl.Result{}, err
 	}
+
+	// Create or update deployment
+	result = controllerutil.OperationResultNone
+	deploy := &appsv1.Deployment{}
+	deploy.ObjectMeta.Name = nm.Name + "-deployment"
+	deploy.ObjectMeta.Namespace = nm.Namespace
+	if result, err = controllerutil.CreateOrUpdate(ctx, r.Client, deploy, r.mutateDeployment(deploy, &nm)); err != nil {
+		log.Error(err, "Failed to CreateOrUpdate deployment", "result", result)
+		return ctrl.Result{}, err
+	}
+	log.V(10).Info("CreateOrUpdate deployment returns", "result", result)
 
 	return ctrl.Result{}, nil
 }
@@ -157,7 +132,7 @@ func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context,
 	return nil
 }
 
-func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployment, cm *corev1.ConfigMap, nm *nmv1alpha1.NotificationManager) controllerutil.MutateFn {
+func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployment, nm *nmv1alpha1.NotificationManager) controllerutil.MutateFn {
 	return func() error {
 		nm = nm.DeepCopy()
 
@@ -189,15 +164,6 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 
 		deploy.Spec.Template.Spec.ServiceAccountName = nm.Spec.ServiceAccountName
 
-		// Define configmap volume mounts
-		volumeMounts := []corev1.VolumeMount{
-			{
-				Name:      notificationManagerConfig,
-				ReadOnly:  true,
-				MountPath: notificationManagerConfigMountPath,
-			},
-		}
-
 		// Define expected container
 		newC := corev1.Container{
 			Name:            "notification-manager",
@@ -210,7 +176,6 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
-			VolumeMounts: volumeMounts,
 		}
 
 		// Make sure existing Containers match expected Containers
@@ -219,7 +184,6 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 				deploy.Spec.Template.Spec.Containers[i].Image = newC.Image
 				deploy.Spec.Template.Spec.Containers[i].ImagePullPolicy = newC.ImagePullPolicy
 				deploy.Spec.Template.Spec.Containers[i].Ports = newC.Ports
-				deploy.Spec.Template.Spec.Containers[i].VolumeMounts = newC.VolumeMounts
 				break
 			}
 		}
@@ -229,47 +193,8 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 			deploy.Spec.Template.Spec.Containers = []corev1.Container{newC}
 		}
 
-		// Define volume for ConfigMap
-		newVol := corev1.Volume{
-			Name: notificationManagerConfig,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cm.ObjectMeta.Name,
-					},
-				},
-			},
-		}
-
-		// Make sure existing volumes match expected volumes
-		for i, v := range deploy.Spec.Template.Spec.Volumes {
-			if v.Name == newVol.Name {
-				if v.ConfigMap != nil {
-					deploy.Spec.Template.Spec.Volumes[i].ConfigMap.LocalObjectReference =
-						newVol.ConfigMap.LocalObjectReference
-				}
-				break
-			}
-		}
-
-		// Create new volumes if no existing volumes exist
-		if len(deploy.Spec.Template.Spec.Volumes) == 0 {
-			deploy.Spec.Template.Spec.Volumes = []corev1.Volume{newVol}
-		}
-
 		deploy.SetOwnerReferences(nil)
 		return ctrl.SetControllerReference(nm, deploy, r.Scheme)
-	}
-}
-
-func (r *NotificationManagerReconciler) mutateConfigMap(cm *corev1.ConfigMap, configChanged bool, nm *nmv1alpha1.NotificationManager) controllerutil.MutateFn {
-	return func() error {
-		cm.ObjectMeta.Labels = *r.makeCommonLabels(nm)
-		if configChanged {
-			cm.Data = map[string]string{"UpdateTime": time.Now().String()}
-		}
-		cm.SetOwnerReferences(nil)
-		return ctrl.SetControllerReference(nm, cm, r.Scheme)
 	}
 }
 
@@ -313,13 +238,5 @@ func (r *NotificationManagerReconciler) SetupWithManager(mgr ctrl.Manager) error
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&nmv1alpha1.NotificationManager{}).
 		Owns(&appsv1.Deployment{}).
-		Watches(&source.Kind{Type: &nmv1alpha1.EmailConfig{}}, &handler.EnqueueRequestForObject{}).
-		Watches(&source.Kind{Type: &nmv1alpha1.EmailReceiver{}}, &handler.EnqueueRequestForObject{}).
-		Watches(&source.Kind{Type: &nmv1alpha1.WebhookConfig{}}, &handler.EnqueueRequestForObject{}).
-		Watches(&source.Kind{Type: &nmv1alpha1.WebhookReceiver{}}, &handler.EnqueueRequestForObject{}).
-		Watches(&source.Kind{Type: &nmv1alpha1.WechatConfig{}}, &handler.EnqueueRequestForObject{}).
-		Watches(&source.Kind{Type: &nmv1alpha1.WechatReceiver{}}, &handler.EnqueueRequestForObject{}).
-		Watches(&source.Kind{Type: &nmv1alpha1.SlackConfig{}}, &handler.EnqueueRequestForObject{}).
-		Watches(&source.Kind{Type: &nmv1alpha1.SlackReceiver{}}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
 }
