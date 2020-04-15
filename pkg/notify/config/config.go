@@ -301,60 +301,41 @@ func (c *Config) TenantIDFromNs(namespace string) ([]string, error) {
 	return tenantIDs, nil
 }
 
-func (c *Config) mailRcvsFromNs(namespace *string) []*nmv1alpha1.EmailReceiver {
-	rcvs := make([]*nmv1alpha1.EmailReceiver, 0)
-	// For notification without a namespace label, use global email receivers
-	// For notifications with a namespace label, find tenantID "User" in that namespace's rolebindings
-	// and then find EmailReceiver for that tenantID
+func (c *Config) RcvsFromNs(namespace *string) []*Receiver {
+	rcvs := make([]*Receiver, 0)
+	// Return global receiver if namespace is nil
 	if namespace == nil {
-		rcvList := nmv1alpha1.EmailReceiverList{}
-		// Use GlobalReceiverSelector to find global receiver
-		labels := c.GlobalReceiverSelector.MatchLabels
-		ls := metav1.LabelSelector{}
-		ls.MatchLabels = labels
-		selector, _ := metav1.LabelSelectorAsSelector(&ls)
-		if err := c.cache.List(c.ctx, &rcvList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
-			_ = level.Error(c.logger).Log("msg", "Failed to list global EmailReceiver", "err", err)
-		}
-		for _, r := range rcvList.Items {
-			rcvs = append(rcvs, &r)
-		}
-
-	} else {
-		if tenantIDs, err := c.TenantIDFromNs(*namespace); err != nil {
-			_ = level.Error(c.logger).Log("msg", "Unable to find tenantID", "err", err)
-		} else {
-			for _, v := range tenantIDs {
-				rcvList := nmv1alpha1.EmailReceiverList{}
-				// Use TenantReceiverSelector and tenant key-value pair to find tenant receiver
-				labels := c.TenantReceiverSelector.MatchLabels
-				labels[c.TenantKey] = v
-				ls := metav1.LabelSelector{}
-				ls.MatchLabels = labels
-				selector, _ := metav1.LabelSelectorAsSelector(&ls)
-				if err := c.cache.List(c.ctx, &rcvList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
-					_ = level.Error(c.logger).Log("msg", "Unable to list EmailReceiver", "err", err)
-					continue
-				}
-
-				for _, r := range rcvList.Items {
-					rcvs = append(rcvs, &r)
-				}
+		p := param{}
+		p.TenantID = globalTenantID
+		p.done = make(chan interface{}, 1)
+		c.ch <- &p
+		o := <-p.done
+		if r, ok := o.(map[string]*Receiver); ok {
+			for _, v := range r {
+				rcvs = append(rcvs, v)
 			}
 		}
 
+	} else {
+		// Return receivers for each tenant if namespace is not nil
+		if tenantIDs, err := c.TenantIDFromNs(*namespace); err != nil {
+			_ = level.Error(c.logger).Log("msg", "Unable to find tenantID", "err", err)
+		} else {
+			for _, t := range tenantIDs {
+				p := param{}
+				p.TenantID = t
+				p.done = make(chan interface{}, 1)
+				c.ch <- &p
+				o := <-p.done
+				if r, ok := o.(map[string]*Receiver); ok {
+					for _, v := range r {
+						rcvs = append(rcvs, v)
+					}
+				}
+			}
+		}
 	}
-	return rcvs
-}
 
-func (c *Config) RcvsFromNs(namespace *string) []*Receiver {
-	rcvs := make([]*Receiver, 0)
-	// Get all EmailReceivers in specified namespace
-	// and then generate Receivers from these EmailReceivers
-	mailRcvs := c.mailRcvsFromNs(namespace)
-	for _, v := range mailRcvs {
-		rcvs = append(rcvs, c.generateMailReceiver(v))
-	}
 	// TODO: Add receiver generation logic for wechat, slack and webhook
 	return rcvs
 }
