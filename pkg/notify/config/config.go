@@ -25,6 +25,7 @@ const (
 	global              = "global"
 	globalTenantID      = "notification-manager/tenant/global"
 	tenant              = "tenant"
+	defaultTenantKey    = "user"
 	notificationManager = "notification-manager"
 	emailReceiver       = "email"
 	emailConfig         = "email-config"
@@ -138,7 +139,7 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		GlobalWechatConfig:     nil,
 		GlobalSlackConfig:      nil,
 		GlobalWebhookConfig:    nil,
-		TenantKey:              "namespace",
+		TenantKey:              defaultTenantKey,
 		TenantReceiverSelector: nil,
 		GlobalReceiverSelector: nil,
 		Receivers:              make(map[string]map[string]*Receiver),
@@ -253,7 +254,7 @@ func (c *Config) sync(p *param) {
 	case opDel:
 		switch p.Type {
 		case notificationManager:
-			c.TenantKey = "namespace"
+			c.TenantKey = defaultTenantKey
 			c.GlobalReceiverSelector = nil
 			c.TenantReceiverSelector = nil
 		case emailReceiver:
