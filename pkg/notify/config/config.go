@@ -306,6 +306,7 @@ func (c *Config) RcvsFromNs(namespace *string) []*Receiver {
 	// Return global receiver if namespace is nil
 	if namespace == nil {
 		p := param{}
+		p.Op = opGet
 		p.TenantID = globalTenantID
 		p.done = make(chan interface{}, 1)
 		c.ch <- &p
@@ -323,6 +324,7 @@ func (c *Config) RcvsFromNs(namespace *string) []*Receiver {
 		} else {
 			for _, t := range tenantIDs {
 				p := param{}
+				p.Op = opGet
 				p.TenantID = t
 				p.done = make(chan interface{}, 1)
 				c.ch <- &p
