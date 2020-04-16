@@ -310,6 +310,8 @@ func (c *Config) sync(p *param) {
 }
 
 func (c *Config) updateEmailReceivers(wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	mrList := nmv1alpha1.EmailReceiverList{}
 	if err := c.cache.List(c.ctx, &mrList, client.InNamespace("")); err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to list EmailReceiver", "err", err)
@@ -322,12 +324,13 @@ func (c *Config) updateEmailReceivers(wg *sync.WaitGroup) {
 			_ = level.Error(c.logger).Log("msg", "Failed to update EmailReceiver", "err", err)
 		}
 	}
-	wg.Done()
 
 	return
 }
 
 func (c *Config) updateEmailConfigs(wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	mcList := nmv1alpha1.EmailConfigList{}
 	if err := c.cache.List(c.ctx, &mcList, client.InNamespace("")); err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to list EmailConfig", "err", err)
@@ -340,7 +343,6 @@ func (c *Config) updateEmailConfigs(wg *sync.WaitGroup) {
 			_ = level.Error(c.logger).Log("msg", "Failed to update EmailConfig", "err", err)
 		}
 	}
-	wg.Done()
 
 	return
 }
