@@ -12,11 +12,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	kcache "k8s.io/client-go/tools/cache"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	kconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sync"
+	"time"
 )
 
 const (
@@ -49,6 +51,7 @@ type Config struct {
 	logger log.Logger
 	ctx    context.Context
 	cache  cache.Cache
+	client client.Client
 	// Global config for email, wechat, slack etc.
 	GlobalEmailConfig   *config.GlobalConfig
 	GlobalWechatConfig  *config.GlobalConfig
@@ -115,8 +118,9 @@ type param struct {
 
 func New(ctx context.Context, logger log.Logger) (*Config, error) {
 	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
 	_ = nmv1alpha1.AddToScheme(scheme)
+	_ = v1.AddToScheme(scheme)
+	_ = rbacv1.AddToScheme(scheme)
 
 	cfg, err := kconfig.GetConfig()
 	if err != nil {
@@ -131,10 +135,31 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		return nil, err
 	}
 
+	//	client, err := client.New(cfg, client.Options{})
+	//	if err != nil {
+	//		_ = level.Error(logger).Log("msg", "Failed to create client", "err", err)
+	//		return nil, err
+	//	}
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Scheme:             scheme,
+		MetricsBindAddress: ":8081",
+		Port:               19443,
+		LeaderElection:     false,
+		LeaderElectionID:   "notification.kubesphere.io",
+	})
+
+	if err != nil {
+		_ = level.Error(logger).Log("msg", "unable to start manager", "err", err)
+	}
+
+	client := mgr.GetClient()
+
 	return &Config{
 		ctx:                    ctx,
 		logger:                 logger,
 		cache:                  c,
+		client:                 client,
 		GlobalEmailConfig:      nil,
 		GlobalWechatConfig:     nil,
 		GlobalSlackConfig:      nil,
@@ -161,8 +186,8 @@ func (c *Config) Run() error {
 			}
 		}
 	}(c.ctx)
-
 	go c.cache.Start(c.ctx.Done())
+
 	// Setup informer for NotificationManager
 	nmInf, err := c.cache.GetInformer(&nmv1alpha1.NotificationManager{})
 	if err != nil {
@@ -208,6 +233,7 @@ func (c *Config) Run() error {
 	if ok := c.cache.WaitForCacheSync(c.ctx.Done()); !ok {
 		return fmt.Errorf("NotificationManager cache failed")
 	}
+
 	_ = level.Info(c.logger).Log("msg", "Setting up informers successfully")
 	return c.ctx.Err()
 }
@@ -283,6 +309,42 @@ func (c *Config) sync(p *param) {
 	p.done <- struct{}{}
 }
 
+func (c *Config) updateEmailReceivers(wg *sync.WaitGroup) {
+	mrList := nmv1alpha1.EmailReceiverList{}
+	if err := c.cache.List(c.ctx, &mrList, client.InNamespace("")); err != nil {
+		_ = level.Error(c.logger).Log("msg", "Failed to list EmailReceiver", "err", err)
+		return
+	}
+	for _, mr := range mrList.Items {
+		r := mr.DeepCopy()
+		r.ObjectMeta.Annotations["reloadtimestamp"] = time.Now().String()
+		if err := c.client.Update(c.ctx, r); err != nil {
+			_ = level.Error(c.logger).Log("msg", "Failed to update EmailReceiver", "err", err)
+		}
+	}
+	wg.Done()
+
+	return
+}
+
+func (c *Config) updateEmailConfigs(wg *sync.WaitGroup) {
+	mcList := nmv1alpha1.EmailConfigList{}
+	if err := c.cache.List(c.ctx, &mcList, client.InNamespace("")); err != nil {
+		_ = level.Error(c.logger).Log("msg", "Failed to list EmailConfig", "err", err)
+		return
+	}
+	for _, mc := range mcList.Items {
+		cfg := mc.DeepCopy()
+		cfg.ObjectMeta.Annotations["reloadtimestamp"] = time.Now().String()
+		if err := c.client.Update(c.ctx, cfg); err != nil {
+			_ = level.Error(c.logger).Log("msg", "Failed to update EmailConfig", "err", err)
+		}
+	}
+	wg.Done()
+
+	return
+}
+
 func (c *Config) TenantIDFromNs(namespace string) ([]string, error) {
 	tenantIDs := make([]string, 0)
 	rbList := rbacv1.RoleBindingList{}
@@ -356,6 +418,13 @@ func (c *Config) OnNmAdd(obj interface{}) {
 		p.done = make(chan interface{}, 1)
 		c.ch <- p
 		<-p.done
+
+		// Update receiver and config CRs to trigger update of receivers
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+		go c.updateEmailReceivers(&wg)
+		go c.updateEmailConfigs(&wg)
+		wg.Wait()
 	}
 }
 
