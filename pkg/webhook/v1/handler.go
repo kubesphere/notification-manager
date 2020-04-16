@@ -6,6 +6,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
+	"github.com/kubesphere/notification-manager/pkg/webhook/v1/notify"
 	"github.com/prometheus/alertmanager/template"
 	"io"
 	"net/http"
@@ -68,7 +69,21 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 
 		go func() {
 			defer close(wkrCh)
-			// time.Sleep(10 * time.Second)
+
+			for _, alert := range wkload.Alerts {
+				var ns *string = nil
+				value, ok := alert.Labels["namespace"]
+				if ok {
+					ns = &value
+				}
+				receivers := h.notifierCfg.RcvsFromNs(ns)
+				integration := notify.NewIntegration(h.logger, receivers, alert)
+				errs := integration.Notify()
+				if errs != nil && len(errs) > 0 {
+					_ = level.Error(h.logger).Log("msg", "Worker: notification sent error")
+				}
+			}
+
 			_ = level.Info(h.logger).Log("msg", "Worker: notification sent")
 		}()
 
