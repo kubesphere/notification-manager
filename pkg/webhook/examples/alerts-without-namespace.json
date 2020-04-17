@@ -1,0 +1,35 @@
+{
+  "receiver": "Critical",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "KubeletDown",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "critical"
+      },
+      "annotations": {
+        "message": "Kubelet has disappeared from Prometheus target discovery.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletdown"
+      },
+      "startsAt": "2020-02-26T07:03:36.952819501Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-0:9090/graph?g0.expr=absent%28up%7Bjob%3D%22kubelet%22%2Cmetrics_path%3D%22%2Fmetrics%22%7D+%3D%3D+1%29\u0026g0.tab=1",
+      "fingerprint": "784778fbea8cd7a6"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "KubeletDown"
+  },
+  "commonLabels": {
+    "alertname": "KubeletDown",
+    "prometheus": "kubesphere-monitoring-system/k8s",
+    "severity": "critical"
+  },
+  "commonAnnotations": {
+    "message": "Kubelet has disappeared from Prometheus target discovery.",
+    "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletdown"
+  },
+  "externalURL": "http://alertmanager-main-2:9093"
+}

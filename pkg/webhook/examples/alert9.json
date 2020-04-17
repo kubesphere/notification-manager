@@ -1,0 +1,46 @@
+{
+  "receiver": "Default",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "KubeJobCompletion",
+        "instance": "10.233.71.230:8080",
+        "job": "kube-state-metrics",
+        "job_name": "dddd",
+        "namespace": "demo-project",
+        "pod": "kube-state-metrics-7c6f4866fc-rclv2",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "Job demo-project/dddd is taking more than one hour to complete.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubejobcompletion"
+      },
+      "startsAt": "2020-02-26T07:49:04.989876849Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-0:9090/graph?g0.expr=kube_job_spec_completions%7Bjob%3D%22kube-state-metrics%22%7D+-+kube_job_status_succeeded%7Bjob%3D%22kube-state-metrics%22%7D+%3E+0\u0026g0.tab=1",
+      "fingerprint": "9dc21fa4c13a99e1"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "KubeJobCompletion",
+    "namespace": "demo-project"
+  },
+  "commonLabels": {
+    "alertname": "KubeJobCompletion",
+    "instance": "10.233.71.230:8080",
+    "job": "kube-state-metrics",
+    "job_name": "dddd",
+    "namespace": "demo-project",
+    "pod": "kube-state-metrics-7c6f4866fc-rclv2",
+    "prometheus": "kubesphere-monitoring-system/k8s",
+    "severity": "warning"
+  },
+  "commonAnnotations": {
+    "message": "Job demo-project/dddd is taking more than one hour to complete.",
+    "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubejobcompletion"
+  },
+  "externalURL": "http://alertmanager-main-2:9093"
+}

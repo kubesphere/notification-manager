@@ -1,0 +1,56 @@
+{
+  "receiver": "Critical",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "KubePodNotReady",
+        "namespace": "t1",
+        "pod": "s2i-1-viafnz-5474c8b5b7-px7kz",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "critical"
+      },
+      "annotations": {
+        "message": "Pod t1/s2i-1-viafnz-5474c8b5b7-px7kz has been in a non-ready state for longer than 15 minutes.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodnotready"
+      },
+      "startsAt": "2020-02-26T07:04:04.989876849Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-0:9090/graph?g0.expr=sum+by%28namespace%2C+pod%29+%28max+by%28namespace%2C+pod%29+%28kube_pod_status_phase%7Bjob%3D%22kube-state-metrics%22%2Cphase%3D~%22Pending%7CUnknown%22%7D%29+%2A+on%28namespace%2C+pod%29+group_left%28owner_kind%29+max+by%28namespace%2C+pod%2C+owner_kind%29+%28kube_pod_owner%7Bowner_kind%21%3D%22Job%22%7D%29%29+%3E+0\u0026g0.tab=1",
+      "fingerprint": "6362d3bf47e6c5a5"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "KubePodNotReady",
+        "namespace": "t1",
+        "pod": "s2i-1-viafnz-89f49c678-2mzsm",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "critical"
+      },
+      "annotations": {
+        "message": "Pod t1/s2i-1-viafnz-89f49c678-2mzsm has been in a non-ready state for longer than 15 minutes.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodnotready"
+      },
+      "startsAt": "2020-02-26T07:04:04.989876849Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-0:9090/graph?g0.expr=sum+by%28namespace%2C+pod%29+%28max+by%28namespace%2C+pod%29+%28kube_pod_status_phase%7Bjob%3D%22kube-state-metrics%22%2Cphase%3D~%22Pending%7CUnknown%22%7D%29+%2A+on%28namespace%2C+pod%29+group_left%28owner_kind%29+max+by%28namespace%2C+pod%2C+owner_kind%29+%28kube_pod_owner%7Bowner_kind%21%3D%22Job%22%7D%29%29+%3E+0\u0026g0.tab=1",
+      "fingerprint": "3e0404fc5e56b99d"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "KubePodNotReady",
+    "namespace": "t1"
+  },
+  "commonLabels": {
+    "alertname": "KubePodNotReady",
+    "namespace": "t1",
+    "prometheus": "kubesphere-monitoring-system/k8s",
+    "severity": "critical"
+  },
+  "commonAnnotations": {
+    "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodnotready"
+  },
+  "externalURL": "http://alertmanager-main-2:9093"
+}

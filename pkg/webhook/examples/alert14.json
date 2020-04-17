@@ -1,0 +1,46 @@
+{
+  "receiver": "Default",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "AlertmanagerFailedReload",
+        "endpoint": "web",
+        "instance": "10.233.71.231:9093",
+        "job": "alertmanager-main",
+        "namespace": "kubesphere-monitoring-system",
+        "pod": "alertmanager-main-0",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "service": "alertmanager-main",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "Reloading Alertmanager's configuration has failed for kubesphere-monitoring-system/alertmanager-main-0."
+      },
+      "startsAt": "2020-04-17T01:16:28.952838294Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-0:9090/graph?g0.expr=alertmanager_config_last_reload_successful%7Bjob%3D%22alertmanager-main%22%2Cnamespace%3D%22kubesphere-monitoring-system%22%7D+%3D%3D+0\u0026g0.tab=1",
+      "fingerprint": "5cb96f8b51c2b647"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "AlertmanagerFailedReload",
+    "namespace": "kubesphere-monitoring-system"
+  },
+  "commonLabels": {
+    "alertname": "AlertmanagerFailedReload",
+    "endpoint": "web",
+    "instance": "10.233.71.231:9093",
+    "job": "alertmanager-main",
+    "namespace": "kubesphere-monitoring-system",
+    "pod": "alertmanager-main-0",
+    "prometheus": "kubesphere-monitoring-system/k8s",
+    "service": "alertmanager-main",
+    "severity": "warning"
+  },
+  "commonAnnotations": {
+    "message": "Reloading Alertmanager's configuration has failed for kubesphere-monitoring-system/alertmanager-main-0."
+  },
+  "externalURL": "http://alertmanager-main-1:9093"
+}

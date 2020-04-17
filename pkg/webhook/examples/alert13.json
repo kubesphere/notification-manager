@@ -1,0 +1,42 @@
+{
+  "receiver": "Default",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "KubeContainerWaiting",
+        "container": "container-ztj830",
+        "namespace": "t1",
+        "pod": "s2i-1-viafnz-89f49c678-2mzsm",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "Pod t1/s2i-1-viafnz-89f49c678-2mzsm container container-ztj830 has been in waiting state for longer than 1 hour.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontainerwaiting"
+      },
+      "startsAt": "2020-02-26T07:49:04.989876849Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-1:9090/graph?g0.expr=sum+by%28namespace%2C+pod%2C+container%29+%28kube_pod_container_status_waiting_reason%7Bjob%3D%22kube-state-metrics%22%7D%29+%3E+0\u0026g0.tab=1",
+      "fingerprint": "838279128e4c0505"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "KubeContainerWaiting",
+    "namespace": "t1"
+  },
+  "commonLabels": {
+    "alertname": "KubeContainerWaiting",
+    "container": "container-ztj830",
+    "namespace": "t1",
+    "pod": "s2i-1-viafnz-89f49c678-2mzsm",
+    "prometheus": "kubesphere-monitoring-system/k8s",
+    "severity": "warning"
+  },
+  "commonAnnotations": {
+    "message": "Pod t1/s2i-1-viafnz-89f49c678-2mzsm container container-ztj830 has been in waiting state for longer than 1 hour.",
+    "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontainerwaiting"
+  },
+  "externalURL": "http://alertmanager-main-1:9093"
+}

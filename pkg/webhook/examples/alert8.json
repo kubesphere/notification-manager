@@ -1,0 +1,46 @@
+{
+  "receiver": "Critical",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "KubeStatefulSetReplicasMismatch",
+        "instance": "10.233.71.230:8080",
+        "job": "kube-state-metrics",
+        "namespace": "pp1",
+        "pod": "kube-state-metrics-7c6f4866fc-rclv2",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "critical",
+        "statefulset": "dd1"
+      },
+      "annotations": {
+        "message": "StatefulSet pp1/dd1 has not matched the expected number of replicas for longer than 15 minutes.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetreplicasmismatch"
+      },
+      "startsAt": "2020-02-26T07:04:04.989876849Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-0:9090/graph?g0.expr=kube_statefulset_status_replicas_ready%7Bjob%3D%22kube-state-metrics%22%7D+%21%3D+kube_statefulset_status_replicas%7Bjob%3D%22kube-state-metrics%22%7D\u0026g0.tab=1",
+      "fingerprint": "90082e8cd5da0e16"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "KubeStatefulSetReplicasMismatch",
+    "namespace": "pp1"
+  },
+  "commonLabels": {
+    "alertname": "KubeStatefulSetReplicasMismatch",
+    "instance": "10.233.71.230:8080",
+    "job": "kube-state-metrics",
+    "namespace": "pp1",
+    "pod": "kube-state-metrics-7c6f4866fc-rclv2",
+    "prometheus": "kubesphere-monitoring-system/k8s",
+    "severity": "critical",
+    "statefulset": "dd1"
+  },
+  "commonAnnotations": {
+    "message": "StatefulSet pp1/dd1 has not matched the expected number of replicas for longer than 15 minutes.",
+    "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetreplicasmismatch"
+  },
+  "externalURL": "http://alertmanager-main-2:9093"
+}
