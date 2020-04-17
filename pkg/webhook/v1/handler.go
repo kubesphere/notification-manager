@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/kubesphere/notification-manager/pkg/notify"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/prometheus/alertmanager/template"
 	"io"
@@ -71,8 +72,60 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 
 		go func() {
 			defer close(wkrCh)
-			// time.Sleep(10 * time.Second)
-			_ = level.Info(h.logger).Log("msg", "Worker: notification sent")
+
+			dataMap := make(map[string]map[string]template.Data)
+			for _, alert := range wkload.Alerts {
+				ns := ""
+				value, ok := alert.Labels["namespace"]
+				if ok {
+					ns = value
+				}
+				alertname := alert.Labels["alertname"]
+
+				m, ok := dataMap[ns]
+				if !ok {
+					m = make(map[string]template.Data)
+				}
+
+				data, ok := m[alertname]
+				if !ok {
+					data = template.Data{
+						Alerts:      template.Alerts{},
+						CommonLabels: map[string]string{},
+						GroupLabels: map[string]string{},
+						Receiver:    wkload.Receiver,
+						ExternalURL: wkload.ExternalURL,
+					}
+					for k, v := range wkload.CommonLabels {
+						data.CommonLabels[k] = v
+					}
+					data.CommonLabels["namespace"] = ns
+					data.CommonLabels["alertname"] = alertname
+					data.GroupLabels["namespace"] = ns
+					data.GroupLabels["alertname"] = alertname
+				}
+
+				data.Alerts = append(data.Alerts, alert)
+				m[alertname] = data
+				dataMap[ns] = m
+			}
+
+			for k, m := range dataMap {
+				var ns *string = nil
+				if len(k) > 0 {
+					ns = &k
+				}
+				receivers := h.notifierCfg.RcvsFromNs(ns)
+				for _, data := range m {
+					n := notify.NewNotification(h.logger, receivers, data)
+					errs := n.Notify()
+					if errs != nil && len(errs) > 0 {
+						_ = level.Error(h.logger).Log("msg", "Worker: notification sent error")
+					}
+				}
+			}
+
+			_ = level.Debug(h.logger).Log("msg", "Worker: notification sent")
 		}()
 
 		select {
