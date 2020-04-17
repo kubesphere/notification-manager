@@ -9,7 +9,7 @@ spec:
   portName: webhook
   globalConfigSelector:
     matchLabels:
-      scope: global
+      type: default
   receivers:
     tenantKey: user
     globalReceiverSelector:

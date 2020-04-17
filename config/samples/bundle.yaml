@@ -94,7 +94,7 @@ metadata:
 spec:
   globalConfigSelector:
     matchLabels:
-      scope: global
+      type: default
   image: benjaminhuo/notification-manager:latest
   portName: webhook
   receivers:

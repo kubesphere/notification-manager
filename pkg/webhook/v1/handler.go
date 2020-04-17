@@ -47,12 +47,12 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 		return
 	}
 
-//	if alerts, err := json.MarshalIndent(data, "", "  "); err != nil {
-//		_ = level.Error(h.logger).Log("msg", "Failed to encode alerts:", "err", err)
-//	} else {
-//		os.Stdout.Write(alerts)
-//		os.Stdout.Write([]byte("\n"))
-//	}
+	//	if alerts, err := json.MarshalIndent(data, "", "  "); err != nil {
+	//		_ = level.Error(h.logger).Log("msg", "Failed to encode alerts:", "err", err)
+	//	} else {
+	//		os.Stdout.Write(alerts)
+	//		os.Stdout.Write([]byte("\n"))
+	//	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), h.webhookTimeout)
 	defer cancel()

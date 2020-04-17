@@ -10,6 +10,7 @@ import (
 	"k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kcache "k8s.io/client-go/tools/cache"
@@ -26,6 +27,7 @@ const (
 	scope               = "scope"
 	global              = "global"
 	globalTenantID      = "notification-manager/tenant/global"
+	globalDefaultConf   = "notification-manager/global/default"
 	tenant              = "tenant"
 	defaultTenantKey    = "user"
 	notificationManager = "notification-manager"
@@ -52,6 +54,8 @@ type Config struct {
 	ctx    context.Context
 	cache  cache.Cache
 	client client.Client
+	// Global default config selector
+	globalConfigSelector *metav1.LabelSelector
 	// Global config for email, wechat, slack etc.
 	GlobalEmailConfig   *config.GlobalConfig
 	GlobalWechatConfig  *config.GlobalConfig
@@ -110,6 +114,7 @@ type param struct {
 	GlobalSlackConfig      *config.GlobalConfig
 	GlobalWebhookConfig    *config.GlobalConfig
 	TenantKey              string
+	globalConfigSelector   *metav1.LabelSelector
 	TenantReceiverSelector *metav1.LabelSelector
 	GlobalReceiverSelector *metav1.LabelSelector
 	Receiver               *Receiver
@@ -165,6 +170,7 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		GlobalSlackConfig:      nil,
 		GlobalWebhookConfig:    nil,
 		TenantKey:              defaultTenantKey,
+		globalConfigSelector:   nil,
 		TenantReceiverSelector: nil,
 		GlobalReceiverSelector: nil,
 		Receivers:              make(map[string]map[string]*Receiver),
@@ -254,9 +260,20 @@ func (c *Config) sync(p *param) {
 		switch p.Type {
 		case notificationManager:
 			c.TenantKey = p.TenantKey
+			c.globalConfigSelector = p.globalConfigSelector
 			c.TenantReceiverSelector = p.TenantReceiverSelector
 			c.GlobalReceiverSelector = p.GlobalReceiverSelector
 		case emailReceiver:
+			// Setup EmailConfig with global default if emailconfig cannot be found
+			if p.Receiver.Email.EmailConfig == nil && c.GlobalEmailConfig != nil {
+				p.Receiver.Email.EmailConfig.Smarthost = c.GlobalEmailConfig.SMTPSmarthost
+				p.Receiver.Email.EmailConfig.AuthSecret = c.GlobalEmailConfig.SMTPAuthSecret
+				p.Receiver.Email.EmailConfig.AuthPassword = c.GlobalEmailConfig.SMTPAuthPassword
+				p.Receiver.Email.EmailConfig.AuthIdentity = c.GlobalEmailConfig.SMTPAuthIdentity
+				p.Receiver.Email.EmailConfig.AuthUsername = c.GlobalEmailConfig.SMTPAuthUsername
+				p.Receiver.Email.EmailConfig.Hello = c.GlobalEmailConfig.SMTPHello
+				p.Receiver.Email.EmailConfig.From = c.GlobalEmailConfig.SMTPFrom
+			}
 			rcvKey := fmt.Sprintf("%s/%s/%s", emailReceiver, p.Namespace, p.Name)
 			if _, exist := c.Receivers[p.TenantID]; exist {
 				c.Receivers[p.TenantID][rcvKey] = p.Receiver
@@ -268,6 +285,7 @@ func (c *Config) sync(p *param) {
 			// Setup global email config
 			if p.GlobalEmailConfig != nil {
 				c.GlobalEmailConfig = p.GlobalEmailConfig
+				break
 			}
 			// Update EmailConfig of the recerver with the same TenantID
 			if _, exist := c.Receivers[p.TenantID]; exist {
@@ -283,6 +301,7 @@ func (c *Config) sync(p *param) {
 			c.TenantKey = defaultTenantKey
 			c.GlobalReceiverSelector = nil
 			c.TenantReceiverSelector = nil
+			c.globalConfigSelector = nil
 		case emailReceiver:
 			rcvKey := fmt.Sprintf("%s/%s/%s", emailReceiver, p.Namespace, p.Name)
 			if _, exist := c.Receivers[p.TenantID]; exist {
@@ -295,6 +314,7 @@ func (c *Config) sync(p *param) {
 			// Reset global email config
 			if p.GlobalEmailConfig != nil {
 				c.GlobalEmailConfig = nil
+				break
 			}
 			// Delete EmailConfig of the recerver with the same TenantID by setting the EmailConfig to nil
 			if _, exist := c.Receivers[p.TenantID]; exist {
@@ -415,6 +435,7 @@ func (c *Config) OnNmAdd(obj interface{}) {
 		p.Namespace = nm.Namespace
 		p.Type = notificationManager
 		p.TenantKey = nm.Spec.Receivers.TenantKey
+		p.globalConfigSelector = nm.Spec.GlobalConfigSelector
 		p.GlobalReceiverSelector = nm.Spec.Receivers.GlobalReceiverSelector
 		p.TenantReceiverSelector = nm.Spec.Receivers.TenantReceiverSelector
 		p.done = make(chan interface{}, 1)
@@ -444,7 +465,7 @@ func (c *Config) OnNmDel(obj interface{}) {
 func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 	mcList := nmv1alpha1.EmailConfigList{}
 	mcSel, _ := metav1.LabelSelectorAsSelector(mr.Spec.EmailConfigSelector)
-	if err := c.cache.List(c.ctx, &mcList, client.MatchingLabelsSelector{Selector: mcSel}); err != nil {
+	if err := c.cache.List(c.ctx, &mcList, client.MatchingLabelsSelector{Selector: mcSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list EmailConfig", "err", err)
 		return nil
 	}
@@ -490,6 +511,12 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 
 		break
 	}
+
+	// Set EmailConfig to nil to indicate EmailConfig should be setup with global default config
+	if len(mcList.Items) == 0 {
+		rcv.Email.EmailConfig = nil
+	}
+
 	rcv.Email.To = mr.Spec.To
 
 	return rcv
@@ -676,7 +703,6 @@ func (c *Config) OnMailConfAdd(obj interface{}) {
 		if c.GlobalReceiverSelector != nil {
 			for k, expected := range c.GlobalReceiverSelector.MatchLabels {
 				if v, exists := mc.ObjectMeta.Labels[k]; exists && v == expected {
-					p.GlobalEmailConfig, _ = c.generateEmailGlobalConfig(mc)
 					p.TenantID = globalTenantID
 					p.Receiver = c.generateMailConfig(mc)
 					break
@@ -696,6 +722,15 @@ func (c *Config) OnMailConfAdd(obj interface{}) {
 					}
 					break
 				}
+			}
+		}
+
+		// Update global default configs if emailconfig's label match globalConfigSelector
+		if c.globalConfigSelector != nil {
+			sel, _ := metav1.LabelSelectorAsSelector(c.globalConfigSelector)
+			if sel.Matches(labels.Set(mc.ObjectMeta.Labels)) {
+				p.TenantID = globalDefaultConf
+				p.GlobalEmailConfig, _ = c.generateEmailGlobalConfig(mc)
 			}
 		}
 
@@ -720,7 +755,6 @@ func (c *Config) OnMailConfDel(obj interface{}) {
 		if c.GlobalReceiverSelector != nil {
 			for k, expected := range c.GlobalReceiverSelector.MatchLabels {
 				if v, exists := mc.ObjectMeta.Labels[k]; exists && v == expected {
-					p.GlobalEmailConfig = &config.GlobalConfig{}
 					p.TenantID = globalTenantID
 					break
 				}
@@ -738,6 +772,15 @@ func (c *Config) OnMailConfDel(obj interface{}) {
 					}
 					break
 				}
+			}
+		}
+
+		// Update global default configs if emailconfig's label match globalConfigSelector
+		if c.globalConfigSelector != nil {
+			sel, _ := metav1.LabelSelectorAsSelector(c.globalConfigSelector)
+			if sel.Matches(labels.Set(mc.ObjectMeta.Labels)) {
+				p.TenantID = globalDefaultConf
+				p.GlobalEmailConfig = &config.GlobalConfig{}
 			}
 		}
 
