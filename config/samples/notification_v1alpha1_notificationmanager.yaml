@@ -18,3 +18,6 @@ spec:
     tenantReceiverSelector:
       matchLabels:
         type: tenant
+    options:
+      notificationTimeout:
+        email: 5

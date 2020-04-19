@@ -121,6 +121,9 @@ spec:
     globalReceiverSelector:
       matchLabels:
         type: global
+    options:
+      notificationTimeout:
+        email: 5
     tenantKey: user
     tenantReceiverSelector:
       matchLabels:

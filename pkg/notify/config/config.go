@@ -26,9 +26,8 @@ import (
 
 const (
 	user                = "User"
-	globalTenantID      = "notification-manager/tenant/global"
-	globalDefaultConf   = "notification-manager/global/default"
-	tenant              = "tenant"
+	globalTenantID      = "notification-manager/type/global"
+	globalDefaultConf   = "notification-manager/type/default"
 	defaultTenantKey    = "user"
 	notificationManager = "notification-manager"
 	emailReceiver       = "email"
@@ -68,6 +67,7 @@ type Config struct {
 	// Label selector to filter valid tenant Receiver CR
 	tenantReceiverSelector *metav1.LabelSelector // Receiver config for each tenant user, in form of map[tenantID]map[type/namespace/name]*Receiver
 	receivers              map[string]map[string]*Receiver
+	ReceiverOpts           *nmv1alpha1.Options
 	// Channel to receive receiver create/update/delete operations and then update receivers
 	ch chan *param
 }
@@ -118,6 +118,7 @@ type param struct {
 	tenantReceiverSelector *metav1.LabelSelector
 	globalReceiverSelector *metav1.LabelSelector
 	receiver               *Receiver
+	ReceiverOpts           *nmv1alpha1.Options
 	done                   chan interface{}
 }
 
@@ -160,6 +161,7 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		tenantReceiverSelector: nil,
 		globalReceiverSelector: nil,
 		receivers:              make(map[string]map[string]*Receiver),
+		ReceiverOpts:           nil,
 		ch:                     make(chan *param, ConfigChannelCapacity),
 	}, nil
 }
@@ -273,6 +275,9 @@ func (c *Config) sync(p *param) {
 			c.globalConfigSelector = p.globalConfigSelector
 			c.tenantReceiverSelector = p.tenantReceiverSelector
 			c.globalReceiverSelector = p.globalReceiverSelector
+			if p.ReceiverOpts != nil {
+				c.ReceiverOpts = p.ReceiverOpts
+			}
 		case emailReceiver:
 			// Setup EmailConfig with global default if emailconfig cannot be found
 			if p.receiver.Email.EmailConfig == nil && c.globalEmailConfig != nil {
@@ -312,6 +317,7 @@ func (c *Config) sync(p *param) {
 			c.globalReceiverSelector = nil
 			c.tenantReceiverSelector = nil
 			c.globalConfigSelector = nil
+			c.ReceiverOpts = nil
 		case emailReceiver:
 			rcvKey := fmt.Sprintf("%s/%s/%s", emailReceiver, p.namespace, p.name)
 			if _, exist := c.receivers[p.tenantID]; exist {
@@ -448,6 +454,9 @@ func (c *Config) onNmAdd(obj interface{}) {
 		p.globalConfigSelector = nm.Spec.GlobalConfigSelector
 		p.globalReceiverSelector = nm.Spec.Receivers.GlobalReceiverSelector
 		p.tenantReceiverSelector = nm.Spec.Receivers.TenantReceiverSelector
+		if nm.Spec.Receivers.Options != nil {
+			p.ReceiverOpts = nm.Spec.Receivers.Options
+		}
 		p.done = make(chan interface{}, 1)
 		c.ch <- p
 		<-p.done
