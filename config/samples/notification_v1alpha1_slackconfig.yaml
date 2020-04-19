@@ -3,10 +3,7 @@ kind: SlackConfig
 metadata:
   name: global-slack-config
   labels:
-    scope: global
-    # or
-    #scope: tenant
-    #user: user1
+    type: global
 spec:
   slackApiUrlSecret:
     key: slack-api-url
@@ -14,5 +11,5 @@ spec:
   slackApiUrl: slack_url_xxx
   httpConfigSelector:
     matchLabels:
-      scope: tenant
+      type: tenant
       user: admin

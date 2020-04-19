@@ -3,12 +3,12 @@ kind: WechatReceiver
 metadata:
   name: admin-wechat
   labels:
-    scope: tenant
+    type: tenant
     user: admin
 spec:
   wechatConfigSelector:
     matchLabels:
-      scope: tenant
+      type: tenant
       user: admin
   message: wechat-test-message
   agentId: wechat-agent-id

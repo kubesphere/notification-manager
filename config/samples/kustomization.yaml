@@ -1,7 +1,8 @@
 resources:
-- notification_v1alpha1_emailconfig.yaml
-- notification_v1alpha1_admin_emailconfig.yaml
-- notification_v1alpha1_emailreceiver.yaml
+- notification_v1alpha1_global_emailconfig.yaml
+- notification_v1alpha1_default_emailconfig.yaml
+- notification_v1alpha1_tenant_emailconfig.yaml
+- notification_v1alpha1_tenant_emailreceiver.yaml
 - notification_v1alpha1_global_emailreceiver.yaml
 - notification_v1alpha1_notificationmanager.yaml
 - notification_v1alpha1_slackconfig.yaml

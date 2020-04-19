@@ -3,10 +3,7 @@ kind: WechatConfig
 metadata:
   name: global-wechat-config
   labels:
-    scope: global
-    # or
-    #scope: tenant
-    #user: user1
+    type: global
 spec:
   wechatApiUrl: wechat-api-url
   wechatApiSecret:

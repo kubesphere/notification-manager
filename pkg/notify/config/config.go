@@ -26,8 +26,6 @@ import (
 
 const (
 	user                = "User"
-	scope               = "scope"
-	global              = "global"
 	globalTenantID      = "notification-manager/tenant/global"
 	globalDefaultConf   = "notification-manager/global/default"
 	tenant              = "tenant"
@@ -538,7 +536,7 @@ func (c *Config) onMailRcvAdd(obj interface{}) {
 	if mr, ok := obj.(*nmv1alpha1.EmailReceiver); ok {
 		p := &param{}
 		p.op = opAdd
-		// If EmailReceiver's label matches globalReceiverSelector such as "scope = global",
+		// If EmailReceiver's label matches globalReceiverSelector such as "type = global",
 		// then this is a global EmailReceiver, and tenantID should be set to an unique tenantID
 		if c.globalReceiverSelector != nil {
 			for k, expected := range c.globalReceiverSelector.MatchLabels {
@@ -548,7 +546,7 @@ func (c *Config) onMailRcvAdd(obj interface{}) {
 				}
 			}
 		}
-		// If EmailReceiver's label matches tenantReceiverSelector such as "scope = tenant",
+		// If EmailReceiver's label matches tenantReceiverSelector such as "type = tenant",
 		// then EmailReceiver's tenantKey's value should be used as tenantID,
 		// For example, if tenantKey is "user" and label "user=admin" exists,
 		// then "admin" should be used as tenantID
@@ -581,7 +579,7 @@ func (c *Config) onMailRcvDel(obj interface{}) {
 	if mr, ok := obj.(*nmv1alpha1.EmailReceiver); ok {
 		p := &param{}
 		p.op = opDel
-		// If EmailReceiver's label matches globalReceiverSelector such as "scope = global",
+		// If EmailReceiver's label matches globalReceiverSelector such as "type = global",
 		// then this is a global EmailReceiver, and tenantID should be set to an unique tenantID
 		if c.globalReceiverSelector != nil {
 			for k, expected := range c.globalReceiverSelector.MatchLabels {
@@ -591,7 +589,7 @@ func (c *Config) onMailRcvDel(obj interface{}) {
 				}
 			}
 		}
-		// If EmailReceiver's label matches tenantReceiverSelector such as "scope = tenant",
+		// If EmailReceiver's label matches tenantReceiverSelector such as "type = tenant",
 		// then EmailReceiver's tenantKey's value should be used as tenantID,
 		// For example, if tenantKey is "user" and label "user=admin" exists,
 		// then "admin" should be used as tenantID
@@ -710,7 +708,7 @@ func (c *Config) onMailConfAdd(obj interface{}) {
 		p.op = opAdd
 		p.opType = emailConfig
 
-		// If EmailConfig's label matches globalReceiverSelector such as "scope = global",
+		// If EmailConfig's label matches globalReceiverSelector such as "type = global",
 		// then this is a global EmailConfig, and tenantID should be set to an unique tenantID
 		if c.globalReceiverSelector != nil {
 			for k, expected := range c.globalReceiverSelector.MatchLabels {
@@ -721,7 +719,7 @@ func (c *Config) onMailConfAdd(obj interface{}) {
 				}
 			}
 		}
-		// If EmailConfig's label matches tenantReceiverSelector such as "scope = tenant",
+		// If EmailConfig's label matches tenantReceiverSelector such as "type = tenant",
 		// then EmailConfig's tenantKey's value should be used as tenantID,
 		// For example, if tenantKey is "user" and label "user=admin" exists,
 		// then "admin" should be used as tenantID
@@ -762,7 +760,7 @@ func (c *Config) onMailConfDel(obj interface{}) {
 		p.op = opDel
 		p.opType = emailConfig
 
-		// If EmailConfig's label matches globalReceiverSelector such as "scope = global",
+		// If EmailConfig's label matches globalReceiverSelector such as "type = global",
 		// then this is a global EmailConfig, and tenantID should be set to an unique tenantID
 		if c.globalReceiverSelector != nil {
 			for k, expected := range c.globalReceiverSelector.MatchLabels {
@@ -772,7 +770,7 @@ func (c *Config) onMailConfDel(obj interface{}) {
 				}
 			}
 		}
-		// If EmailConfig's label matches tenantReceiverSelector such as "scope = tenant",
+		// If EmailConfig's label matches tenantReceiverSelector such as "type = tenant",
 		// then EmailConfig's tenantKey's value should be used as tenantID,
 		// For example, if tenantKey is "user" and label "user=admin" exists,
 		// then "admin" should be used as tenantID
