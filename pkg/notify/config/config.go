@@ -9,14 +9,16 @@ import (
 	"github.com/prometheus/alertmanager/config"
 	"k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	kcache "k8s.io/client-go/tools/cache"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	kconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sync"
 	"time"
@@ -132,7 +134,7 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		_ = level.Error(logger).Log("msg", "Failed to get kubeconfig ", "err", err)
 	}
 
-	c, err := cache.New(cfg, cache.Options{
+	cache, err := cache.New(cfg, cache.Options{
 		Scheme: scheme,
 	})
 	if err != nil {
@@ -140,30 +142,16 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		return nil, err
 	}
 
-	//	client, err := client.New(cfg, client.Options{})
-	//	if err != nil {
-	//		_ = level.Error(logger).Log("msg", "Failed to create client", "err", err)
-	//		return nil, err
-	//	}
-
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: ":8081",
-		Port:               19443,
-		LeaderElection:     false,
-		LeaderElectionID:   "notification.kubesphere.io",
-	})
-
+	client, err := newClient(cfg, cache, scheme)
 	if err != nil {
-		_ = level.Error(logger).Log("msg", "unable to start manager", "err", err)
+		_ = level.Error(logger).Log("msg", "Failed to create client", "err", err)
+		return nil, err
 	}
-
-	client := mgr.GetClient()
 
 	return &Config{
 		ctx:                    ctx,
 		logger:                 logger,
-		cache:                  c,
+		cache:                  cache,
 		client:                 client,
 		globalEmailConfig:      nil,
 		globalWechatConfig:     nil,
@@ -175,6 +163,30 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		globalReceiverSelector: nil,
 		receivers:              make(map[string]map[string]*Receiver),
 		ch:                     make(chan *param, ConfigChannelCapacity),
+	}, nil
+}
+
+// Setting up client
+func newClient(cfg *rest.Config, cache cache.Cache, scheme *runtime.Scheme) (client.Client, error) {
+	mapper, err := func(c *rest.Config) (meta.RESTMapper, error) {
+		return apiutil.NewDynamicRESTMapper(c)
+	}(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := client.New(cfg, client.Options{Scheme: scheme, Mapper: mapper})
+	if err != nil {
+		return nil, err
+	}
+
+	return &client.DelegatingClient{
+		Reader: &client.DelegatingReader{
+			CacheReader:  cache,
+			ClientReader: c,
+		},
+		Writer:       c,
+		StatusClient: c,
 	}, nil
 }
 
