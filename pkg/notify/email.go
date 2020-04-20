@@ -60,22 +60,22 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 	}
 	notifier.Template = tmpl
 
-	if opts.NotificationTimeout.Email != nil {
+	if opts != nil && opts.NotificationTimeout != nil && opts.NotificationTimeout.Email != nil {
 		notifier.Timeout = time.Second * time.Duration(*opts.NotificationTimeout.Email)
 	}
 
 	return notifier
 }
 
-func (en *EmailNotifier) Notify(datas []template.Data) []error {
+func (en *EmailNotifier) Notify(data []template.Data) []error {
 
 	var errs []error
-	for _, data := range datas {
-		en.Config.Headers["Subject"] = en.getSubject(data)
-		en.Template.ExternalURL, _ = url.Parse(data.ExternalURL)
+	for _, d := range data {
+		en.Config.Headers["Subject"] = en.getSubject(d)
+		en.Template.ExternalURL, _ = url.Parse(d.ExternalURL)
 
 		var as []*types.Alert
-		for _, a := range data.Alerts {
+		for _, a := range d.Alerts {
 			as = append(as, &types.Alert{
 				Alert: model.Alert{
 					Labels:       kvToLabelSet(a.Labels),
@@ -92,8 +92,8 @@ func (en *EmailNotifier) Notify(datas []template.Data) []error {
 			e := email.New(en.Config, en.Template, en.logger)
 
 			ctx, cancel := context.WithTimeout(context.Background(), en.Timeout)
-			ctx = notify.WithGroupLabels(ctx, kvToLabelSet(data.GroupLabels))
-			ctx = notify.WithReceiverName(ctx, data.Receiver)
+			ctx = notify.WithGroupLabels(ctx, kvToLabelSet(d.GroupLabels))
+			ctx = notify.WithReceiverName(ctx, d.Receiver)
 			defer cancel()
 
 			_, err := e.Notify(ctx, as...)

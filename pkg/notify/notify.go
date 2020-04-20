@@ -9,7 +9,7 @@ import (
 )
 
 type Notifier interface {
-	Notify(datas []template.Data) []error
+	Notify(data []template.Data) []error
 }
 
 type Factory func(logger log.Logger, receiver interface{}, opts *nmv1alpha1.Options) Notifier
@@ -28,12 +28,12 @@ func Register(name string, factory Factory) {
 
 type Notification struct {
 	Notifiers []Notifier
-	Datas     []template.Data
+	Data      []template.Data
 }
 
-func NewNotification(logger log.Logger, receivers []*config.Receiver, opts *nmv1alpha1.Options, datas []template.Data) *Notification {
+func NewNotification(logger log.Logger, receivers []*config.Receiver, opts *nmv1alpha1.Options, data []template.Data) *Notification {
 
-	n := &Notification{Datas: datas}
+	n := &Notification{Data: data}
 	for _, receiver := range receivers {
 		t := reflect.TypeOf(*receiver)
 		v := reflect.ValueOf(*receiver)
@@ -63,7 +63,7 @@ func (n *Notification) Notify() []error {
 			continue
 		}
 
-		err := notifier.Notify(n.Datas)
+		err := notifier.Notify(n.Data)
 		if err != nil {
 			errs = append(errs, err...)
 		}

@@ -2,9 +2,9 @@ package v1
 
 import (
 	"context"
-	"github.com/json-iterator/go"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/json-iterator/go"
 	"github.com/kubesphere/notification-manager/pkg/notify"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/prometheus/alertmanager/template"
@@ -117,11 +117,11 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 				}
 				receivers := h.notifierCfg.RcvsFromNs(ns)
 
-				var datas []template.Data
-				for _, data := range m {
-					datas = append(datas, data)
+				var data []template.Data
+				for _, d := range m {
+					data = append(data, d)
 				}
-				n := notify.NewNotification(h.logger, receivers, h.notifierCfg.ReceiverOpts, datas)
+				n := notify.NewNotification(h.logger, receivers, h.notifierCfg.ReceiverOpts, data)
 				errs := n.Notify()
 				if errs != nil && len(errs) > 0 {
 					_ = level.Error(h.logger).Log("msg", "Worker: notification sent error")
