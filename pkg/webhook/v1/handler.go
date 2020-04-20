@@ -73,55 +73,49 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 		go func() {
 			defer close(wkrCh)
 
-			dataMap := make(map[string]map[string]template.Data)
-			for _, alert := range wkload.Alerts {
-				ns := ""
-				value, ok := alert.Labels["namespace"]
-				if ok {
-					ns = value
-				}
-				alertname := alert.Labels["alertname"]
-
-				m, ok := dataMap[ns]
-				if !ok {
-					m = make(map[string]template.Data)
-				}
-
-				data, ok := m[alertname]
-				if !ok {
-					data = template.Data{
-						Alerts:       template.Alerts{},
-						CommonLabels: map[string]string{},
-						GroupLabels:  map[string]string{},
-						Receiver:     wkload.Receiver,
-						ExternalURL:  wkload.ExternalURL,
+			dm := make(map[string]template.Data)
+			ns, ok := wkload.CommonLabels["namespace"]
+			if ok {
+				dm[ns] = wkload
+			} else {
+				for _, alert := range wkload.Alerts {
+					ns, ok = alert.Labels["namespace"]
+					if !ok {
+						ns = ""
 					}
-					for k, v := range wkload.CommonLabels {
-						data.CommonLabels[k] = v
-					}
-					data.CommonLabels["namespace"] = ns
-					data.CommonLabels["alertname"] = alertname
-					data.GroupLabels["namespace"] = ns
-					data.GroupLabels["alertname"] = alertname
-				}
 
-				data.Alerts = append(data.Alerts, alert)
-				m[alertname] = data
-				dataMap[ns] = m
+					d, ok := dm[ns]
+					if !ok {
+						d = template.Data{
+							Alerts:       template.Alerts{},
+							CommonLabels: map[string]string{},
+							GroupLabels:  map[string]string{},
+							Receiver:     wkload.Receiver,
+							ExternalURL:  wkload.ExternalURL,
+						}
+						for k, v := range wkload.CommonLabels {
+							d.CommonLabels[k] = v
+						}
+						if len(ns) > 0 {
+							d.CommonLabels["namespace"] = ns
+						}
+						for k, v := range wkload.GroupLabels {
+							d.GroupLabels[k] = v
+						}
+					}
+
+					d.Alerts = append(d.Alerts, alert)
+					dm[ns] = d
+				}
 			}
 
-			for k, m := range dataMap {
+			for k, d := range dm {
 				var ns *string = nil
 				if len(k) > 0 {
 					ns = &k
 				}
 				receivers := h.notifierCfg.RcvsFromNs(ns)
-
-				var data []template.Data
-				for _, d := range m {
-					data = append(data, d)
-				}
-				n := notify.NewNotification(h.logger, receivers, h.notifierCfg.ReceiverOpts, data)
+				n := notify.NewNotification(h.logger, receivers, h.notifierCfg.ReceiverOpts, d)
 				errs := n.Notify()
 				if errs != nil && len(errs) > 0 {
 					_ = level.Error(h.logger).Log("msg", "Worker: notification sent error")

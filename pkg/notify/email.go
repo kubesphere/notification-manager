@@ -2,7 +2,6 @@ package notify
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
@@ -14,7 +13,6 @@ import (
 	"github.com/prometheus/alertmanager/types"
 	"github.com/prometheus/common/model"
 	"net/url"
-	"strings"
 	"time"
 )
 
@@ -67,94 +65,46 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 	return notifier
 }
 
-func (en *EmailNotifier) Notify(data []template.Data) []error {
+func (en *EmailNotifier) Notify(data template.Data) []error {
+
+	en.Template.ExternalURL, _ = url.Parse(data.ExternalURL)
+
+	var as []*types.Alert
+	for _, a := range data.Alerts {
+		as = append(as, &types.Alert{
+			Alert: model.Alert{
+				Labels:       kvToLabelSet(a.Labels),
+				Annotations:  kvToLabelSet(a.Annotations),
+				StartsAt:     a.StartsAt,
+				EndsAt:       a.EndsAt,
+				GeneratorURL: a.GeneratorURL,
+			},
+		})
+	}
 
 	var errs []error
-	for _, d := range data {
-		en.Config.Headers["Subject"] = en.getSubject(d)
-		en.Template.ExternalURL, _ = url.Parse(d.ExternalURL)
+	sendEmail := func(to string) {
+		en.Config.To = to
+		e := email.New(en.Config, en.Template, en.logger)
 
-		var as []*types.Alert
-		for _, a := range d.Alerts {
-			as = append(as, &types.Alert{
-				Alert: model.Alert{
-					Labels:       kvToLabelSet(a.Labels),
-					Annotations:  kvToLabelSet(a.Annotations),
-					StartsAt:     a.StartsAt,
-					EndsAt:       a.EndsAt,
-					GeneratorURL: a.GeneratorURL,
-				},
-			})
+		ctx, cancel := context.WithTimeout(context.Background(), en.Timeout)
+		ctx = notify.WithGroupLabels(ctx, kvToLabelSet(data.GroupLabels))
+		ctx = notify.WithReceiverName(ctx, data.Receiver)
+		defer cancel()
+
+		_, err := e.Notify(ctx, as...)
+		if err != nil {
+			_ = level.Error(en.logger).Log("msg", "Notifier: email notify error", "subject", en.Config.Headers["Subject"], "from", en.Config.From, "to", en.Config.To, "error", err.Error())
+			errs = append(errs, err)
 		}
+		_ = level.Debug(en.logger).Log("Notifier: send email to", to)
+	}
 
-		sendEmail := func(to string) {
-			en.Config.To = to
-			e := email.New(en.Config, en.Template, en.logger)
-
-			ctx, cancel := context.WithTimeout(context.Background(), en.Timeout)
-			ctx = notify.WithGroupLabels(ctx, kvToLabelSet(d.GroupLabels))
-			ctx = notify.WithReceiverName(ctx, d.Receiver)
-			defer cancel()
-
-			_, err := e.Notify(ctx, as...)
-			if err != nil {
-				_ = level.Error(en.logger).Log("msg", "Notifier: email notify error", "subject", en.Config.Headers["Subject"], "address", to, "error", err.Error())
-				errs = append(errs, err)
-			}
-			_ = level.Debug(en.logger).Log("Notifier: send email to", to)
-		}
-
-		for _, to := range en.To {
-			sendEmail(to)
-		}
+	for _, to := range en.To {
+		sendEmail(to)
 	}
 
 	return errs
-}
-
-func (en *EmailNotifier) getSubject(data template.Data) string {
-
-	subject := ""
-	ns := data.CommonLabels["namespace"]
-	alertname := data.CommonLabels["alertname"]
-
-	firingNum := len(data.Alerts.Firing())
-	if firingNum > 0 {
-		subject = fmt.Sprintf("[FIRING:%d] ", firingNum)
-	}
-
-	resolvedNum := len(data.Alerts.Resolved())
-	if resolvedNum > 0 {
-		subject = fmt.Sprintf("%s[RESOLVED:%d] ", subject, resolvedNum)
-	}
-
-	if len(ns) > 0 {
-		subject = fmt.Sprintf("%s %s", subject, ns)
-	}
-
-	if len(alertname) > 0 {
-		if len(ns) > 0 {
-			subject = fmt.Sprintf("%s/%s", subject, alertname)
-		} else {
-			subject = fmt.Sprintf("%s%s", subject, alertname)
-		}
-	}
-
-	labels := ""
-	for k, v := range data.CommonLabels {
-		if k == "namespace" || k == "alertname" {
-			continue
-		}
-
-		labels = fmt.Sprintf("%s%s=%s,", labels, k, v)
-	}
-
-	if len(labels) > 0 {
-		labels = strings.TrimSuffix(labels, ",")
-		subject = fmt.Sprintf("%s (%s)", subject, labels)
-	}
-
-	return subject
 }
 
 func (en *EmailNotifier) Clone(ec *config.EmailConfig) *config.EmailConfig {
