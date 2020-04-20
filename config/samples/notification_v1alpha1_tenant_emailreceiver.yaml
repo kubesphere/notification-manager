@@ -3,7 +3,7 @@ kind: EmailReceiver
 metadata:
   name: admin-email
   labels:
-    scope: tenant
+    type: tenant
     user: admin
 spec:
   to:
@@ -11,5 +11,5 @@ spec:
   - abc3@xyz.com
   emailConfigSelector:
     matchLabels:
-      scope: tenant
+      type: tenant
       user: admin

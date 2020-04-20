@@ -3,10 +3,7 @@ kind: WebhookConfig
 metadata:
   name: global-webhook-config
   labels:
-    scope: global
-    # or
-    #scope: tenant
-    #user: user1
+    type: global
 spec:
   url: xxx
   urlSecret:
@@ -14,5 +11,5 @@ spec:
     name: webhook-url-secret
   httpConfigSelector:
     matchLabels:
-      scope: tenant
+      type: tenant
       user: admin

@@ -14,7 +14,10 @@ spec:
     tenantKey: user
     globalReceiverSelector:
       matchLabels:
-        scope: global
+        type: global
     tenantReceiverSelector:
       matchLabels:
-        scope: tenant
+        type: tenant
+    options:
+      notificationTimeout:
+        email: 5

@@ -135,6 +135,27 @@ spec:
                         are ANDed.
                       type: object
                   type: object
+                options:
+                  description: Various receiver options
+                  properties:
+                    notificationTimeout:
+                      description: Notification Sending Timeout
+                      properties:
+                        email:
+                          description: Notification timeout in second
+                          format: int32
+                          type: integer
+                        slack:
+                          format: int32
+                          type: integer
+                        webhook:
+                          format: int32
+                          type: integer
+                        wechat:
+                          format: int32
+                          type: integer
+                      type: object
+                  type: object
                 tenantKey:
                   description: Key used to identify tenant, default to be "namespace"
                     if not specified

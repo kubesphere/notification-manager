@@ -3,11 +3,11 @@ kind: SlackReceiver
 metadata:
   name: admin-slack
   labels:
-    scope: tenant
+    type: tenant
     user: admin
 spec:
   slackConfigSelector:
     matchLabels:
-      scope: tenant
+      type: tenant
       user: admin
   channel: slack_channel_x

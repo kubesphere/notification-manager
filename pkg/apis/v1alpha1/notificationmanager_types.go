@@ -48,6 +48,21 @@ type ReceiversSpec struct {
 	// Selector to find tenant notification receivers.
 	// Only matchLabels expression is allowed.
 	TenantReceiverSelector *metav1.LabelSelector `json:"tenantReceiverSelector"`
+	// Various receiver options
+	Options *Options `json:"options,omitempty"`
+}
+
+type Options struct {
+	// Notification Sending Timeout
+	NotificationTimeout *NotificationTimeout `json:"notificationTimeout,omitempty"`
+}
+
+type NotificationTimeout struct {
+	// Notification timeout in second
+	Email   *int32 `json:"email,omitempty"`
+	Wechat  *int32 `json:"wechat,omitempty"`
+	Slack   *int32 `json:"slack,omitempty"`
+	Webhook *int32 `json:"webhook,omitempty"`
 }
 
 // NotificationManagerStatus defines the observed state of NotificationManager
