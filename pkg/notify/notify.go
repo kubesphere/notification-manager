@@ -2,16 +2,17 @@ package notify
 
 import (
 	"github.com/go-kit/kit/log"
+	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/prometheus/alertmanager/template"
 	"reflect"
 )
 
 type Notifier interface {
-	Notify(alert template.Data) []error
+	Notify(datas []template.Data) []error
 }
 
-type Factory func(logger log.Logger, config interface{}) Notifier
+type Factory func(logger log.Logger, receiver interface{}, opts *nmv1alpha1.Options) Notifier
 
 var (
 	factorys map[string]Factory
@@ -27,12 +28,12 @@ func Register(name string, factory Factory) {
 
 type Notification struct {
 	Notifiers []Notifier
-	Data      template.Data
+	Datas     []template.Data
 }
 
-func NewNotification(logger log.Logger, receivers []*config.Receiver, data template.Data) *Notification {
+func NewNotification(logger log.Logger, receivers []*config.Receiver, opts *nmv1alpha1.Options, datas []template.Data) *Notification {
 
-	n := &Notification{Data: data}
+	n := &Notification{Datas: datas}
 	for _, receiver := range receivers {
 		t := reflect.TypeOf(*receiver)
 		v := reflect.ValueOf(*receiver)
@@ -41,7 +42,7 @@ func NewNotification(logger log.Logger, receivers []*config.Receiver, data templ
 			if v.Field(i).CanInterface() {
 				factory := factorys[t.Field(i).Name]
 				if factory != nil && v.Field(i).Interface() != nil {
-					notifier := factory(logger, v.Field(i).Interface())
+					notifier := factory(logger, v.Field(i).Interface(), opts)
 					if notifier != nil {
 						n.Notifiers = append(n.Notifiers, notifier)
 					}
@@ -62,7 +63,7 @@ func (n *Notification) Notify() []error {
 			continue
 		}
 
-		err := notifier.Notify(n.Data)
+		err := notifier.Notify(n.Datas)
 		if err != nil {
 			errs = append(errs, err...)
 		}

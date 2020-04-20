@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
 	notifyconfig "github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/alertmanager/notify"
@@ -25,6 +26,7 @@ type EmailNotifier struct {
 	To       []string
 	Config   *config.EmailConfig
 	Template *template.Template
+	Timeout  time.Duration
 	logger   log.Logger
 }
 
@@ -32,16 +34,16 @@ func init() {
 	Register("Email", NewEmailNotifier)
 }
 
-func NewEmailNotifier(logger log.Logger, val interface{}) Notifier {
+func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Options) Notifier {
 
-	emailConfig, ok := val.(*notifyconfig.Email)
+	receiver, ok := val.(*notifyconfig.Email)
 	if !ok {
 		_ = level.Error(logger).Log("msg", "Notifier: value type error")
 		return nil
 	}
 
-	notifier := &EmailNotifier{logger: logger, To: emailConfig.To}
-	notifier.Config = notifier.Clone(emailConfig.EmailConfig)
+	notifier := &EmailNotifier{logger: logger, To: receiver.To, Timeout: DefaultSendTimeout}
+	notifier.Config = notifier.Clone(receiver.EmailConfig)
 	if notifier.Config == nil {
 		_ = level.Error(logger).Log("msg", "empty email config")
 		return nil
@@ -58,47 +60,53 @@ func NewEmailNotifier(logger log.Logger, val interface{}) Notifier {
 	}
 	notifier.Template = tmpl
 
+	if opts.NotificationTimeout.Email != nil {
+		notifier.Timeout = time.Second * time.Duration(*opts.NotificationTimeout.Email)
+	}
+
 	return notifier
 }
 
-func (en *EmailNotifier) Notify(data template.Data) []error {
-
-	en.Config.Headers["Subject"] = en.getSubject(data)
-	en.Template.ExternalURL, _ = url.Parse(data.ExternalURL)
-
-	var as []*types.Alert
-	for _, a := range data.Alerts {
-		as = append(as, &types.Alert{
-			Alert: model.Alert{
-				Labels:       kvToLabelSet(a.Labels),
-				Annotations:  kvToLabelSet(a.Annotations),
-				StartsAt:     a.StartsAt,
-				EndsAt:       a.EndsAt,
-				GeneratorURL: a.GeneratorURL,
-			},
-		})
-	}
+func (en *EmailNotifier) Notify(datas []template.Data) []error {
 
 	var errs []error
-	sendEmail := func(to string) {
-		en.Config.To = to
-		e := email.New(en.Config, en.Template, en.logger)
+	for _, data := range datas {
+		en.Config.Headers["Subject"] = en.getSubject(data)
+		en.Template.ExternalURL, _ = url.Parse(data.ExternalURL)
 
-		ctx, cancel := context.WithTimeout(context.Background(), DefaultSendTimeout)
-		ctx = notify.WithGroupLabels(ctx, kvToLabelSet(data.GroupLabels))
-		ctx = notify.WithReceiverName(ctx, data.Receiver)
-		defer cancel()
-
-		_, err := e.Notify(ctx, as...)
-		if err != nil {
-			_ = level.Error(en.logger).Log("msg", "Notifier: email notify error", "address", to, "error", err.Error())
-			errs = append(errs, err)
+		var as []*types.Alert
+		for _, a := range data.Alerts {
+			as = append(as, &types.Alert{
+				Alert: model.Alert{
+					Labels:       kvToLabelSet(a.Labels),
+					Annotations:  kvToLabelSet(a.Annotations),
+					StartsAt:     a.StartsAt,
+					EndsAt:       a.EndsAt,
+					GeneratorURL: a.GeneratorURL,
+				},
+			})
 		}
-		_ = level.Debug(en.logger).Log("Notifier: send email to", to)
-	}
 
-	for _, to := range en.To {
-		sendEmail(to)
+		sendEmail := func(to string) {
+			en.Config.To = to
+			e := email.New(en.Config, en.Template, en.logger)
+
+			ctx, cancel := context.WithTimeout(context.Background(), en.Timeout)
+			ctx = notify.WithGroupLabels(ctx, kvToLabelSet(data.GroupLabels))
+			ctx = notify.WithReceiverName(ctx, data.Receiver)
+			defer cancel()
+
+			_, err := e.Notify(ctx, as...)
+			if err != nil {
+				_ = level.Error(en.logger).Log("msg", "Notifier: email notify error", "subject", en.Config.Headers["Subject"], "address", to, "error", err.Error())
+				errs = append(errs, err)
+			}
+			_ = level.Debug(en.logger).Log("Notifier: send email to", to)
+		}
+
+		for _, to := range en.To {
+			sendEmail(to)
+		}
 	}
 
 	return errs
