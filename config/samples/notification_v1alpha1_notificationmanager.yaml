@@ -5,7 +5,7 @@ metadata:
 spec:
   replicas: 1
   image: benjaminhuo/notification-manager:latest
-  serviceAccountName: default
+  serviceAccountName: notification-manager-sa
   portName: webhook
   globalConfigSelector:
     matchLabels:

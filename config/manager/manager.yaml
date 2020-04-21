@@ -15,6 +15,7 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
+      serviceAccountName: notification-manager-sa
       containers:
       - command:
         - /notification-manager-operator
