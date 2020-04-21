@@ -56,7 +56,7 @@ metadata:
   labels:
     app: notification-manager
     type: global
-  name: global-email-config
+  name: global-admin1-email-config
   namespace: kubesphere-monitoring-system
 spec:
   authPassword:
@@ -94,7 +94,7 @@ metadata:
   labels:
     app: notification-manager
     type: global
-  name: global-email
+  name: global-admin1-email
   namespace: kubesphere-monitoring-system
 spec:
   emailConfigSelector:
