@@ -8,5 +8,5 @@ roleRef:
   name: controller-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: sa
   namespace: system

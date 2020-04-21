@@ -1055,6 +1055,12 @@ status:
   conditions: []
   storedVersions: []
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: notification-manager-sa
+  namespace: kubesphere-monitoring-system
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -1202,7 +1208,7 @@ roleRef:
   name: notification-manager-leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: notification-manager-sa
   namespace: kubesphere-monitoring-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1215,7 +1221,7 @@ roleRef:
   name: notification-manager-controller-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: notification-manager-sa
   namespace: kubesphere-monitoring-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1228,7 +1234,7 @@ roleRef:
   name: notification-manager-proxy-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: notification-manager-sa
   namespace: kubesphere-monitoring-system
 ---
 apiVersion: v1
@@ -1288,4 +1294,5 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+      serviceAccountName: notification-manager-sa
       terminationGracePeriodSeconds: 10

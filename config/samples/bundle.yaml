@@ -129,7 +129,7 @@ spec:
       matchLabels:
         type: tenant
   replicas: 1
-  serviceAccountName: default
+  serviceAccountName: notification-manager-sa
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: SlackConfig
