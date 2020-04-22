@@ -46,9 +46,6 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 		_ = level.Error(logger).Log("msg", "empty email config")
 		return nil
 	}
-	if notifier.Config.Headers == nil {
-		notifier.Config.Headers = make(map[string]string)
-	}
 	notifier.Config.HTML = `{{ template "email.default.html" . }}`
 
 	tmpl, err := template.FromGlobs()
