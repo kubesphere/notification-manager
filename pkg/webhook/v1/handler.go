@@ -2,9 +2,10 @@ package v1
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/json-iterator/go"
+	"github.com/kubesphere/notification-manager/pkg/notify"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/prometheus/alertmanager/template"
 	"io"
@@ -42,7 +43,7 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 	// Parse alerts sent through Alertmanager webhook, more detail please refer to
 	// https://github.com/prometheus/alertmanager/blob/master/template/template.go#L231
 	data := template.Data{}
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+	if err := jsoniter.NewDecoder(r.Body).Decode(&data); err != nil {
 		h.handle(w, &response{http.StatusBadRequest, err.Error()})
 		return
 	}
@@ -71,8 +72,57 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 
 		go func() {
 			defer close(wkrCh)
-			// time.Sleep(10 * time.Second)
-			_ = level.Info(h.logger).Log("msg", "Worker: notification sent")
+
+			dm := make(map[string]template.Data)
+			ns, ok := wkload.CommonLabels["namespace"]
+			if ok {
+				dm[ns] = wkload
+			} else {
+				for _, alert := range wkload.Alerts {
+					ns, ok = alert.Labels["namespace"]
+					if !ok {
+						ns = ""
+					}
+
+					d, ok := dm[ns]
+					if !ok {
+						d = template.Data{
+							Alerts:       template.Alerts{},
+							CommonLabels: map[string]string{},
+							GroupLabels:  map[string]string{},
+							Receiver:     wkload.Receiver,
+							ExternalURL:  wkload.ExternalURL,
+						}
+						for k, v := range wkload.CommonLabels {
+							d.CommonLabels[k] = v
+						}
+						if len(ns) > 0 {
+							d.CommonLabels["namespace"] = ns
+						}
+						for k, v := range wkload.GroupLabels {
+							d.GroupLabels[k] = v
+						}
+					}
+
+					d.Alerts = append(d.Alerts, alert)
+					dm[ns] = d
+				}
+			}
+
+			for k, d := range dm {
+				var ns *string = nil
+				if len(k) > 0 {
+					ns = &k
+				}
+				receivers := h.notifierCfg.RcvsFromNs(ns)
+				n := notify.NewNotification(h.logger, receivers, h.notifierCfg.ReceiverOpts, d)
+				errs := n.Notify()
+				if errs != nil && len(errs) > 0 {
+					_ = level.Error(h.logger).Log("msg", "Worker: notification sent error")
+				}
+			}
+
+			_ = level.Debug(h.logger).Log("msg", "Worker: notification sent")
 		}()
 
 		select {
@@ -136,7 +186,7 @@ func (h *HttpHandler) ServeStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HttpHandler) handle(w http.ResponseWriter, resp *response) {
-	bytes, _ := json.Marshal(resp)
+	bytes, _ := jsoniter.Marshal(resp)
 	msg := string(bytes[:])
 	w.WriteHeader(resp.Status)
 	_, _ = io.WriteString(w, msg)
