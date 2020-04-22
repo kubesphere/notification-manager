@@ -15,15 +15,15 @@ type Notifier interface {
 type Factory func(logger log.Logger, receiver interface{}, opts *nmv1alpha1.Options) Notifier
 
 var (
-	factorys map[string]Factory
+	factories map[string]Factory
 )
 
 func Register(name string, factory Factory) {
-	if factorys == nil {
-		factorys = make(map[string]Factory)
+	if factories == nil {
+		factories = make(map[string]Factory)
 	}
 
-	factorys[name] = factory
+	factories[name] = factory
 }
 
 type Notification struct {
@@ -40,7 +40,7 @@ func NewNotification(logger log.Logger, receivers []*config.Receiver, opts *nmv1
 		for i := 0; i < v.NumField(); i++ {
 			// Dose the field can be export?
 			if v.Field(i).CanInterface() {
-				factory := factorys[t.Field(i).Name]
+				factory := factories[t.Field(i).Name]
 				if factory != nil && v.Field(i).Interface() != nil {
 					notifier := factory(logger, v.Field(i).Interface(), opts)
 					if notifier != nil {
