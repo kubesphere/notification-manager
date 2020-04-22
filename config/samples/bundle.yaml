@@ -56,7 +56,7 @@ metadata:
   labels:
     app: notification-manager
     type: global
-  name: global-email-config
+  name: global-admin1-email-config
   namespace: kubesphere-monitoring-system
 spec:
   authPassword:
@@ -94,7 +94,7 @@ metadata:
   labels:
     app: notification-manager
     type: global
-  name: global-email
+  name: global-admin1-email
   namespace: kubesphere-monitoring-system
 spec:
   emailConfigSelector:
@@ -116,6 +116,7 @@ spec:
     matchLabels:
       type: default
   image: benjaminhuo/notification-manager:latest
+  imagePullPolicy: Always
   portName: webhook
   receivers:
     globalReceiverSelector:
@@ -129,6 +130,13 @@ spec:
       matchLabels:
         type: tenant
   replicas: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 100m
+      memory: 20Mi
   serviceAccountName: notification-manager-sa
 ---
 apiVersion: notification.kubesphere.io/v1alpha1

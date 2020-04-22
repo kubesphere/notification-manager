@@ -404,7 +404,7 @@ func (c *Config) tenantIDFromNs(namespace string) ([]string, error) {
 
 func (c *Config) RcvsFromNs(namespace *string) []*Receiver {
 	rcvs := make([]*Receiver, 0)
-	// Return global receiver if namespace is nil
+	// Return global receiver if namespace is nil, global receiver should receive all notifications
 	if namespace == nil {
 		p := param{}
 		p.op = opGet
@@ -417,9 +417,21 @@ func (c *Config) RcvsFromNs(namespace *string) []*Receiver {
 				rcvs = append(rcvs, v)
 			}
 		}
-
 	} else {
-		// Return receivers for each tenant if namespace is not nil
+		// Get all global receiver first, global receiver should receive all notifications
+		p := param{}
+		p.op = opGet
+		p.tenantID = globalTenantID
+		p.done = make(chan interface{}, 1)
+		c.ch <- &p
+		o := <-p.done
+		if r, ok := o.(map[string]*Receiver); ok {
+			for _, v := range r {
+				rcvs = append(rcvs, v)
+			}
+		}
+
+		// Get receivers for each tenant if namespace is not nil
 		if tenantIDs, err := c.tenantIDFromNs(*namespace); err != nil {
 			_ = level.Error(c.logger).Log("msg", "Unable to find tenantID", "err", err)
 		} else {

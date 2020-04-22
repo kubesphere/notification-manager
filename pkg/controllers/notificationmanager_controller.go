@@ -39,11 +39,12 @@ const (
 )
 
 var (
-	ownerKey    = ".metadata.controller"
-	apiGVStr    = nmv1alpha1.GroupVersion.String()
-	log         logr.Logger
-	minReplicas int32  = 1
-	image       string = "kubesphere/notification-manager:v0.1.0"
+	ownerKey               = ".metadata.controller"
+	apiGVStr               = nmv1alpha1.GroupVersion.String()
+	log                    logr.Logger
+	minReplicas            int32             = 1
+	defaultImage           string            = "kubesphere/notification-manager:v0.1.0"
+	defaultImagePullPolicy corev1.PullPolicy = corev1.PullIfNotPresent
 )
 
 // NotificationManagerReconciler reconciles a NotificationManager object
@@ -136,11 +137,15 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 	return func() error {
 		nm = nm.DeepCopy()
 
-		if (nm.Spec.Image == nil) || (nm.Spec.Image != nil && *nm.Spec.Image == "") {
-			nm.Spec.Image = &image
+		if nm.Spec.Image == nil || nm.Spec.Image != nil && *nm.Spec.Image == "" {
+			nm.Spec.Image = &defaultImage
 		}
 
-		if (nm.Spec.Replicas == nil) || (nm.Spec.Replicas != nil && *nm.Spec.Replicas <= int32(0)) {
+		if nm.Spec.ImagePullPolicy == nil || nm.Spec.ImagePullPolicy != nil && *nm.Spec.ImagePullPolicy == "" {
+			nm.Spec.ImagePullPolicy = &defaultImagePullPolicy
+		}
+
+		if nm.Spec.Replicas == nil || nm.Spec.Replicas != nil && *nm.Spec.Replicas <= int32(0) {
 			nm.Spec.Replicas = &minReplicas
 		}
 
@@ -161,14 +166,17 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 		deploy.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 			Labels: podLabels,
 		}
-
+		deploy.Spec.Template.Spec.NodeSelector = nm.Spec.NodeSelector
+		deploy.Spec.Template.Spec.Affinity = nm.Spec.Affinity
+		deploy.Spec.Template.Spec.Tolerations = nm.Spec.Tolerations
 		deploy.Spec.Template.Spec.ServiceAccountName = nm.Spec.ServiceAccountName
 
 		// Define expected container
 		newC := corev1.Container{
-			Name:            "notification-manager",
+			Name:            notificationManager,
+			Resources:       nm.Spec.Resources,
 			Image:           *nm.Spec.Image,
-			ImagePullPolicy: "Always",
+			ImagePullPolicy: *nm.Spec.ImagePullPolicy,
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          nm.Spec.PortName,
@@ -181,6 +189,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 		// Make sure existing Containers match expected Containers
 		for i, c := range deploy.Spec.Template.Spec.Containers {
 			if c.Name == newC.Name {
+				deploy.Spec.Template.Spec.Containers[i].Resources = newC.Resources
 				deploy.Spec.Template.Spec.Containers[i].Image = newC.Image
 				deploy.Spec.Template.Spec.Containers[i].ImagePullPolicy = newC.ImagePullPolicy
 				deploy.Spec.Template.Spec.Containers[i].Ports = newC.Ports

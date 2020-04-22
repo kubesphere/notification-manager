@@ -4,7 +4,15 @@ metadata:
   name: notificationmanager-sample
 spec:
   replicas: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 100m
+      memory: 20Mi
   image: benjaminhuo/notification-manager:latest
+  imagePullPolicy: Always
   serviceAccountName: notification-manager-sa
   portName: webhook
   globalConfigSelector:

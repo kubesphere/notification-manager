@@ -1,7 +1,7 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: EmailConfig
 metadata:
-  name: global-email-config
+  name: global-admin1-email-config
   labels:
     type: global
 spec:

@@ -17,16 +17,28 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NotificationManagerSpec defines the desired state of NotificationManager
 type NotificationManagerSpec struct {
+	// Compute Resources required by container.
+	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 	// Docker Image used to start Notification Manager container,
 	// for example kubesphere/notification-manager:v0.1.0
 	Image *string `json:"image,omitempty"`
+	// Image pull policy. One of Always, Never, IfNotPresent.
+	// Defaults to IfNotPresent if not specified
+	ImagePullPolicy *v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Number of instances to deploy for Notification Manager deployment.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Define which Nodes the Pods will be scheduled to.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Pod's scheduling constraints.
+	Affinity *v1.Affinity `json:"affinity,omitempty"`
+	// Pod's tolerations.
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// ServiceAccountName is the name of the ServiceAccount to use to run Notification Manager Pods.
 	// ServiceAccount 'default' in notification manager's namespace will be used if not specified.
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
