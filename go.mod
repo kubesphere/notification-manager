@@ -6,6 +6,7 @@ require (
 	github.com/go-chi/chi v4.0.3+incompatible
 	github.com/go-kit/kit v0.9.0
 	github.com/go-logr/logr v0.1.0
+	github.com/json-iterator/go v1.1.8
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
 	github.com/pkg/errors v0.8.1
