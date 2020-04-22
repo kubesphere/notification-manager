@@ -46,9 +46,6 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 		_ = level.Error(logger).Log("msg", "empty email config")
 		return nil
 	}
-	if notifier.Config.Headers == nil {
-		notifier.Config.Headers = make(map[string]string)
-	}
 	notifier.Config.HTML = `{{ template "email.default.html" . }}`
 
 	tmpl, err := template.FromGlobs()
@@ -84,8 +81,9 @@ func (en *EmailNotifier) Notify(data template.Data) []error {
 
 	var errs []error
 	sendEmail := func(to string) {
-		en.Config.To = to
-		e := email.New(en.Config, en.Template, en.logger)
+		c := en.Clone(en.Config)
+		c.To = to
+		e := email.New(c, en.Template, en.logger)
 
 		ctx, cancel := context.WithTimeout(context.Background(), en.Timeout)
 		ctx = notify.WithGroupLabels(ctx, kvToLabelSet(data.GroupLabels))
@@ -123,7 +121,7 @@ func (en *EmailNotifier) Clone(ec *config.EmailConfig) *config.EmailConfig {
 		AuthPassword:   ec.AuthPassword,
 		AuthSecret:     ec.AuthSecret,
 		AuthIdentity:   ec.AuthIdentity,
-		Headers:        nil,
+		Headers:        make(map[string]string),
 		HTML:           ec.HTML,
 		Text:           ec.Text,
 		RequireTLS:     &(*ec.RequireTLS),
