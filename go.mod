@@ -3,7 +3,6 @@ module github.com/kubesphere/notification-manager
 go 1.13
 
 require (
-	github.com/deckarep/golang-set v1.7.1
 	github.com/go-chi/chi v4.0.3+incompatible
 	github.com/go-kit/kit v0.9.0
 	github.com/go-logr/logr v0.1.0

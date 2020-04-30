@@ -2,7 +2,6 @@ package email
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -21,19 +20,20 @@ import (
 )
 
 const (
-	DefaultSendTimeout     = time.Second * 3
 	Bulk                   = "Bulk"
-	DefaultReceiversLimits = 2
+	DefaultAddresseesLimit = 2
+	DefaultSendTimeout     = time.Second * 3
 )
 
 type Notifier struct {
-	emails   map[string]*nmconfig.Email
+	email    map[string]*nmconfig.Email
 	template *template.Template
 	timeout  time.Duration
 	logger   log.Logger
 	// Email delivery type, single or bulk
-	delivery        string
-	receiversLimits int
+	delivery string
+	// The maximum size of addressees in one email.
+	addresseesLimits int
 }
 
 func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Options) notifier.Notifier {
@@ -44,11 +44,11 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 	}
 
 	n := &Notifier{
-		emails:          make(map[string]*nmconfig.Email),
-		logger:          logger,
-		timeout:         DefaultSendTimeout,
-		delivery:        "",
-		receiversLimits: DefaultReceiversLimits}
+		email:            make(map[string]*nmconfig.Email),
+		logger:           logger,
+		timeout:          DefaultSendTimeout,
+		delivery:         "",
+		addresseesLimits: DefaultAddresseesLimit}
 
 	tmpl, err := template.FromGlobs()
 	if err != nil {
@@ -61,49 +61,40 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 		n.timeout = time.Second * time.Duration(*opts.NotificationTimeout.Email)
 	}
 
-	if n.delivery == Bulk {
-		for _, v := range sv {
-			receiver, ok := v.(*nmconfig.Email)
-			if !ok {
-				_ = level.Error(logger).Log("msg", "Notifier: value type error")
-				continue
-			}
-			c := n.clone(receiver.EmailConfig)
-			notifier.JsonOut(c)
+	for _, v := range sv {
+		ev, ok := v.(*nmconfig.Email)
+		if !ok {
+			_ = level.Error(logger).Log("msg", "Notifier: value type error")
+			continue
+		}
+
+		if n.delivery == Bulk {
+			c := n.clone(ev.EmailConfig)
 			key, err := notifier.Md5key(c)
 			if err != nil {
 				_ = level.Error(logger).Log("msg", "Notifier: get notifier error", "error", err.Error())
 				continue
 			}
-			fmt.Println(key)
-			e, ok := n.emails[key]
+
+			e, ok := n.email[key]
 			if !ok {
 				e = &nmconfig.Email{
 					EmailConfig: c,
 				}
 			}
 
-			e.To = append(e.To, receiver.To...)
-			n.emails[key] = e
-			notifier.JsonOut(n.emails)
-		}
-	} else {
-		for _, v := range sv {
-			receiver, ok := v.(*nmconfig.Email)
-			if !ok {
-				_ = level.Error(logger).Log("msg", "Notifier: value type error")
-				continue
-			}
-
-			key, err := notifier.Md5key(receiver)
+			e.To = append(e.To, ev.To...)
+			n.email[key] = e
+		} else {
+			key, err := notifier.Md5key(ev)
 			if err != nil {
 				_ = level.Error(logger).Log("msg", "Notifier: get notifier error", "error", err.Error())
 				continue
 			}
 
-			n.emails[key] = &nmconfig.Email{
-				To:          receiver.To,
-				EmailConfig: n.clone(receiver.EmailConfig),
+			n.email[key] = &nmconfig.Email{
+				To:          ev.To,
+				EmailConfig: n.clone(ev.EmailConfig),
 			}
 		}
 	}
@@ -112,8 +103,6 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 }
 
 func (n *Notifier) Notify(data template.Data) []error {
-	bs, _ := json.Marshal(n)
-	fmt.Println(string(bs))
 	n.template.ExternalURL, _ = url.Parse(data.ExternalURL)
 
 	var as []*types.Alert
@@ -148,7 +137,7 @@ func (n *Notifier) Notify(data template.Data) []error {
 		_ = level.Debug(n.logger).Log("msg", "EmailNotifier: notify error", "from", c.From, "to", c.To)
 	}
 
-	for _, e := range n.emails {
+	for _, e := range n.email {
 		if n.delivery == Bulk {
 			size := 0
 			for {
@@ -157,13 +146,13 @@ func (n *Notifier) Notify(data template.Data) []error {
 				}
 
 				var sub []string
-				if size+n.receiversLimits > len(e.To) {
+				if size+n.addresseesLimits > len(e.To) {
 					sub = e.To[size:]
 				} else {
-					sub = e.To[size : size+n.receiversLimits]
+					sub = e.To[size : size+n.addresseesLimits]
 				}
 
-				size += n.receiversLimits
+				size += n.addresseesLimits
 
 				to := ""
 				for _, t := range sub {

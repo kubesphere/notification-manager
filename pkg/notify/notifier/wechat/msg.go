@@ -9,8 +9,8 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
 	"github.com/kubesphere/notification-manager/pkg/notify"
-	notifyconfig "github.com/kubesphere/notification-manager/pkg/notify/config"
-	notifier2 "github.com/kubesphere/notification-manager/pkg/notify/notifier"
+	nmconfig "github.com/kubesphere/notification-manager/pkg/notify/config"
+	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/alertmanager/template"
 	"io"
@@ -58,15 +58,15 @@ func init() {
 	notify.Register("Wechat", NewWechatNotifier)
 }
 
-func NewWechatNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Options) notify.Notifier {
+func NewWechatNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Options) notifier.Notifier {
 
-	receivers, ok := val.([]*notifyconfig.Wechat)
+	receivers, ok := val.([]*nmconfig.Wechat)
 	if !ok {
 		_ = level.Error(logger).Log("msg", "Notifier: value type error")
 		return nil
 	}
 
-	notifier := &Notifier{
+	n := &Notifier{
 		wechat:  make(map[string]*config.WechatConfig),
 		logger:  logger,
 		timeout: DefaultSendTimeout,
@@ -74,18 +74,18 @@ func NewWechatNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Opti
 	}
 
 	if opts != nil && opts.NotificationTimeout != nil && opts.NotificationTimeout.Wechat != nil {
-		notifier.timeout = time.Second * time.Duration(*opts.NotificationTimeout.Wechat)
+		n.timeout = time.Second * time.Duration(*opts.NotificationTimeout.Wechat)
 	}
 
 	for _, receiver := range receivers {
-		c := notifier.clone(receiver.WechatConfig)
-		key, err := notifier2.Md5key(c)
+		c := n.clone(receiver.WechatConfig)
+		key, err := notifier.Md5key(c)
 		if err != nil {
 			_ = level.Error(logger).Log("msg", "WechatNotifier: get notifier error", "error", err.Error())
 			continue
 		}
 
-		w, ok := notifier.wechat[key]
+		w, ok := n.wechat[key]
 		if !ok {
 			w = c
 		}
@@ -105,10 +105,10 @@ func NewWechatNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Opti
 		}
 		w.ToParty = strings.TrimPrefix(w.ToParty, "|")
 
-		notifier.wechat[key] = w
+		n.wechat[key] = w
 	}
 
-	return notifier
+	return n
 }
 
 func (n *Notifier) Notify(data template.Data) []error {
