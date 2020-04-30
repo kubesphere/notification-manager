@@ -24,9 +24,6 @@ import (
 type WechatReceiverSpec struct {
 	// WechatConfig to be selected for this receiver
 	WechatConfigSelector *metav1.LabelSelector `json:"wechatConfigSelector"`
-	// API request data as defined by the WeChat API.
-	Message string `json:"message"`
-	AgentId string `json:"agentId"`
 	ToUser  string `json:"toUser"`
 	ToParty string `json:"toParty"`
 	ToTag   string `json:"toTag"`

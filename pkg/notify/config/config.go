@@ -78,8 +78,6 @@ type Email struct {
 }
 
 type Wechat struct {
-	Message      string
-	AgentId      string
 	ToUser       string
 	ToParty      string
 	ToTag        string

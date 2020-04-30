@@ -4,19 +4,21 @@ import (
 	"github.com/go-kit/kit/log"
 	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
+	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
+	"github.com/kubesphere/notification-manager/pkg/notify/notifier/email"
 	"github.com/prometheus/alertmanager/template"
 	"reflect"
 )
 
-type Notifier interface {
-	Notify(data template.Data) []error
-}
-
-type Factory func(logger log.Logger, receiver interface{}, opts *nmv1alpha1.Options) Notifier
+type Factory func(logger log.Logger, val interface{}, opts *nmv1alpha1.Options) notifier.Notifier
 
 var (
 	factories map[string]Factory
 )
+
+func init() {
+	Register("Email", email.NewEmailNotifier)
+}
 
 func Register(name string, factory Factory) {
 	if factories == nil {
@@ -27,27 +29,41 @@ func Register(name string, factory Factory) {
 }
 
 type Notification struct {
-	Notifiers []Notifier
+	Notifiers []notifier.Notifier
 	Data      template.Data
 }
 
 func NewNotification(logger log.Logger, receivers []*config.Receiver, opts *nmv1alpha1.Options, data template.Data) *Notification {
 
-	n := &Notification{Data: data}
+	m := make(map[string][]interface{})
 	for _, receiver := range receivers {
 		t := reflect.TypeOf(*receiver)
 		v := reflect.ValueOf(*receiver)
 		for i := 0; i < v.NumField(); i++ {
 			// Dose the field can be export?
 			if v.Field(i).CanInterface() {
-				factory := factories[t.Field(i).Name]
-				if factory != nil && v.Field(i).Interface() != nil {
-					notifier := factory(logger, v.Field(i).Interface(), opts)
-					if notifier != nil {
-						n.Notifiers = append(n.Notifiers, notifier)
-					}
+				key := t.Field(i).Name
+				val := v.Field(i).Interface()
+				if val == nil {
+					continue
 				}
+
+				l, ok := m[key]
+				if !ok {
+					l = []interface{}{}
+				}
+
+				l = append(l, val)
+				m[key] = l
 			}
+		}
+	}
+
+	n := &Notification{Data: data}
+	for k, v := range m {
+		factory := factories[k]
+		if factory != nil && v != nil {
+			n.Notifiers = append(n.Notifiers, factory(logger, v, opts))
 		}
 	}
 
@@ -57,13 +73,13 @@ func NewNotification(logger log.Logger, receivers []*config.Receiver, opts *nmv1
 func (n *Notification) Notify() []error {
 
 	var errs []error
-	for _, notifier := range n.Notifiers {
+	for _, nr := range n.Notifiers {
 
-		if notifier == nil {
+		if nr == nil {
 			continue
 		}
 
-		err := notifier.Notify(n.Data)
+		err := nr.Notify(n.Data)
 		if err != nil {
 			errs = append(errs, err...)
 		}

@@ -29,6 +29,7 @@ type WechatConfigSpec struct {
 	WechatApiSecret *v1.SecretKeySelector `json:"wechatApiSecret"`
 	// The corp id for authentication.
 	WechatApiCorpId string `json:"wechatApiCorpId"`
+	AgentId string `json:"agentId"`
 }
 
 // WechatConfigStatus defines the observed state of WechatConfig
