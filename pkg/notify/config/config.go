@@ -42,6 +42,7 @@ const (
 	opUpdate            = "update"
 	opDel               = "delete"
 	opGet               = "get"
+	tenantKeyNamespace  = "namespace"
 )
 
 var (
@@ -95,10 +96,11 @@ type Webhook struct {
 }
 
 type Receiver struct {
-	Email   *Email
-	Wechat  *Wechat
-	Slack   *Slack
-	Webhook *Webhook
+	TenantID *string
+	Email    *Email
+	Wechat   *Wechat
+	Slack    *Slack
+	Webhook  *Webhook
 }
 
 type param struct {
@@ -381,10 +383,17 @@ func (c *Config) updateEmailConfigs(wg *sync.WaitGroup) {
 	return
 }
 
-func (c *Config) tenantIDFromNs(namespace string) ([]string, error) {
+func (c *Config) tenantIDFromNs(namespace *string) ([]string, error) {
 	tenantIDs := make([]string, 0)
+	// Use namespace as TenantID directly if tenantKey is "namespace"
+	if c.tenantKey == tenantKeyNamespace {
+		tenantIDs = append(tenantIDs, *namespace)
+		return tenantIDs, nil
+	}
+
+	// Find User in rolebinding for KubeSphere
 	rbList := rbacv1.RoleBindingList{}
-	if err := c.cache.List(c.ctx, &rbList, client.InNamespace(namespace)); err != nil {
+	if err := c.cache.List(c.ctx, &rbList, client.InNamespace(*namespace)); err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to list rolebinding", "err", err)
 		return []string{}, err
 	}
@@ -430,7 +439,7 @@ func (c *Config) RcvsFromNs(namespace *string) []*Receiver {
 		}
 
 		// Get receivers for each tenant if namespace is not nil
-		if tenantIDs, err := c.tenantIDFromNs(*namespace); err != nil {
+		if tenantIDs, err := c.tenantIDFromNs(namespace); err != nil {
 			_ = level.Error(c.logger).Log("msg", "Unable to find tenantID", "err", err)
 		} else {
 			for _, t := range tenantIDs {
@@ -547,7 +556,6 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 	}
 
 	rcv.Email.To = mr.Spec.To
-
 	return rcv
 }
 
@@ -585,6 +593,7 @@ func (c *Config) onMailRcvAdd(obj interface{}) {
 		p.opType = emailReceiver
 		if len(p.tenantID) > 0 {
 			p.receiver = c.generateMailReceiver(mr)
+			p.receiver.TenantID = &p.tenantID
 			p.done = make(chan interface{}, 1)
 			c.ch <- p
 			<-p.done
