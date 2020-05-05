@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	DefaultApiURL      = "https://qyapi.weixin.qq.com/cgi-bin/"
 	DefaultSendTimeout = time.Second * 3
 	ToUserMax          = 1000
 	ToPartyMax         = 100
@@ -73,8 +74,8 @@ func NewWechatNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Opti
 		client:  ats.client,
 	}
 
-	if opts != nil && opts.NotificationTimeout != nil && opts.NotificationTimeout.Wechat != nil {
-		n.timeout = time.Second * time.Duration(*opts.NotificationTimeout.Wechat)
+	if opts != nil && opts.Wechat != nil && opts.Wechat.NotificationTimeout != nil {
+		n.timeout = time.Second * time.Duration(*opts.Wechat.NotificationTimeout)
 	}
 
 	for _, receiver := range receivers {
@@ -281,7 +282,7 @@ func (n *Notifier) clone(c *config.WechatConfig) *config.WechatConfig {
 		return nil
 	}
 
-	return &config.WechatConfig{
+	wc := &config.WechatConfig{
 		NotifierConfig: c.NotifierConfig,
 		HTTPConfig:     c.HTTPConfig,
 		APISecret:      c.APISecret,
@@ -293,4 +294,12 @@ func (n *Notifier) clone(c *config.WechatConfig) *config.WechatConfig {
 		ToTag:          "",
 		AgentID:        c.AgentID,
 	}
+
+	if wc.APIURL == nil || len(wc.APIURL.URL.String()) == 0 {
+		url := &config.URL{}
+		url.URL, _ = url.Parse(DefaultApiURL)
+		wc.APIURL = url
+	}
+
+	return wc
 }

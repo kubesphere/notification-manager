@@ -47,7 +47,7 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 		email:            make(map[string]*nmconfig.Email),
 		logger:           logger,
 		timeout:          DefaultSendTimeout,
-		delivery:         "",
+		delivery:         Bulk,
 		addresseesLimits: DefaultAddresseesLimit}
 
 	tmpl, err := template.FromGlobs()
@@ -57,8 +57,18 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 	}
 	n.template = tmpl
 
-	if opts != nil && opts.NotificationTimeout != nil && opts.NotificationTimeout.Email != nil {
-		n.timeout = time.Second * time.Duration(*opts.NotificationTimeout.Email)
+	if opts != nil && opts.Email != nil {
+		if opts.Email.NotificationTimeout != nil {
+			n.timeout = time.Second * time.Duration(*opts.Email.NotificationTimeout)
+		}
+
+		if opts.Email.AddresseesLimit > 0 {
+			n.addresseesLimits = opts.Email.AddresseesLimit
+		}
+
+		if len(opts.Email.DeliveryType) > 0 {
+			n.delivery = opts.Email.DeliveryType
+		}
 	}
 
 	for _, v := range sv {
