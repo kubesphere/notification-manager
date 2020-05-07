@@ -8,7 +8,6 @@ import (
 	"github.com/go-kit/kit/log/level"
 	jsoniter "github.com/json-iterator/go"
 	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
-	"github.com/kubesphere/notification-manager/pkg/notify"
 	nmconfig "github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/prometheus/alertmanager/config"
@@ -55,15 +54,11 @@ type weChatResponse struct {
 	Error string `json:"error"`
 }
 
-func init() {
-	notify.Register("Wechat", NewWechatNotifier)
-}
-
 func NewWechatNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Options) notifier.Notifier {
 
-	receivers, ok := val.([]*nmconfig.Wechat)
+	sv, ok := val.([]interface{})
 	if !ok {
-		_ = level.Error(logger).Log("msg", "Notifier: value type error")
+		_ = level.Error(logger).Log("msg", "WechatNotifier: value type error")
 		return nil
 	}
 
@@ -78,8 +73,15 @@ func NewWechatNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Opti
 		n.timeout = time.Second * time.Duration(*opts.Wechat.NotificationTimeout)
 	}
 
-	for _, receiver := range receivers {
-		c := n.clone(receiver.WechatConfig)
+	for _, v := range sv {
+
+		wv, ok := v.(*nmconfig.Wechat)
+		if !ok || wv == nil {
+			_ = level.Error(logger).Log("msg", "WechatNotifier: value type error")
+			continue
+		}
+
+		c := n.clone(wv.WechatConfig)
 		key, err := notifier.Md5key(c)
 		if err != nil {
 			_ = level.Error(logger).Log("msg", "WechatNotifier: get notifier error", "error", err.Error())
@@ -91,18 +93,18 @@ func NewWechatNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Opti
 			w = c
 		}
 
-		if len(receiver.ToUser) > 0 {
-			w.ToUser += "|" + receiver.ToUser
+		if len(wv.ToUser) > 0 {
+			w.ToUser += "|" + wv.ToUser
 		}
 		w.ToUser = strings.TrimPrefix(w.ToUser, "|")
 
-		if len(receiver.ToTag) > 0 {
-			w.ToTag += "|" + receiver.ToTag
+		if len(wv.ToTag) > 0 {
+			w.ToTag += "|" + wv.ToTag
 		}
 		w.ToTag = strings.TrimPrefix(w.ToTag, "|")
 
-		if len(receiver.ToParty) > 0 {
-			w.ToParty += "|" + receiver.ToParty
+		if len(wv.ToParty) > 0 {
+			w.ToParty += "|" + wv.ToParty
 		}
 		w.ToParty = strings.TrimPrefix(w.ToParty, "|")
 
@@ -195,6 +197,7 @@ func (n *Notifier) Notify(data template.Data) []error {
 
 		// https://work.weixin.qq.com/api/doc#10649
 		if weResp.Code == 0 {
+			_ = level.Debug(n.logger).Log("msg", "send wechat", "from", c.AgentID, "toUser", c.ToUser, "toParty", c.ToParty, "toTag", c.ToTag)
 			return false, nil
 		}
 

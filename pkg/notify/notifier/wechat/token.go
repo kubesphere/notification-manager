@@ -152,7 +152,7 @@ func (ats *AccessTokenService) invalidToken(c *config.WechatConfig) {
 func (ats *AccessTokenService) get(c *config.WechatConfig, ctx context.Context, resp chan interface{}) {
 
 	p := operator{
-		op:     OpInvalid,
+		op:     OpGet,
 		Config: c,
 		ctx:    ctx,
 		resp:   resp,

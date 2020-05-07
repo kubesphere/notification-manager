@@ -53,7 +53,7 @@ var (
 // unless overwritten.
 type GlobalConfig struct {
 	config.GlobalConfig
-	WeChatAgentID string
+	WeChatApiAgentID string
 }
 
 type Config struct {
@@ -262,25 +262,25 @@ func (c *Config) Run() error {
 		return err
 	}
 	wechatConfInf.AddEventHandler(kcache.ResourceEventHandlerFuncs{
-		AddFunc: c.onWchatConfAdd,
+		AddFunc: c.onWechatConfAdd,
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			c.onWchatConfAdd(newObj)
+			c.onWechatConfAdd(newObj)
 		},
-		DeleteFunc: c.onWchatConfDel,
+		DeleteFunc: c.onWechatConfDel,
 	})
 
 	// Setup informer for EmailReceiver
-	wechatRcvInf, err := c.cache.GetInformer(&nmv1alpha1.EmailReceiver{})
+	wechatRcvInf, err := c.cache.GetInformer(&nmv1alpha1.WechatReceiver{})
 	if err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to get informer for EmailReceiver", "err", err)
 		return err
 	}
 	wechatRcvInf.AddEventHandler(kcache.ResourceEventHandlerFuncs{
-		AddFunc: c.onWchatRcvAdd,
+		AddFunc: c.onWechatRcvAdd,
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			c.onWchatRcvAdd(newObj)
+			c.onWechatRcvAdd(newObj)
 		},
-		DeleteFunc: c.onWchatRcvDel,
+		DeleteFunc: c.onWechatRcvDel,
 	})
 
 	if ok := c.cache.WaitForCacheSync(c.ctx.Done()); !ok {
@@ -344,12 +344,12 @@ func (c *Config) sync(p *param) {
 				}
 			}
 		case wechatReceiver:
-			// Setup EmailConfig with global default if emailconfig cannot be found
+			// Setup WechatConfig with global default if wechatconfig cannot be found
 			if p.receiver.Wechat.WechatConfig == nil && c.globalWebhookConfig != nil {
 				p.receiver.Wechat.WechatConfig.APISecret = c.globalWechatConfig.WeChatAPISecret
 				p.receiver.Wechat.WechatConfig.CorpID = c.globalWechatConfig.WeChatAPICorpID
 				p.receiver.Wechat.WechatConfig.APIURL = c.globalWechatConfig.WeChatAPIURL
-				p.receiver.Wechat.WechatConfig.AgentID = c.globalWechatConfig.WeChatAgentID
+				p.receiver.Wechat.WechatConfig.AgentID = c.globalWechatConfig.WeChatApiAgentID
 			}
 			rcvKey := fmt.Sprintf("%s/%s/%s", wechatReceiver, p.namespace, p.name)
 			if _, exist := c.receivers[p.tenantID]; exist {
@@ -359,7 +359,7 @@ func (c *Config) sync(p *param) {
 				c.receivers[p.tenantID][rcvKey] = p.receiver
 			}
 		case wechatConfig:
-			// Setup global email config
+			// Setup global wechat config
 			if p.globalWechatConfig != nil {
 				c.globalWechatConfig = p.globalWechatConfig
 				break
@@ -367,7 +367,7 @@ func (c *Config) sync(p *param) {
 			// Update globalWechatConfig of the recerver with the same tenantID
 			if _, exist := c.receivers[p.tenantID]; exist {
 				for k := range c.receivers[p.tenantID] {
-					c.receivers[p.tenantID][k].Email.EmailConfig = p.receiver.Email.EmailConfig
+					c.receivers[p.tenantID][k].Wechat.WechatConfig = p.receiver.Wechat.WechatConfig
 				}
 			}
 		default:
@@ -544,9 +544,11 @@ func (c *Config) onNmAdd(obj interface{}) {
 
 		// Update receiver and config CRs to trigger update of receivers
 		wg := sync.WaitGroup{}
-		wg.Add(2)
+		wg.Add(4)
 		go c.updateEmailReceivers(&wg)
 		go c.updateEmailConfigs(&wg)
+		go c.updateWechatConfigs(&wg)
+		go c.updateWechatReceivers(&wg)
 		wg.Wait()
 	}
 }
@@ -894,7 +896,7 @@ func (c *Config) onMailConfDel(obj interface{}) {
 	}
 }
 
-func (c *Config) updateWchatReceivers(wg *sync.WaitGroup) {
+func (c *Config) updateWechatReceivers(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	wrList := nmv1alpha1.WechatReceiverList{}
@@ -913,7 +915,7 @@ func (c *Config) updateWchatReceivers(wg *sync.WaitGroup) {
 	return
 }
 
-func (c *Config) updateWchatConfigs(wg *sync.WaitGroup) {
+func (c *Config) updateWechatConfigs(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	wcList := nmv1alpha1.WechatConfigList{}
@@ -942,6 +944,7 @@ func (c *Config) generateWechatReceiver(wr *nmv1alpha1.WechatReceiver) *Receiver
 
 	rcv := &Receiver{}
 	rcv.Wechat = &Wechat{}
+	rcv.Wechat.WechatConfig = &config.WechatConfig{}
 	for _, wc := range wcList.Items {
 		rcv.Wechat.WechatConfig = &config.WechatConfig{}
 
@@ -968,7 +971,7 @@ func (c *Config) generateWechatReceiver(wr *nmv1alpha1.WechatReceiver) *Receiver
 		}
 		rcv.Wechat.WechatConfig.APISecret = config.Secret(string(secret.Data[wc.Spec.WechatApiSecret.Key]))
 
-		rcv.Wechat.WechatConfig.AgentID = wc.Spec.WechatAgentId
+		rcv.Wechat.WechatConfig.AgentID = wc.Spec.WechatApiAgentId
 		rcv.Wechat.WechatConfig.CorpID = wc.Spec.WechatApiCorpId
 
 		break
@@ -986,7 +989,7 @@ func (c *Config) generateWechatReceiver(wr *nmv1alpha1.WechatReceiver) *Receiver
 	return rcv
 }
 
-func (c *Config) onWchatRcvAdd(obj interface{}) {
+func (c *Config) onWechatRcvAdd(obj interface{}) {
 	if wr, ok := obj.(*nmv1alpha1.WechatReceiver); ok {
 		p := &param{}
 		p.op = opAdd
@@ -1029,7 +1032,7 @@ func (c *Config) onWchatRcvAdd(obj interface{}) {
 	}
 }
 
-func (c *Config) onWchatRcvDel(obj interface{}) {
+func (c *Config) onWechatRcvDel(obj interface{}) {
 	if wr, ok := obj.(*nmv1alpha1.WechatReceiver); ok {
 		p := &param{}
 		p.op = opDel
@@ -1098,7 +1101,7 @@ func (c *Config) generateWechatConfig(wc *nmv1alpha1.WechatConfig) *Receiver {
 	}
 	rcv.Wechat.WechatConfig.APISecret = config.Secret(string(secret.Data[wc.Spec.WechatApiSecret.Key]))
 
-	rcv.Wechat.WechatConfig.AgentID = wc.Spec.WechatAgentId
+	rcv.Wechat.WechatConfig.AgentID = wc.Spec.WechatApiAgentId
 	rcv.Wechat.WechatConfig.CorpID = wc.Spec.WechatApiCorpId
 
 	return rcv
@@ -1130,11 +1133,11 @@ func (c *Config) generateWechatGlobalConfig(wc *nmv1alpha1.WechatConfig) (*Globa
 	global.WeChatAPISecret = config.Secret(string(secret.Data[wc.Spec.WechatApiSecret.Key]))
 
 	global.WeChatAPICorpID = wc.Spec.WechatApiCorpId
-	global.WeChatAgentID = wc.Spec.WechatAgentId
+	global.WeChatApiAgentID = wc.Spec.WechatApiAgentId
 	return global, nil
 }
 
-func (c *Config) onWchatConfAdd(obj interface{}) {
+func (c *Config) onWechatConfAdd(obj interface{}) {
 	if wc, ok := obj.(*nmv1alpha1.WechatConfig); ok {
 		p := &param{}
 		p.op = opAdd
@@ -1186,7 +1189,7 @@ func (c *Config) onWchatConfAdd(obj interface{}) {
 	}
 }
 
-func (c *Config) onWchatConfDel(obj interface{}) {
+func (c *Config) onWechatConfDel(obj interface{}) {
 	if wc, ok := obj.(*nmv1alpha1.WechatConfig); ok {
 		p := &param{}
 		p.op = opDel

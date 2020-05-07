@@ -73,7 +73,7 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 
 	for _, v := range sv {
 		ev, ok := v.(*nmconfig.Email)
-		if !ok {
+		if !ok || ev == nil {
 			_ = level.Error(logger).Log("msg", "Notifier: value type error")
 			continue
 		}
@@ -130,9 +130,10 @@ func (n *Notifier) Notify(data template.Data) []error {
 
 	var errs []error
 	sendEmail := func(c *config.EmailConfig, to string) {
-		c.To = to
-		c.HTML = `{{ template "email.default.html" . }}`
-		e := email.New(c, n.template, n.logger)
+		cc := n.clone(c)
+		cc.To = to
+		cc.HTML = `{{ template "email.default.html" . }}`
+		e := email.New(cc, n.template, n.logger)
 
 		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
 		ctx = notify.WithGroupLabels(ctx, notifier.KvToLabelSet(data.GroupLabels))
@@ -141,10 +142,10 @@ func (n *Notifier) Notify(data template.Data) []error {
 
 		_, err := e.Notify(ctx, as...)
 		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "EmailNotifier: notify error", "subject", c.Headers["Subject"], "from", c.From, "to", c.To, "error", err.Error())
+			_ = level.Error(n.logger).Log("msg", "EmailNotifier: notify error", "from", cc.From, "to", cc.To, "error", err.Error())
 			errs = append(errs, err)
 		}
-		_ = level.Debug(n.logger).Log("msg", "EmailNotifier: notify error", "from", c.From, "to", c.To)
+		_ = level.Info(n.logger).Log("msg", "EmailNotifier: send email", "from", cc.From, "to", cc.To)
 	}
 
 	for _, e := range n.email {

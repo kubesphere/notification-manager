@@ -25,11 +25,11 @@ type WechatReceiverSpec struct {
 	// WechatConfig to be selected for this receiver
 	WechatConfigSelector *metav1.LabelSelector `json:"wechatConfigSelector"`
 	// +optional
-	ToUser  string `json:"toUser"`
+	ToUser string `json:"toUser"`
 	// +optional
 	ToParty string `json:"toParty"`
 	// +optional
-	ToTag   string `json:"toTag"`
+	ToTag string `json:"toTag"`
 }
 
 // WechatReceiverStatus defines the observed state of WechatReceiver

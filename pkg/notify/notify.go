@@ -6,6 +6,7 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/email"
+	"github.com/kubesphere/notification-manager/pkg/notify/notifier/wechat"
 	"github.com/prometheus/alertmanager/template"
 	"reflect"
 )
@@ -18,6 +19,7 @@ var (
 
 func init() {
 	Register("Email", email.NewEmailNotifier)
+	Register("Wechat", wechat.NewWechatNotifier)
 }
 
 func Register(name string, factory Factory) {
@@ -44,7 +46,7 @@ func NewNotification(logger log.Logger, receivers []*config.Receiver, opts *nmv1
 			if v.Field(i).CanInterface() {
 				key := t.Field(i).Name
 				val := v.Field(i).Interface()
-				if val == nil {
+				if reflect.ValueOf(val).IsNil() {
 					continue
 				}
 
