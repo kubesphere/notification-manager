@@ -266,14 +266,26 @@ func (n *Notifier) Notify(data template.Data) []error {
 func (n *Notifier) getMsg(data template.Data) string {
 
 	msg := fmt.Sprintf("[%d] Firing", len(data.Alerts.Firing()))
-	for _, v := range data.GroupLabels {
-		msg = fmt.Sprintf("%s\n%s", msg, v)
+
+	var head []string
+	var body []string
+	for k, v := range data.CommonLabels {
+		if k == "alertname" {
+			head = append([]string{fmt.Sprintf("%s = %s", k, v)}, head...)
+		} else if k == "namespace" {
+			head = append(head, fmt.Sprintf("%s = %s", k, v))
+		} else {
+			body = append(body, fmt.Sprintf("%s = %s", k, v))
+		}
 	}
 
-	for _, v := range data.CommonLabels {
-		msg = fmt.Sprintf("%s\n%s", msg, v)
+	for _, s := range head {
+		msg = fmt.Sprintf("%s\n%s", msg, s)
 	}
 
+	for _, s := range body {
+		msg = fmt.Sprintf("%s\n%s", msg, s)
+	}
 	msg = fmt.Sprintf("%s\nDetails: %s", msg, data.ExternalURL)
 
 	return msg

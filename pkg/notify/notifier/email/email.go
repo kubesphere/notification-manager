@@ -39,7 +39,7 @@ type Notifier struct {
 func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Options) notifier.Notifier {
 	sv, ok := val.([]interface{})
 	if !ok {
-		_ = level.Error(logger).Log("msg", "Notifier: value type error")
+		_ = level.Error(logger).Log("msg", "EmailNotifier: value type error")
 		return nil
 	}
 
@@ -52,7 +52,7 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 
 	tmpl, err := template.FromGlobs()
 	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "Notifier: template error", "error", err.Error())
+		_ = level.Error(n.logger).Log("msg", "EmailNotifier: template error", "error", err.Error())
 		return nil
 	}
 	n.template = tmpl
@@ -74,7 +74,7 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 	for _, v := range sv {
 		ev, ok := v.(*nmconfig.Email)
 		if !ok || ev == nil {
-			_ = level.Error(logger).Log("msg", "Notifier: value type error")
+			_ = level.Error(logger).Log("msg", "EmailNotifier: value type error")
 			continue
 		}
 
@@ -82,7 +82,7 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 			c := n.clone(ev.EmailConfig)
 			key, err := notifier.Md5key(c)
 			if err != nil {
-				_ = level.Error(logger).Log("msg", "Notifier: get notifier error", "error", err.Error())
+				_ = level.Error(logger).Log("msg", "EmailNotifier: get notifier error", "error", err.Error())
 				continue
 			}
 
@@ -98,7 +98,7 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 		} else {
 			key, err := notifier.Md5key(ev)
 			if err != nil {
-				_ = level.Error(logger).Log("msg", "Notifier: get notifier error", "error", err.Error())
+				_ = level.Error(logger).Log("msg", "EmailNotifier: get notifier error", "error", err.Error())
 				continue
 			}
 
@@ -145,7 +145,7 @@ func (n *Notifier) Notify(data template.Data) []error {
 			_ = level.Error(n.logger).Log("msg", "EmailNotifier: notify error", "from", cc.From, "to", cc.To, "error", err.Error())
 			errs = append(errs, err)
 		}
-		_ = level.Info(n.logger).Log("msg", "EmailNotifier: send email", "from", cc.From, "to", cc.To)
+		_ = level.Debug(n.logger).Log("msg", "EmailNotifier: send email", "from", cc.From, "to", cc.To)
 	}
 
 	for _, e := range n.email {
