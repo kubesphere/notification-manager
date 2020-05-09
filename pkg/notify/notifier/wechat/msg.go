@@ -123,7 +123,7 @@ func (n *Notifier) Notify(data template.Data) []error {
 
 		msg := &weChatMessage{
 			Text: weChatMessageContent{
-				Content: n.getMsg(data),
+				Content: c.Message,
 			},
 			ToUser:  c.ToUser,
 			ToParty: c.ToParty,
@@ -248,45 +248,42 @@ func (n *Notifier) Notify(data template.Data) []error {
 			c.ToParty = batch(toParty, &ps, ToPartyMax)
 			c.ToTag = batch(toTag, &ts, ToTagMax)
 
-			retry, err := send(c)
-			if err != nil {
-				if retry {
-					_, err = send(c)
-				}
+			for _, alert := range data.Alerts {
+				c.Message = n.getMsg(alert)
+				retry, err := send(c)
 				if err != nil {
-					errs = append(errs, err)
+					if retry {
+						_, err = send(c)
+					}
+					if err != nil {
+						errs = append(errs, err)
+					}
 				}
 			}
+
 		}
 	}
 
 	return errs
 }
 
-func (n *Notifier) getMsg(data template.Data) string {
+func (n *Notifier) getMsg(alert template.Alert) string {
 
-	msg := fmt.Sprintf("[%d] Firing", len(data.Alerts.Firing()))
+	msg := fmt.Sprintf("[1] %s\n", alert.Status)
 
-	var head []string
-	var body []string
-	for k, v := range data.CommonLabels {
-		if k == "alertname" {
-			head = append([]string{fmt.Sprintf("%s = %s", k, v)}, head...)
-		} else if k == "namespace" {
-			head = append(head, fmt.Sprintf("%s = %s", k, v))
-		} else {
-			body = append(body, fmt.Sprintf("%s = %s", k, v))
-		}
+	if len(alert.Labels) > 0 {
+		msg = fmt.Sprintf("%s\nLabels", msg)
+	}
+	for k, v := range alert.Labels {
+		msg = fmt.Sprintf("%s\n%s = %s", msg, k, v)
 	}
 
-	for _, s := range head {
-		msg = fmt.Sprintf("%s\n%s", msg, s)
+	if len(alert.Annotations) > 0 {
+		msg = fmt.Sprintf("%s\nAnnotations", msg)
 	}
-
-	for _, s := range body {
-		msg = fmt.Sprintf("%s\n%s", msg, s)
+	for k, v := range alert.Annotations {
+		msg = fmt.Sprintf("%s\n%s = %s", msg, k, v)
 	}
-	msg = fmt.Sprintf("%s\nDetails: %s", msg, data.ExternalURL)
 
 	return msg
 }
