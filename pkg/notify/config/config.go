@@ -255,7 +255,7 @@ func (c *Config) Run() error {
 		DeleteFunc: c.onMailRcvDel,
 	})
 
-	// Setup informer for EmailConfig
+	// Setup informer for WechatConfig
 	wechatConfInf, err := c.cache.GetInformer(&nmv1alpha1.WechatConfig{})
 	if err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to get informer for WechatConfig", "err", err)
@@ -269,10 +269,10 @@ func (c *Config) Run() error {
 		DeleteFunc: c.onWechatConfDel,
 	})
 
-	// Setup informer for EmailReceiver
+	// Setup informer for WechatReceiver
 	wechatRcvInf, err := c.cache.GetInformer(&nmv1alpha1.WechatReceiver{})
 	if err != nil {
-		_ = level.Error(c.logger).Log("msg", "Failed to get informer for EmailReceiver", "err", err)
+		_ = level.Error(c.logger).Log("msg", "Failed to get informer for WechatReceiver", "err", err)
 		return err
 	}
 	wechatRcvInf.AddEventHandler(kcache.ResourceEventHandlerFuncs{
@@ -904,8 +904,8 @@ func (c *Config) updateWechatReceivers(wg *sync.WaitGroup) {
 		_ = level.Error(c.logger).Log("msg", "Failed to list WechatReceiver", "err", err)
 		return
 	}
-	for _, mr := range wrList.Items {
-		r := mr.DeepCopy()
+	for _, wr := range wrList.Items {
+		r := wr.DeepCopy()
 		r.ObjectMeta.Annotations["reloadtimestamp"] = time.Now().String()
 		if err := c.client.Update(c.ctx, r); err != nil {
 			_ = level.Error(c.logger).Log("msg", "Failed to update WechatReceiver", "err", err)
@@ -923,8 +923,8 @@ func (c *Config) updateWechatConfigs(wg *sync.WaitGroup) {
 		_ = level.Error(c.logger).Log("msg", "Failed to list WechatConfig", "err", err)
 		return
 	}
-	for _, mc := range wcList.Items {
-		cfg := mc.DeepCopy()
+	for _, wc := range wcList.Items {
+		cfg := wc.DeepCopy()
 		cfg.ObjectMeta.Annotations["reloadtimestamp"] = time.Now().String()
 		if err := c.client.Update(c.ctx, cfg); err != nil {
 			_ = level.Error(c.logger).Log("msg", "Failed to update WechatConfig", "err", err)
@@ -977,7 +977,7 @@ func (c *Config) generateWechatReceiver(wr *nmv1alpha1.WechatReceiver) *Receiver
 		break
 	}
 
-	// Set EmailConfig to nil to indicate EmailConfig should be setup with global default config
+	// Set WechatConfig to nil to indicate WechatConfig should be setup with global default config
 	if len(rcv.Wechat.WechatConfig.CorpID) == 0 {
 		rcv.Wechat.WechatConfig = nil
 	}
@@ -994,7 +994,7 @@ func (c *Config) onWechatRcvAdd(obj interface{}) {
 		p := &param{}
 		p.op = opAdd
 		// If WechatReceiver's label matches globalReceiverSelector such as "type = global",
-		// then this is a global EmailReceiver, and tenantID should be set to an unique tenantID
+		// then this is a global WechatReceiver, and tenantID should be set to an unique tenantID
 		if c.globalReceiverSelector != nil {
 			for k, expected := range c.globalReceiverSelector.MatchLabels {
 				if v, exists := wr.ObjectMeta.Labels[k]; exists && v == expected {
@@ -1144,7 +1144,7 @@ func (c *Config) onWechatConfAdd(obj interface{}) {
 		p.opType = wechatConfig
 
 		// If WechatConfig's label matches globalReceiverSelector such as "type = global",
-		// then this is a global EmailConfig, and tenantID should be set to an unique tenantID
+		// then this is a global WechatConfig, and tenantID should be set to an unique tenantID
 		if c.globalReceiverSelector != nil {
 			for k, expected := range c.globalReceiverSelector.MatchLabels {
 				if v, exists := wc.ObjectMeta.Labels[k]; exists && v == expected {
@@ -1170,7 +1170,7 @@ func (c *Config) onWechatConfAdd(obj interface{}) {
 			}
 		}
 
-		// Update global default configs if emailconfig's label match globalConfigSelector
+		// Update global default configs if WechatConfig's label match globalConfigSelector
 		if c.globalConfigSelector != nil {
 			sel, _ := metav1.LabelSelectorAsSelector(c.globalConfigSelector)
 			if sel.Matches(labels.Set(wc.ObjectMeta.Labels)) {
@@ -1196,7 +1196,7 @@ func (c *Config) onWechatConfDel(obj interface{}) {
 		p.opType = wechatConfig
 
 		// If WechatConfig's label matches globalReceiverSelector such as "type = global",
-		// then this is a global EmailConfig, and tenantID should be set to an unique tenantID
+		// then this is a global WechatConfig, and tenantID should be set to an unique tenantID
 		if c.globalReceiverSelector != nil {
 			for k, expected := range c.globalReceiverSelector.MatchLabels {
 				if v, exists := wc.ObjectMeta.Labels[k]; exists && v == expected {
@@ -1220,7 +1220,7 @@ func (c *Config) onWechatConfDel(obj interface{}) {
 			}
 		}
 
-		// Update global default configs if emailconfig's label match globalConfigSelector
+		// Update global default configs if wechatConfig's label match globalConfigSelector
 		if c.globalConfigSelector != nil {
 			sel, _ := metav1.LabelSelectorAsSelector(c.globalConfigSelector)
 			if sel.Matches(labels.Set(wc.ObjectMeta.Labels)) {
