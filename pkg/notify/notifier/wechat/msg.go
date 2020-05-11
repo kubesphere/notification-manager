@@ -22,9 +22,10 @@ import (
 const (
 	DefaultApiURL      = "https://qyapi.weixin.qq.com/cgi-bin/"
 	DefaultSendTimeout = time.Second * 3
-	ToUserMax          = 1000
-	ToPartyMax         = 100
-	ToTagMax           = 100
+	ToUserBatchSize    = 1000
+	ToPartyBatchSize   = 100
+	ToTagBatchSize     = 100
+	AccessTokenInvalid = 42001
 )
 
 type Notifier struct {
@@ -164,13 +165,13 @@ func (n *Notifier) Notify(data template.Data) []error {
 
 		req, err := http.NewRequest(http.MethodPost, postMessageURL.String(), &buf)
 		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "WechatNotifier: wechat notify error", "error", err.Error())
+			_ = level.Error(n.logger).Log("msg", "WechatNotifier: create http request error", "error", err.Error())
 			return false, err
 		}
 
 		resp, err := n.client.Do(req.WithContext(ctx))
 		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "WechatNotifier: wechat notify error", "error", err.Error())
+			_ = level.Error(n.logger).Log("msg", "WechatNotifier: do http request error", "error", err.Error())
 			return false, err
 		}
 		defer func() {
@@ -178,14 +179,14 @@ func (n *Notifier) Notify(data template.Data) []error {
 			_ = resp.Body.Close()
 		}()
 
-		if resp.StatusCode != 200 {
-			_ = level.Error(n.logger).Log("msg", "WechatNotifier: wechat notify error", "status", resp.StatusCode)
+		if resp.StatusCode != http.StatusOK {
+			_ = level.Error(n.logger).Log("msg", "WechatNotifier: http error", "status", resp.StatusCode)
 			return false, err
 		}
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "WechatNotifier: wechat notify error", "error", err)
+			_ = level.Error(n.logger).Log("msg", "WechatNotifier: read response body error", "error", err)
 			return false, err
 		}
 
@@ -202,7 +203,7 @@ func (n *Notifier) Notify(data template.Data) []error {
 		}
 
 		// AccessToken is expired
-		if weResp.Code == 42001 {
+		if weResp.Code == AccessTokenInvalid {
 			ats.invalid(c)
 			return true, fmt.Errorf("%s", weResp.Error)
 		}
@@ -244,9 +245,9 @@ func (n *Notifier) Notify(data template.Data) []error {
 				break
 			}
 
-			c.ToUser = batch(toUser, &us, ToUserMax)
-			c.ToParty = batch(toParty, &ps, ToPartyMax)
-			c.ToTag = batch(toTag, &ts, ToTagMax)
+			c.ToUser = batch(toUser, &us, ToUserBatchSize)
+			c.ToParty = batch(toParty, &ps, ToPartyBatchSize)
+			c.ToTag = batch(toTag, &ts, ToTagBatchSize)
 
 			for _, alert := range data.Alerts {
 				c.Message = n.getMsg(alert)
