@@ -7,7 +7,7 @@ Supported senders includes:
 
 Supported receivers includes:
 - Email
-- Wechat (Coming soon)
+- Wechat (Wechat Work)
 - Slack (Coming soon)
 - Webhook (Coming soon)
 
@@ -16,8 +16,8 @@ Notification Manager uses the following CRDs to define the desired alerts/notifi
 - NotificationManager: Defines the desired alerts/notification webhook deployment. The Notification Manager Operator ensures a deployment meeting the resource requirements is running.
 - EmailConfig: Defines the email configs like SmartHost, AuthUserName, AuthPassword, From, RequireTLS etc. 
 - EmailReceiver: Define email receiver's mail addresses and the EmailConfig selector.
-- WechatConfig: Define the wechat configs like ApiUrl, ApiSecret and ApiCorpId.
-- WechatReceiver: Define the wechat message and receiver related info like Message, AgentId, ToUser, ToParty, ToTag as well as WechatConfig Selector.
+- WechatConfig: Define the wechat configs like ApiUrl, ApiCorpId, AgentId and ApiSecret.
+- WechatReceiver: Define the wechat receiver related info like ToUser, ToParty, ToTag as well as WechatConfig Selector.
 - SlackConfig: Define the slack configs like ApiUrl.
 - SlackReceiver: Define the slack channel or user to send notifications to and the SlackConfig selector.
 - WebhookConfig: Define the webhook Url, HttpConfig.
@@ -139,6 +139,60 @@ metadata:
 type: Opaque
 EOF
 ```
+Deploy WechatConfig and WechatReceivers
+
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: WechatConfig
+metadata:
+  name: admin-wechat-config
+  namespace: kubesphere-monitoring-system
+  labels:
+    app: notification-manager
+    type: tenant
+    user: admin
+spec:
+  wechatApiUrl: wechat-api-url
+  wechatApiSecret:
+    key: wechat
+    name: wechat-api-secret
+  wechatApiCorpId: wechat-api-corp-id
+  wechatApiAgentId: wechat-api-agent-id
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: WechatReceiver
+metadata:
+  name: admin-wechat
+  namespace: kubesphere-monitoring-system
+  labels:
+    app: notification-manager
+    type: tenant
+    user: admin
+spec:
+  wechatConfigSelector:
+    matchLabels:
+      type: tenant
+      user: admin
+  toUser: abc
+  toParty: wechat-party
+  toTag: wechat-tag
+---
+apiVersion: v1
+data:
+  wechat: dGVzdA==
+kind: Secret
+metadata:
+  labels:
+    app: notification-manager
+  name: wechat-api-secret
+  namespace: kubesphere-monitoring-system
+type: Opaque
+EOF
+```
+
+>WechatApiAgentId is the id of app which sending message to user in your Wechat Work, wechatApiSecret is the secret of this app, you can get these two parameters in App Managerment of your Wechat Work. Note that any user, party or tag wanted to rerceving notification must be in the Allowed users of this app.
+
 ### Deploy Notification Manager in any other Kubernetes cluster (Uses `namespace` to distinguish each tenant user):
 Deploy Notification Manager
 ```shell
@@ -227,6 +281,57 @@ metadata:
   labels:
     app: notification-manager
   name: global-email-secret
+  namespace: default
+type: Opaque
+EOF
+```
+Deploy WechatConfig and WechatReceivers
+
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: WechatConfig
+metadata:
+  name: admin-wechat-config
+  namespace: default
+  labels:
+    app: notification-manager
+    type: tenant
+    namespace: default
+spec:
+  wechatApiUrl: wechat-api-url
+  wechatApiSecret:
+    key: wechat
+    name: wechat-api-secret
+  wechatApiCorpId: wechat-api-corp-id
+  wechatApiAgentId: wechat-api-agent-id
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: WechatReceiver
+metadata:
+  name: admin-wechat
+  namespace: default
+  labels:
+    app: notification-manager
+    type: tenant
+    namespace: default
+spec:
+  wechatConfigSelector:
+    matchLabels:
+      type: tenant
+      namespace: default
+  toUser: abc
+  toParty: wechat-party
+  toTag: wechat-tag
+---
+apiVersion: v1
+data:
+  wechat: dGVzdA==
+kind: Secret
+metadata:
+  labels:
+    app: notification-manager
+  name: wechat-api-secret
   namespace: default
 type: Opaque
 EOF

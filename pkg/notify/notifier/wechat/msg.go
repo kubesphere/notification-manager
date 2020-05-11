@@ -260,7 +260,6 @@ func (n *Notifier) Notify(data template.Data) []error {
 					}
 				}
 			}
-
 		}
 	}
 
