@@ -64,17 +64,35 @@ type ReceiversSpec struct {
 	Options *Options `json:"options,omitempty"`
 }
 
-type Options struct {
+type EmailOptions struct {
 	// Notification Sending Timeout
-	NotificationTimeout *NotificationTimeout `json:"notificationTimeout,omitempty"`
+	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
+	// Type of sending email, bulk or single
+	DeliveryType string `json:"deliveryType,omitempty"`
+	// The maximum size of receivers in one email.
+	MaxEmailReceivers int `json:"maxEmailReceivers,omitempty"`
 }
 
-type NotificationTimeout struct {
-	// Notification timeout in second
-	Email   *int32 `json:"email,omitempty"`
-	Wechat  *int32 `json:"wechat,omitempty"`
-	Slack   *int32 `json:"slack,omitempty"`
-	Webhook *int32 `json:"webhook,omitempty"`
+type WechatOptions struct {
+	// Notification Sending Timeout
+	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
+}
+
+type SlackOptions struct {
+	// Notification Sending Timeout
+	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
+}
+
+type WebhookOptions struct {
+	// Notification Sending Timeout
+	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
+}
+
+type Options struct {
+	Email   *EmailOptions   `json:"email,omitempty"`
+	Wechat  *WechatOptions  `json:"wechat,omitempty"`
+	Slack   *SlackOptions   `json:"slack,omitempty"`
+	Webhook *WebhookOptions `json:"webhook,omitempty"`
 }
 
 // NotificationManagerStatus defines the observed state of NotificationManager

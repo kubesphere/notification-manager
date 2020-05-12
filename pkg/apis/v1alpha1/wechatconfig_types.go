@@ -25,10 +25,12 @@ import (
 type WechatConfigSpec struct {
 	// The WeChat API URL.
 	WechatApiUrl string `json:"wechatApiUrl"`
-	// The API key to use when talking to the WeChat API.
-	WechatApiSecret *v1.SecretKeySelector `json:"wechatApiSecret"`
 	// The corp id for authentication.
 	WechatApiCorpId string `json:"wechatApiCorpId"`
+	// The id of the application which sending message.
+	WechatApiAgentId string `json:"wechatApiAgentId"`
+	// The API key to use when talking to the WeChat API.
+	WechatApiSecret *v1.SecretKeySelector `json:"wechatApiSecret"`
 }
 
 // WechatConfigStatus defines the observed state of WechatConfig
