@@ -80,8 +80,12 @@ spec:
       matchLabels:
         type: tenant
     options:
-      notificationTimeout:
-        email: 5
+      email:
+        notificationTimeout: 5
+        deliveryType: bulk
+        maxEmailReceivers: 200
+      wechat:
+        notificationTimeout: 5
 EOF
 ```
 
@@ -191,7 +195,7 @@ type: Opaque
 EOF
 ```
 
->WechatApiAgentId is the id of app which sending message to user in your Wechat Work, wechatApiSecret is the secret of this app, you can get these two parameters in App Managerment of your Wechat Work. Note that any user, party or tag who wants to rerceiv notifications must be in the allowed users list of this app.
+>WechatApiAgentId is the id of app which sending message to user in your Wechat Work, wechatApiSecret is the secret of this app, you can get these two parameters in App Managerment of your Wechat Work. Note that any user, party or tag who wants to rerceive notifications must be in the allowed users list of this app.
 
 ### Deploy Notification Manager in any other Kubernetes cluster (Uses `namespace` to distinguish each tenant user):
 Deploy Notification Manager
