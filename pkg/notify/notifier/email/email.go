@@ -14,15 +14,16 @@ import (
 	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/alertmanager/types"
 	"github.com/prometheus/common/model"
+	"math"
 	"net/url"
 	"strings"
 	"time"
 )
 
 const (
-	Bulk                   = "Bulk"
-	DefaultAddresseesLimit = 2
-	DefaultSendTimeout     = time.Second * 3
+	Bulk               = "Bulk"
+	MaxEmailReceivers  = math.MaxInt32
+	DefaultSendTimeout = time.Second * 3
 )
 
 type Notifier struct {
@@ -32,8 +33,8 @@ type Notifier struct {
 	logger   log.Logger
 	// Email delivery type, single or bulk
 	delivery string
-	// The maximum size of addressees in one email.
-	addresseesLimits int
+	// The maximum size of receivers in one email.
+	maxEmailReceivers int
 }
 
 func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Options) notifier.Notifier {
@@ -44,11 +45,11 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 	}
 
 	n := &Notifier{
-		email:            make(map[string]*nmconfig.Email),
-		logger:           logger,
-		timeout:          DefaultSendTimeout,
-		delivery:         Bulk,
-		addresseesLimits: DefaultAddresseesLimit}
+		email:             make(map[string]*nmconfig.Email),
+		logger:            logger,
+		timeout:           DefaultSendTimeout,
+		delivery:          Bulk,
+		maxEmailReceivers: MaxEmailReceivers}
 
 	tmpl, err := template.FromGlobs()
 	if err != nil {
@@ -62,8 +63,8 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 			n.timeout = time.Second * time.Duration(*opts.Email.NotificationTimeout)
 		}
 
-		if opts.Email.AddresseesLimit > 0 {
-			n.addresseesLimits = opts.Email.AddresseesLimit
+		if opts.Email.MaxEmailReceivers > 0 {
+			n.maxEmailReceivers = opts.Email.MaxEmailReceivers
 		}
 
 		if len(opts.Email.DeliveryType) > 0 {
@@ -157,13 +158,13 @@ func (n *Notifier) Notify(data template.Data) []error {
 				}
 
 				var sub []string
-				if size+n.addresseesLimits > len(e.To) {
+				if size+n.maxEmailReceivers > len(e.To) {
 					sub = e.To[size:]
 				} else {
-					sub = e.To[size : size+n.addresseesLimits]
+					sub = e.To[size : size+n.maxEmailReceivers]
 				}
 
-				size += n.addresseesLimits
+				size += n.maxEmailReceivers
 
 				to := ""
 				for _, t := range sub {

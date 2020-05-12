@@ -69,8 +69,8 @@ type EmailOptions struct {
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
 	// Type of sending email, bulk or single
 	DeliveryType string `json:"deliveryType,omitempty"`
-	// Addressees limit in one email.
-	AddresseesLimit int `json:"addresseesLimit,omitempty"`
+	// The maximum size of receivers in one email.
+	MaxEmailReceivers int `json:"maxEmailReceivers,omitempty"`
 }
 
 type WechatOptions struct {

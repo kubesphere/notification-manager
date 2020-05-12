@@ -14,9 +14,9 @@ Supported receivers includes:
 ## CustomResourceDefinitions
 Notification Manager uses the following CRDs to define the desired alerts/notifications webhook and receiver configs.
 - NotificationManager: Defines the desired alerts/notification webhook deployment. The Notification Manager Operator ensures a deployment meeting the resource requirements is running.
-- EmailConfig: Defines the email configs like SmartHost, AuthUserName, AuthPassword, From, RequireTLS etc. 
+- EmailConfig: Defines the email configs like SmartHost, AuthUserName, AuthPassword, From, RequireTLS etc. There are also global options like NotificationTimeout, DeliveryType, MaxEmailReceivers to define email configs.
 - EmailReceiver: Define email receiver's mail addresses and the EmailConfig selector.
-- WechatConfig: Define the wechat configs like ApiUrl, ApiCorpId, AgentId and ApiSecret.
+- WechatConfig: Define the wechat configs like ApiUrl, ApiCorpId, AgentId and ApiSecret. There are also global options like NotificationTimeout to define email configs.
 - WechatReceiver: Define the wechat receiver related info like ToUser, ToParty, ToTag as well as WechatConfig Selector.
 - SlackConfig: Define the slack configs like ApiUrl.
 - SlackReceiver: Define the slack channel or user to send notifications to and the SlackConfig selector.
@@ -153,12 +153,12 @@ metadata:
     type: tenant
     user: admin
 spec:
-  wechatApiUrl: wechat-api-url
+  wechatApiUrl: < wechat-api-url >
   wechatApiSecret:
     key: wechat
-    name: wechat-api-secret
-  wechatApiCorpId: wechat-api-corp-id
-  wechatApiAgentId: wechat-api-agent-id
+    name: < wechat-api-secret >
+  wechatApiCorpId: < wechat-api-corp-id >
+  wechatApiAgentId: < wechat-api-agent-id >
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WechatReceiver
@@ -174,9 +174,9 @@ spec:
     matchLabels:
       type: tenant
       user: admin
-  toUser: abc
-  toParty: wechat-party
-  toTag: wechat-tag
+  toUser: < wechat-user >
+  toParty: < wechat-party >
+  toTag: < wechat-tag >
 ---
 apiVersion: v1
 data:
@@ -185,13 +185,13 @@ kind: Secret
 metadata:
   labels:
     app: notification-manager
-  name: wechat-api-secret
+  name: < wechat-api-secret >
   namespace: kubesphere-monitoring-system
 type: Opaque
 EOF
 ```
 
->WechatApiAgentId is the id of app which sending message to user in your Wechat Work, wechatApiSecret is the secret of this app, you can get these two parameters in App Managerment of your Wechat Work. Note that any user, party or tag wanted to rerceving notification must be in the Allowed users of this app.
+>WechatApiAgentId is the id of app which sending message to user in your Wechat Work, wechatApiSecret is the secret of this app, you can get these two parameters in App Managerment of your Wechat Work. Note that any user, party or tag who wants to rerceiv notifications must be in the allowed users list of this app.
 
 ### Deploy Notification Manager in any other Kubernetes cluster (Uses `namespace` to distinguish each tenant user):
 Deploy Notification Manager
@@ -299,12 +299,12 @@ metadata:
     type: tenant
     namespace: default
 spec:
-  wechatApiUrl: wechat-api-url
+  wechatApiUrl: < wechat-api-url >
   wechatApiSecret:
     key: wechat
-    name: wechat-api-secret
-  wechatApiCorpId: wechat-api-corp-id
-  wechatApiAgentId: wechat-api-agent-id
+    name: < wechat-api-secret >
+  wechatApiCorpId: < wechat-api-corp-id >
+  wechatApiAgentId: < wechat-api-agent-id >
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WechatReceiver
@@ -320,9 +320,9 @@ spec:
     matchLabels:
       type: tenant
       namespace: default
-  toUser: abc
-  toParty: wechat-party
-  toTag: wechat-tag
+  toUser: < wechat-user >
+  toParty: < wechat-party >
+  toTag: < wechat-tag >
 ---
 apiVersion: v1
 data:
@@ -331,7 +331,7 @@ kind: Secret
 metadata:
   labels:
     app: notification-manager
-  name: wechat-api-secret
+  name: < wechat-api-secret >
   namespace: default
 type: Opaque
 EOF

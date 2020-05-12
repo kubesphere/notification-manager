@@ -345,7 +345,7 @@ func (c *Config) sync(p *param) {
 			}
 		case wechatReceiver:
 			// Setup WechatConfig with global default if wechatconfig cannot be found
-			if p.receiver.Wechat.WechatConfig == nil && c.globalWebhookConfig != nil {
+			if p.receiver.Wechat.WechatConfig == nil && c.globalWechatConfig != nil {
 				p.receiver.Wechat.WechatConfig.APISecret = c.globalWechatConfig.WeChatAPISecret
 				p.receiver.Wechat.WechatConfig.CorpID = c.globalWechatConfig.WeChatAPICorpID
 				p.receiver.Wechat.WechatConfig.APIURL = c.globalWechatConfig.WeChatAPIURL
@@ -398,6 +398,26 @@ func (c *Config) sync(p *param) {
 			if _, exist := c.receivers[p.tenantID]; exist {
 				for k := range c.receivers[p.tenantID] {
 					c.receivers[p.tenantID][k].Email.EmailConfig = nil
+				}
+			}
+		case wechatReceiver:
+			rcvKey := fmt.Sprintf("%s/%s/%s", wechatReceiver, p.namespace, p.name)
+			if _, exist := c.receivers[p.tenantID]; exist {
+				delete(c.receivers[p.tenantID], rcvKey)
+				if len(c.receivers[p.tenantID]) <= 0 {
+					delete(c.receivers, p.tenantID)
+				}
+			}
+		case wechatConfig:
+			// Reset global wechat config
+			if p.globalWechatConfig != nil {
+				c.globalWechatConfig = nil
+				break
+			}
+			// Delete WechatConfig of the recerver with the same tenantID by setting the WechatConfig to nil
+			if _, exist := c.receivers[p.tenantID]; exist {
+				for k := range c.receivers[p.tenantID] {
+					c.receivers[p.tenantID][k].Wechat.WechatConfig = nil
 				}
 			}
 		default:
