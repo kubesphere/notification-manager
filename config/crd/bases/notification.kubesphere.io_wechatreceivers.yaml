@@ -34,11 +34,6 @@ spec:
         spec:
           description: WechatReceiverSpec defines the desired state of WechatReceiver
           properties:
-            agentId:
-              type: string
-            message:
-              description: API request data as defined by the WeChat API.
-              type: string
             toParty:
               type: string
             toTag:
@@ -89,11 +84,6 @@ spec:
                   type: object
               type: object
           required:
-          - agentId
-          - message
-          - toParty
-          - toTag
-          - toUser
           - wechatConfigSelector
           type: object
         status:

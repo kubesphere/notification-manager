@@ -719,20 +719,37 @@ spec:
                 options:
                   description: Various receiver options
                   properties:
-                    notificationTimeout:
-                      description: Notification Sending Timeout
+                    email:
                       properties:
-                        email:
-                          description: Notification timeout in second
+                        deliveryType:
+                          description: Type of sending email, bulk or single
+                          type: string
+                        maxEmailReceivers:
+                          description: The maximum size of receivers in one email.
+                          type: integer
+                        notificationTimeout:
+                          description: Notification Sending Timeout
                           format: int32
                           type: integer
-                        slack:
+                      type: object
+                    slack:
+                      properties:
+                        notificationTimeout:
+                          description: Notification Sending Timeout
                           format: int32
                           type: integer
-                        webhook:
+                      type: object
+                    webhook:
+                      properties:
+                        notificationTimeout:
+                          description: Notification Sending Timeout
                           format: int32
                           type: integer
-                        wechat:
+                      type: object
+                    wechat:
+                      properties:
+                        notificationTimeout:
+                          description: Notification Sending Timeout
                           format: int32
                           type: integer
                       type: object

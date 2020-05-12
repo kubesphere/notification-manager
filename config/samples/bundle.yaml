@@ -115,7 +115,7 @@ spec:
   globalConfigSelector:
     matchLabels:
       type: default
-  image: benjaminhuo/notification-manager:latest
+  image: kubesphere/notification-manager:latest
   imagePullPolicy: Always
   portName: webhook
   receivers:

@@ -924,20 +924,37 @@ spec:
                 options:
                   description: Various receiver options
                   properties:
-                    notificationTimeout:
-                      description: Notification Sending Timeout
+                    email:
                       properties:
-                        email:
-                          description: Notification timeout in second
+                        deliveryType:
+                          description: Type of sending email, bulk or single
+                          type: string
+                        maxEmailReceivers:
+                          description: The maximum size of receivers in one email.
+                          type: integer
+                        notificationTimeout:
+                          description: Notification Sending Timeout
                           format: int32
                           type: integer
-                        slack:
+                      type: object
+                    slack:
+                      properties:
+                        notificationTimeout:
+                          description: Notification Sending Timeout
                           format: int32
                           type: integer
-                        webhook:
+                      type: object
+                    webhook:
+                      properties:
+                        notificationTimeout:
+                          description: Notification Sending Timeout
                           format: int32
                           type: integer
-                        wechat:
+                      type: object
+                    wechat:
+                      properties:
+                        notificationTimeout:
+                          description: Notification Sending Timeout
                           format: int32
                           type: integer
                       type: object
@@ -1547,6 +1564,9 @@ spec:
         spec:
           description: WechatConfigSpec defines the desired state of WechatConfig
           properties:
+            wechatApiAgentId:
+              description: The id of the application which sending message.
+              type: string
             wechatApiCorpId:
               description: The corp id for authentication.
               type: string
@@ -1571,6 +1591,7 @@ spec:
               description: The WeChat API URL.
               type: string
           required:
+          - wechatApiAgentId
           - wechatApiCorpId
           - wechatApiSecret
           - wechatApiUrl
@@ -1624,11 +1645,6 @@ spec:
         spec:
           description: WechatReceiverSpec defines the desired state of WechatReceiver
           properties:
-            agentId:
-              type: string
-            message:
-              description: API request data as defined by the WeChat API.
-              type: string
             toParty:
               type: string
             toTag:
@@ -1679,11 +1695,6 @@ spec:
                   type: object
               type: object
           required:
-          - agentId
-          - message
-          - toParty
-          - toTag
-          - toUser
           - wechatConfigSelector
           type: object
         status:
@@ -1932,7 +1943,7 @@ spec:
         - --enable-leader-election
         command:
         - /notification-manager-operator
-        image: benjaminhuo/notification-manager-operator:latest
+        image: kubesphere/notification-manager-operator:latest
         name: notification-manager-operator
         resources:
           limits:
