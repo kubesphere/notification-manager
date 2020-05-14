@@ -36,17 +36,16 @@ const (
 	wechatConfig        = "wechat-config"
 	slackReceiver       = "slack"
 	slackConfig         = "slack-config"
-	webhookReceiver     = "webhook"
-	webhookConfig       = "webhook-config"
-	opAdd               = "add"
-	opUpdate            = "update"
-	opDel               = "delete"
-	opGet               = "get"
-	tenantKeyNamespace  = "namespace"
+	//webhookReceiver     = "webhook"
+	//webhookConfig       = "webhook-config"
+	opAdd              = "add"
+	opDel              = "delete"
+	opGet              = "get"
+	tenantKeyNamespace = "namespace"
 )
 
 var (
-	ConfigChannelCapacity = 1000
+	ChannelCapacity = 1000
 )
 
 // GlobalConfig defines configuration parameters that are valid globally
@@ -54,6 +53,7 @@ var (
 type GlobalConfig struct {
 	config.GlobalConfig
 	WeChatApiAgentID string
+	SlackToken       string
 }
 
 type Config struct {
@@ -94,8 +94,9 @@ type Wechat struct {
 
 type Slack struct {
 	// The channel or user to send notifications to.
-	Channel      string
-	SlackConfigs *config.SlackConfig
+	Channel string
+	// The token of user or bot.
+	Token string
 }
 
 type Webhook struct {
@@ -140,7 +141,7 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		_ = level.Error(logger).Log("msg", "Failed to get kubeconfig ", "err", err)
 	}
 
-	cache, err := cache.New(cfg, cache.Options{
+	informerCache, err := cache.New(cfg, cache.Options{
 		Scheme: scheme,
 	})
 	if err != nil {
@@ -148,7 +149,7 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		return nil, err
 	}
 
-	client, err := newClient(cfg, cache, scheme)
+	c, err := newClient(cfg, informerCache, scheme)
 	if err != nil {
 		_ = level.Error(logger).Log("msg", "Failed to create client", "err", err)
 		return nil, err
@@ -157,8 +158,8 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 	return &Config{
 		ctx:                    ctx,
 		logger:                 logger,
-		cache:                  cache,
-		client:                 client,
+		cache:                  informerCache,
+		client:                 c,
 		globalEmailConfig:      nil,
 		globalWechatConfig:     nil,
 		globalSlackConfig:      nil,
@@ -169,7 +170,7 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		globalReceiverSelector: nil,
 		receivers:              make(map[string]map[string]*Receiver),
 		ReceiverOpts:           nil,
-		ch:                     make(chan *param, ConfigChannelCapacity),
+		ch:                     make(chan *param, ChannelCapacity),
 	}, nil
 }
 
@@ -211,7 +212,9 @@ func (c *Config) Run() error {
 			}
 		}
 	}(c.ctx)
-	go c.cache.Start(c.ctx.Done())
+	go func() {
+		_ = c.cache.Start(c.ctx.Done())
+	}()
 
 	// Setup informer for NotificationManager
 	nmInf, err := c.cache.GetInformer(&nmv1alpha1.NotificationManager{})
@@ -283,6 +286,34 @@ func (c *Config) Run() error {
 		DeleteFunc: c.onWechatRcvDel,
 	})
 
+	// Setup informer for SlackConfig
+	slackConfInf, err := c.cache.GetInformer(&nmv1alpha1.SlackConfig{})
+	if err != nil {
+		_ = level.Error(c.logger).Log("msg", "Failed to get informer for SlackConfig", "err", err)
+		return err
+	}
+	slackConfInf.AddEventHandler(kcache.ResourceEventHandlerFuncs{
+		AddFunc: c.onSlackConfAdd,
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			c.onSlackConfAdd(newObj)
+		},
+		DeleteFunc: c.onSlackConfDel,
+	})
+
+	// Setup informer for SlackReceiver
+	slackRcvInf, err := c.cache.GetInformer(&nmv1alpha1.SlackReceiver{})
+	if err != nil {
+		_ = level.Error(c.logger).Log("msg", "Failed to get informer for SlackReceiver", "err", err)
+		return err
+	}
+	slackRcvInf.AddEventHandler(kcache.ResourceEventHandlerFuncs{
+		AddFunc: c.onSlackRcvAdd,
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			c.onSlackRcvAdd(newObj)
+		},
+		DeleteFunc: c.onSlackRcvDel,
+	})
+
 	if ok := c.cache.WaitForCacheSync(c.ctx.Done()); !ok {
 		return fmt.Errorf("NotificationManager cache failed")
 	}
@@ -337,6 +368,11 @@ func (c *Config) sync(p *param) {
 				c.globalEmailConfig = p.globalEmailConfig
 				break
 			}
+
+			if p.receiver.Email == nil {
+				return
+			}
+
 			// Update EmailConfig of the recerver with the same tenantID
 			if _, exist := c.receivers[p.tenantID]; exist {
 				for k := range c.receivers[p.tenantID] {
@@ -364,10 +400,44 @@ func (c *Config) sync(p *param) {
 				c.globalWechatConfig = p.globalWechatConfig
 				break
 			}
+
+			if p.receiver.Wechat == nil {
+				return
+			}
+
 			// Update globalWechatConfig of the recerver with the same tenantID
 			if _, exist := c.receivers[p.tenantID]; exist {
 				for k := range c.receivers[p.tenantID] {
 					c.receivers[p.tenantID][k].Wechat.WechatConfig = p.receiver.Wechat.WechatConfig
+				}
+			}
+		case slackReceiver:
+			// Setup SlackConfig with global default if slackReceiver cannot be found
+			if len(p.receiver.Slack.Token) == 0 && c.globalSlackConfig != nil && len(c.globalSlackConfig.SlackToken) > 0 {
+				p.receiver.Slack.Token = c.globalSlackConfig.SlackToken
+			}
+			rcvKey := fmt.Sprintf("%s/%s/%s", slackReceiver, p.namespace, p.name)
+			if _, exist := c.receivers[p.tenantID]; exist {
+				c.receivers[p.tenantID][rcvKey] = p.receiver
+			} else if len(p.tenantID) > 0 {
+				c.receivers[p.tenantID] = make(map[string]*Receiver)
+				c.receivers[p.tenantID][rcvKey] = p.receiver
+			}
+		case slackConfig:
+			// Setup global slack config
+			if p.globalSlackConfig != nil {
+				c.globalSlackConfig = p.globalSlackConfig
+				break
+			}
+
+			if p.receiver.Slack == nil {
+				return
+			}
+
+			// Update globalSlackConfig of the recerver with the same tenantID
+			if _, exist := c.receivers[p.tenantID]; exist {
+				for k := range c.receivers[p.tenantID] {
+					c.receivers[p.tenantID][k].Slack.Token = p.receiver.Slack.Token
 				}
 			}
 		default:
@@ -418,6 +488,26 @@ func (c *Config) sync(p *param) {
 			if _, exist := c.receivers[p.tenantID]; exist {
 				for k := range c.receivers[p.tenantID] {
 					c.receivers[p.tenantID][k].Wechat.WechatConfig = nil
+				}
+			}
+		case slackReceiver:
+			rcvKey := fmt.Sprintf("%s/%s/%s", slackReceiver, p.namespace, p.name)
+			if _, exist := c.receivers[p.tenantID]; exist {
+				delete(c.receivers[p.tenantID], rcvKey)
+				if len(c.receivers[p.tenantID]) <= 0 {
+					delete(c.receivers, p.tenantID)
+				}
+			}
+		case slackConfig:
+			// Reset global slack config
+			if p.globalSlackConfig != nil {
+				c.globalSlackConfig = nil
+				break
+			}
+			// Delete SlackConfig of the recerver with the same tenantID by setting the EmailConfig to nil
+			if _, exist := c.receivers[p.tenantID]; exist {
+				for k := range c.receivers[p.tenantID] {
+					c.receivers[p.tenantID][k].Slack.Token = ""
 				}
 			}
 		default:
@@ -564,11 +654,13 @@ func (c *Config) onNmAdd(obj interface{}) {
 
 		// Update receiver and config CRs to trigger update of receivers
 		wg := sync.WaitGroup{}
-		wg.Add(4)
+		wg.Add(6)
 		go c.updateEmailReceivers(&wg)
 		go c.updateEmailConfigs(&wg)
 		go c.updateWechatConfigs(&wg)
 		go c.updateWechatReceivers(&wg)
+		go c.updateSlackConfigs(&wg)
+		go c.updateSlackReceivers(&wg)
 		wg.Wait()
 	}
 }
@@ -594,8 +686,8 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 
 	rcv := &Receiver{}
 	rcv.Email = &Email{}
-	rcv.Email.EmailConfig = &config.EmailConfig{}
 	for _, mc := range mcList.Items {
+		rcv.Email.EmailConfig = &config.EmailConfig{}
 		rcv.Email.EmailConfig.From = mc.Spec.From
 		if mc.Spec.Hello != nil {
 			rcv.Email.EmailConfig.Hello = *mc.Spec.Hello
@@ -613,7 +705,7 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 			authPassword := v1.Secret{}
 			if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: mc.Spec.AuthPassword.Namespace, Name: mc.Spec.AuthPassword.Name}, &authPassword); err != nil {
 				_ = level.Error(c.logger).Log("msg", "Unable to get AuthPassword secret", "err", err)
-				return nil
+				continue
 			}
 			rcv.Email.EmailConfig.AuthPassword = config.Secret(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
 		}
@@ -622,7 +714,7 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 			authSecret := v1.Secret{}
 			if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: mc.Spec.AuthSecret.Namespace, Name: mc.Spec.AuthSecret.Name}, &authSecret); err != nil {
 				_ = level.Error(c.logger).Log("msg", "Unable to get AuthSecret secret", "err", err)
-				return nil
+				continue
 			}
 			rcv.Email.EmailConfig.AuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
 		}
@@ -632,11 +724,6 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 		}
 
 		break
-	}
-
-	// Set EmailConfig to nil to indicate EmailConfig should be setup with global default config
-	if len(mcList.Items) == 0 {
-		rcv.Email.EmailConfig = nil
 	}
 
 	rcv.Email.To = mr.Spec.To
@@ -730,44 +817,46 @@ func (c *Config) onMailRcvDel(obj interface{}) {
 
 func (c *Config) generateMailConfig(mc *nmv1alpha1.EmailConfig) *Receiver {
 	rcv := &Receiver{}
-	rcv.Email = &Email{}
-	rcv.Email.EmailConfig = &config.EmailConfig{}
-	rcv.Email.EmailConfig.From = mc.Spec.From
+	e := &Email{}
+	e.EmailConfig = &config.EmailConfig{}
+	e.EmailConfig.From = mc.Spec.From
 
 	if mc.Spec.Hello != nil {
-		rcv.Email.EmailConfig.Hello = *mc.Spec.Hello
+		e.EmailConfig.Hello = *mc.Spec.Hello
 	}
 
-	rcv.Email.EmailConfig.Smarthost = config.HostPort(mc.Spec.SmartHost)
+	e.EmailConfig.Smarthost = config.HostPort(mc.Spec.SmartHost)
 	if mc.Spec.AuthUsername != nil {
-		rcv.Email.EmailConfig.AuthUsername = *mc.Spec.AuthUsername
+		e.EmailConfig.AuthUsername = *mc.Spec.AuthUsername
 	}
 
 	if mc.Spec.AuthIdentify != nil {
-		rcv.Email.EmailConfig.AuthIdentity = *mc.Spec.AuthIdentify
+		e.EmailConfig.AuthIdentity = *mc.Spec.AuthIdentify
 	}
 
 	if mc.Spec.AuthPassword != nil {
 		authPassword := v1.Secret{}
 		if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: mc.Spec.AuthPassword.Namespace, Name: mc.Spec.AuthPassword.Name}, &authPassword); err != nil {
 			_ = level.Error(c.logger).Log("msg", "Unable to get AuthPassword secret", "err", err)
-			return nil
+			return rcv
 		}
-		rcv.Email.EmailConfig.AuthPassword = config.Secret(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
+		e.EmailConfig.AuthPassword = config.Secret(string(authPassword.Data[mc.Spec.AuthPassword.Key]))
 	}
 
 	if mc.Spec.AuthSecret != nil {
 		authSecret := v1.Secret{}
 		if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: mc.Spec.AuthSecret.Namespace, Name: mc.Spec.AuthSecret.Name}, &authSecret); err != nil {
 			_ = level.Error(c.logger).Log("msg", "Unable to get AuthSecret secret", "err", err)
-			return nil
+			return rcv
 		}
-		rcv.Email.EmailConfig.AuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
+		e.EmailConfig.AuthSecret = config.Secret(string(authSecret.Data[mc.Spec.AuthSecret.Key]))
 	}
 
 	if mc.Spec.RequireTLS != nil {
-		rcv.Email.EmailConfig.RequireTLS = mc.Spec.RequireTLS
+		e.EmailConfig.RequireTLS = mc.Spec.RequireTLS
 	}
+
+	rcv.Email = e
 
 	return rcv
 }
@@ -964,7 +1053,6 @@ func (c *Config) generateWechatReceiver(wr *nmv1alpha1.WechatReceiver) *Receiver
 
 	rcv := &Receiver{}
 	rcv.Wechat = &Wechat{}
-	rcv.Wechat.WechatConfig = &config.WechatConfig{}
 	for _, wc := range wcList.Items {
 		rcv.Wechat.WechatConfig = &config.WechatConfig{}
 
@@ -995,11 +1083,6 @@ func (c *Config) generateWechatReceiver(wr *nmv1alpha1.WechatReceiver) *Receiver
 		rcv.Wechat.WechatConfig.CorpID = wc.Spec.WechatApiCorpId
 
 		break
-	}
-
-	// Set WechatConfig to nil to indicate WechatConfig should be setup with global default config
-	if len(rcv.Wechat.WechatConfig.CorpID) == 0 {
-		rcv.Wechat.WechatConfig = nil
 	}
 
 	rcv.Wechat.ToUser = wr.Spec.ToUser
@@ -1095,8 +1178,8 @@ func (c *Config) onWechatRcvDel(obj interface{}) {
 
 func (c *Config) generateWechatConfig(wc *nmv1alpha1.WechatConfig) *Receiver {
 	rcv := &Receiver{}
-	rcv.Wechat = &Wechat{}
-	rcv.Wechat.WechatConfig = &config.WechatConfig{}
+	w := &Wechat{}
+	w.WechatConfig = &config.WechatConfig{}
 
 	if len(wc.Spec.WechatApiUrl) > 0 {
 		url := &config.URL{}
@@ -1104,25 +1187,26 @@ func (c *Config) generateWechatConfig(wc *nmv1alpha1.WechatConfig) *Receiver {
 		url.URL, err = url.Parse(wc.Spec.WechatApiUrl)
 		if err != nil {
 			_ = level.Error(c.logger).Log("msg", "Unable to parse Wechat apiurl", "url", wc.Spec.WechatApiUrl, "err", err)
-			return nil
+			return rcv
 		}
-		rcv.Wechat.WechatConfig.APIURL = url
+		w.WechatConfig.APIURL = url
 	}
 
 	if wc.Spec.WechatApiSecret == nil {
 		_ = level.Error(c.logger).Log("msg", "ignore wechat config because of empty api secret")
-		return nil
+		return rcv
 	}
 
 	secret := v1.Secret{}
 	if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: wc.Namespace, Name: wc.Spec.WechatApiSecret.Name}, &secret); err != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to get api secret", "err", err)
-		return nil
+		return rcv
 	}
-	rcv.Wechat.WechatConfig.APISecret = config.Secret(string(secret.Data[wc.Spec.WechatApiSecret.Key]))
+	w.WechatConfig.APISecret = config.Secret(string(secret.Data[wc.Spec.WechatApiSecret.Key]))
 
-	rcv.Wechat.WechatConfig.AgentID = wc.Spec.WechatApiAgentId
-	rcv.Wechat.WechatConfig.CorpID = wc.Spec.WechatApiCorpId
+	w.WechatConfig.AgentID = wc.Spec.WechatApiAgentId
+	w.WechatConfig.CorpID = wc.Spec.WechatApiCorpId
+	rcv.Wechat = w
 
 	return rcv
 }
@@ -1246,6 +1330,300 @@ func (c *Config) onWechatConfDel(obj interface{}) {
 			if sel.Matches(labels.Set(wc.ObjectMeta.Labels)) {
 				p.tenantID = globalDefaultConf
 				p.globalEmailConfig = &GlobalConfig{}
+			}
+		}
+
+		if len(p.tenantID) > 0 {
+			p.done = make(chan interface{}, 1)
+			c.ch <- p
+			<-p.done
+		} else {
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+		}
+	}
+}
+
+func (c *Config) updateSlackReceivers(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	srList := nmv1alpha1.SlackReceiverList{}
+	if err := c.cache.List(c.ctx, &srList, client.InNamespace("")); err != nil {
+		_ = level.Error(c.logger).Log("msg", "Failed to list SlackReceiver", "err", err)
+		return
+	}
+	for _, sr := range srList.Items {
+		r := sr.DeepCopy()
+		r.ObjectMeta.Annotations["reloadtimestamp"] = time.Now().String()
+		if err := c.client.Update(c.ctx, r); err != nil {
+			_ = level.Error(c.logger).Log("msg", "Failed to update SlackReceiver", "err", err)
+		}
+	}
+
+	return
+}
+
+func (c *Config) updateSlackConfigs(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	scList := nmv1alpha1.SlackConfigList{}
+	if err := c.cache.List(c.ctx, &scList, client.InNamespace("")); err != nil {
+		_ = level.Error(c.logger).Log("msg", "Failed to list SlackConfig", "err", err)
+		return
+	}
+	for _, sc := range scList.Items {
+		cfg := sc.DeepCopy()
+		cfg.ObjectMeta.Annotations["reloadtimestamp"] = time.Now().String()
+		if err := c.client.Update(c.ctx, cfg); err != nil {
+			_ = level.Error(c.logger).Log("msg", "Failed to update SlackConfig", "err", err)
+		}
+	}
+
+	return
+}
+
+func (c *Config) generateSlackReceiver(sr *nmv1alpha1.SlackReceiver) *Receiver {
+	scList := nmv1alpha1.SlackConfigList{}
+	scSel, _ := metav1.LabelSelectorAsSelector(sr.Spec.SlackConfigSelector)
+	if err := c.cache.List(c.ctx, &scList, client.MatchingLabelsSelector{Selector: scSel}); client.IgnoreNotFound(err) != nil {
+		_ = level.Error(c.logger).Log("msg", "Unable to list SlackConfig", "err", err)
+		return nil
+	}
+
+	rcv := &Receiver{}
+	rcv.Slack = &Slack{}
+	for _, sc := range scList.Items {
+
+		if sc.Spec.SlackToken == nil {
+			_ = level.Error(c.logger).Log("msg", "ignore slack config because of empty token")
+			continue
+		}
+
+		secret := v1.Secret{}
+		if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: sr.Namespace, Name: sc.Spec.SlackToken.Name}, &secret); err != nil {
+			_ = level.Error(c.logger).Log("msg", "Unable to get slack token", "err", err)
+			continue
+		}
+		rcv.Slack.Token = string(secret.Data[sc.Spec.SlackToken.Key])
+
+		break
+	}
+
+	rcv.Slack.Channel = sr.Spec.Channel
+
+	return rcv
+}
+
+func (c *Config) onSlackRcvAdd(obj interface{}) {
+	if sr, ok := obj.(*nmv1alpha1.SlackReceiver); ok {
+		p := &param{}
+		p.op = opAdd
+		// If SlackReceiver's label matches globalReceiverSelector such as "type = global",
+		// then this is a global SlackReceiver, and tenantID should be set to an unique tenantID
+		if c.globalReceiverSelector != nil {
+			for k, expected := range c.globalReceiverSelector.MatchLabels {
+				if v, exists := sr.ObjectMeta.Labels[k]; exists && v == expected {
+					p.tenantID = globalTenantID
+					break
+				}
+			}
+		}
+		// If SlackReceiver's label matches tenantReceiverSelector such as "type = tenant",
+		// then SlackReceiver's tenantKey's value should be used as tenantID,
+		// For example, if tenantKey is "user" and label "user=admin" exists,
+		// then "admin" should be used as tenantID
+		if c.tenantReceiverSelector != nil {
+			for k, expected := range c.tenantReceiverSelector.MatchLabels {
+				if v, exists := sr.ObjectMeta.Labels[k]; exists && v == expected {
+					if v, exists := sr.ObjectMeta.Labels[c.tenantKey]; exists {
+						p.tenantID = v
+					}
+					break
+				}
+			}
+		}
+
+		p.name = sr.Name
+		p.namespace = sr.Namespace
+		p.opType = slackReceiver
+		if len(p.tenantID) > 0 {
+			p.receiver = c.generateSlackReceiver(sr)
+			p.done = make(chan interface{}, 1)
+			c.ch <- p
+			<-p.done
+		} else {
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+		}
+	}
+}
+
+func (c *Config) onSlackRcvDel(obj interface{}) {
+	if wr, ok := obj.(*nmv1alpha1.SlackReceiver); ok {
+		p := &param{}
+		p.op = opDel
+		// If SlackReceiver's label matches globalReceiverSelector such as "type = global",
+		// then this is a global SlackReceiver, and tenantID should be set to an unique tenantID
+		if c.globalReceiverSelector != nil {
+			for k, expected := range c.globalReceiverSelector.MatchLabels {
+				if v, exists := wr.ObjectMeta.Labels[k]; exists && v == expected {
+					p.tenantID = globalTenantID
+					break
+				}
+			}
+		}
+		// If SlackReceiver's label matches tenantReceiverSelector such as "type = tenant",
+		// then SlackReceiver's tenantKey's value should be used as tenantID,
+		// For example, if tenantKey is "user" and label "user=admin" exists,
+		// then "admin" should be used as tenantID
+		if c.tenantReceiverSelector != nil {
+			for k, expected := range c.tenantReceiverSelector.MatchLabels {
+				if v, exists := wr.ObjectMeta.Labels[k]; exists && v == expected {
+					if v, exists := wr.ObjectMeta.Labels[c.tenantKey]; exists {
+						p.tenantID = v
+					}
+					break
+				}
+			}
+		}
+		p.name = wr.Name
+		p.namespace = wr.Namespace
+		p.opType = slackReceiver
+		if len(p.tenantID) > 0 {
+			p.done = make(chan interface{}, 1)
+			c.ch <- p
+			<-p.done
+		} else {
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+		}
+	}
+}
+
+func (c *Config) generateSlackConfig(sc *nmv1alpha1.SlackConfig) *Receiver {
+	rcv := &Receiver{}
+
+	if sc.Spec.SlackToken == nil {
+		_ = level.Error(c.logger).Log("msg", "ignore slack config because of empty token")
+		return rcv
+	}
+
+	secret := v1.Secret{}
+	if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: sc.Namespace, Name: sc.Spec.SlackToken.Name}, &secret); err != nil {
+		_ = level.Error(c.logger).Log("msg", "Unable to get slack token", "err", err)
+		return rcv
+	}
+
+	rcv.Slack = &Slack{}
+	rcv.Slack.Token = string(secret.Data[sc.Spec.SlackToken.Key])
+
+	return rcv
+}
+
+func (c *Config) generateSlackGlobalConfig(sc *nmv1alpha1.SlackConfig) (*GlobalConfig, error) {
+	global := &GlobalConfig{}
+
+	if sc.Spec.SlackToken == nil {
+		_ = level.Error(c.logger).Log("msg", "ignore slack config because of empty token")
+		return nil, fmt.Errorf("ignore slack config because of empty token")
+	}
+
+	secret := v1.Secret{}
+	if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: sc.Namespace, Name: sc.Spec.SlackToken.Name}, &secret); err != nil {
+		_ = level.Error(c.logger).Log("msg", "Unable to get slack token", "err", err)
+		return nil, err
+	}
+	global.SlackToken = string(secret.Data[sc.Spec.SlackToken.Key])
+
+	return global, nil
+}
+
+func (c *Config) onSlackConfAdd(obj interface{}) {
+	if sc, ok := obj.(*nmv1alpha1.SlackConfig); ok {
+		p := &param{}
+		p.op = opAdd
+		p.opType = slackConfig
+
+		// If SlackConfig's label matches globalReceiverSelector such as "type = global",
+		// then this is a global SlackConfig, and tenantID should be set to an unique tenantID
+		if c.globalReceiverSelector != nil {
+			for k, expected := range c.globalReceiverSelector.MatchLabels {
+				if v, exists := sc.ObjectMeta.Labels[k]; exists && v == expected {
+					p.tenantID = globalTenantID
+					p.receiver = c.generateSlackConfig(sc)
+					break
+				}
+			}
+		}
+		// If SlackConfig's label matches tenantReceiverSelector such as "type = tenant",
+		// then SlackConfig's tenantKey's value should be used as tenantID,
+		// For example, if tenantKey is "user" and label "user=admin" exists,
+		// then "admin" should be used as tenantID
+		if c.tenantReceiverSelector != nil {
+			for k, expected := range c.tenantReceiverSelector.MatchLabels {
+				if v, exists := sc.ObjectMeta.Labels[k]; exists && v == expected {
+					if v, exists := sc.ObjectMeta.Labels[c.tenantKey]; exists {
+						p.tenantID = v
+						p.receiver = c.generateSlackConfig(sc)
+					}
+					break
+				}
+			}
+		}
+
+		// Update global default configs if SlackConfig's label match globalConfigSelector
+		if c.globalConfigSelector != nil {
+			sel, _ := metav1.LabelSelectorAsSelector(c.globalConfigSelector)
+			if sel.Matches(labels.Set(sc.ObjectMeta.Labels)) {
+				p.tenantID = globalDefaultConf
+				p.globalSlackConfig, _ = c.generateSlackGlobalConfig(sc)
+			}
+		}
+
+		if len(p.tenantID) > 0 {
+			p.done = make(chan interface{}, 1)
+			c.ch <- p
+			<-p.done
+		} else {
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+		}
+	}
+}
+
+func (c *Config) onSlackConfDel(obj interface{}) {
+	if wc, ok := obj.(*nmv1alpha1.SlackConfig); ok {
+		p := &param{}
+		p.op = opDel
+		p.opType = slackConfig
+
+		// If SlackConfig's label matches globalReceiverSelector such as "type = global",
+		// then this is a global SlackConfig, and tenantID should be set to an unique tenantID
+		if c.globalReceiverSelector != nil {
+			for k, expected := range c.globalReceiverSelector.MatchLabels {
+				if v, exists := wc.ObjectMeta.Labels[k]; exists && v == expected {
+					p.tenantID = globalTenantID
+					break
+				}
+			}
+		}
+		// If SlackConfig's label matches tenantReceiverSelector such as "type = tenant",
+		// then SlackConfig's tenantKey's value should be used as tenantID,
+		// For example, if tenantKey is "user" and label "user=admin" exists,
+		// then "admin" should be used as tenantID
+		if c.tenantReceiverSelector != nil {
+			for k, expected := range c.tenantReceiverSelector.MatchLabels {
+				if v, exists := wc.ObjectMeta.Labels[k]; exists && v == expected {
+					if v, exists := wc.ObjectMeta.Labels[c.tenantKey]; exists {
+						p.tenantID = v
+					}
+					break
+				}
+			}
+		}
+
+		// Update global default configs if SlackConfig's label match globalConfigSelector
+		if c.globalConfigSelector != nil {
+			sel, _ := metav1.LabelSelectorAsSelector(c.globalConfigSelector)
+			if sel.Matches(labels.Set(wc.ObjectMeta.Labels)) {
+				p.tenantID = globalDefaultConf
+				p.globalSlackConfig = &GlobalConfig{}
 			}
 		}
 

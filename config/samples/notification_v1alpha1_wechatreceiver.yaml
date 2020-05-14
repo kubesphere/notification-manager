@@ -10,8 +10,6 @@ spec:
     matchLabels:
       type: tenant
       user: admin
-  message: wechat-test-message
-  agentId: wechat-agent-id
   toUser: abc
   toParty: wechat-party
   toTag: wechat-tag

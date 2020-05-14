@@ -18,6 +18,7 @@ const (
 	TokenChannleLen = 1000
 	OpGet           = "get"
 	OpInvalid       = "invalid"
+	DefaultExpires  = time.Hour * 2
 )
 
 type token struct {
@@ -48,7 +49,7 @@ func init() {
 func newAccessTokenService() *AccessTokenService {
 	c, err := commoncfg.NewClientFromConfig(commoncfg.HTTPClientConfig{}, "tokenService", false)
 	if err != nil {
-		_ = level.Error(log.NewNopLogger()).Log("msg", "Notifier: create token service error", "error", err.Error())
+		_ = level.Error(log.NewNopLogger()).Log("msg", "WechatNotifier: create token service error", "error", err.Error())
 		return nil
 	}
 	ats := &AccessTokenService{
@@ -92,7 +93,7 @@ func (ats *AccessTokenService) getToken(c *config.WechatConfig, ctx context.Cont
 	if !ok {
 		t = token{
 			AccessToken: "",
-			Expires:     time.Hour * 2,
+			Expires:     DefaultExpires,
 		}
 	}
 

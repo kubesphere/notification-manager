@@ -6,6 +6,7 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/email"
+	"github.com/kubesphere/notification-manager/pkg/notify/notifier/slack"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/wechat"
 	"github.com/prometheus/alertmanager/template"
 	"reflect"
@@ -20,6 +21,7 @@ var (
 func init() {
 	Register("Email", email.NewEmailNotifier)
 	Register("Wechat", wechat.NewWechatNotifier)
+	Register("Slack", slack.NewSlackNotifier)
 }
 
 func Register(name string, factory Factory) {

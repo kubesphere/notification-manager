@@ -64,6 +64,11 @@ type ReceiversSpec struct {
 	Options *Options `json:"options,omitempty"`
 }
 
+type GlobalOptions struct {
+	// The file which template be in, must be a absolute path.
+	TemplateFiles []string `json:"templateFile,omitempty"`
+}
+
 type EmailOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
@@ -71,24 +76,35 @@ type EmailOptions struct {
 	DeliveryType string `json:"deliveryType,omitempty"`
 	// The maximum size of receivers in one email.
 	MaxEmailReceivers int `json:"maxEmailReceivers,omitempty"`
+	// The name of the template to generate email message,like '{{ template "email.default.html" . }}'
+	Template string `json:"template,omitempty"`
+	// The name of the template to generate email subject,like `{{ template "email.default.subject" . }}`
+	SubjectTemplate string `json:"subjectTemplate,omitempty"`
 }
 
 type WechatOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
+	// The name of the template to generate wechat message,like '{{ template "wechat.default" . }}'
+	Template string `json:"template,omitempty"`
 }
 
 type SlackOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
+	// The name of the template to generate slack message,like '{{ template "slack.default" . }}'
+	Template string `json:"template,omitempty"`
 }
 
 type WebhookOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
+	// The name of the template to generate webhook message,like '{{ template "webhook.default" . }}'
+	Template string `json:"template,omitempty"`
 }
 
 type Options struct {
+	Global  *GlobalOptions  `json:"global,omitempty"`
 	Email   *EmailOptions   `json:"email,omitempty"`
 	Wechat  *WechatOptions  `json:"wechat,omitempty"`
 	Slack   *SlackOptions   `json:"slack,omitempty"`
