@@ -7,7 +7,7 @@ Supported senders includes:
 
 Supported receivers includes:
 - Email
-- Wechat (Wechat Work)
+- [Wechat Work](https://work.weixin.qq.com/)
 - Slack (Coming soon)
 - Webhook (Coming soon)
 
