@@ -28,13 +28,15 @@ const (
 )
 
 type Notifier struct {
-	email               map[string]*nmconfig.Email
-	template            *notifier.Template
-	templateName        string
+	email    map[string]*nmconfig.Email
+	template *notifier.Template
+	// The name of template to generate email message.
+	templateName string
+	// The name of template to generate email subject.
 	subjectTemplateName string
 	timeout             time.Duration
 	logger              log.Logger
-	// Email delivery type, single or bulk
+	// Email delivery type, single or bulk.
 	delivery string
 	// The maximum size of receivers in one email.
 	maxEmailReceivers int

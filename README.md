@@ -213,7 +213,9 @@ metadata:
     type: tenant
     user: admin
 spec:
-  slackToken: < slack-token >
+  slackToken: 
+    key: token
+    name: < slack-token-secret >
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: SlackReceiver
@@ -402,7 +404,9 @@ metadata:
     type: tenant
     namespace: default
 spec:
-  slackToken: < slack-token >
+  slackToken: 
+    key: token
+    name: < slack-token-secret >
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: SlackReceiver

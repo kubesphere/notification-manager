@@ -769,7 +769,7 @@ func (c *Config) onMailRcvAdd(obj interface{}) {
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
@@ -810,7 +810,7 @@ func (c *Config) onMailRcvDel(obj interface{}) {
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
@@ -950,7 +950,7 @@ func (c *Config) onMailConfAdd(obj interface{}) {
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
@@ -1000,7 +1000,7 @@ func (c *Config) onMailConfDel(obj interface{}) {
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
@@ -1130,7 +1130,7 @@ func (c *Config) onWechatRcvAdd(obj interface{}) {
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
@@ -1171,7 +1171,7 @@ func (c *Config) onWechatRcvDel(obj interface{}) {
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
@@ -1288,7 +1288,7 @@ func (c *Config) onWechatConfAdd(obj interface{}) {
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
@@ -1338,7 +1338,7 @@ func (c *Config) onWechatConfDel(obj interface{}) {
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
@@ -1451,20 +1451,20 @@ func (c *Config) onSlackRcvAdd(obj interface{}) {
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
 
 func (c *Config) onSlackRcvDel(obj interface{}) {
-	if wr, ok := obj.(*nmv1alpha1.SlackReceiver); ok {
+	if sr, ok := obj.(*nmv1alpha1.SlackReceiver); ok {
 		p := &param{}
 		p.op = opDel
 		// If SlackReceiver's label matches globalReceiverSelector such as "type = global",
 		// then this is a global SlackReceiver, and tenantID should be set to an unique tenantID
 		if c.globalReceiverSelector != nil {
 			for k, expected := range c.globalReceiverSelector.MatchLabels {
-				if v, exists := wr.ObjectMeta.Labels[k]; exists && v == expected {
+				if v, exists := sr.ObjectMeta.Labels[k]; exists && v == expected {
 					p.tenantID = globalTenantID
 					break
 				}
@@ -1476,23 +1476,23 @@ func (c *Config) onSlackRcvDel(obj interface{}) {
 		// then "admin" should be used as tenantID
 		if c.tenantReceiverSelector != nil {
 			for k, expected := range c.tenantReceiverSelector.MatchLabels {
-				if v, exists := wr.ObjectMeta.Labels[k]; exists && v == expected {
-					if v, exists := wr.ObjectMeta.Labels[c.tenantKey]; exists {
+				if v, exists := sr.ObjectMeta.Labels[k]; exists && v == expected {
+					if v, exists := sr.ObjectMeta.Labels[c.tenantKey]; exists {
 						p.tenantID = v
 					}
 					break
 				}
 			}
 		}
-		p.name = wr.Name
-		p.namespace = wr.Namespace
+		p.name = sr.Name
+		p.namespace = sr.Namespace
 		p.opType = slackReceiver
 		if len(p.tenantID) > 0 {
 			p.done = make(chan interface{}, 1)
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
@@ -1582,7 +1582,7 @@ func (c *Config) onSlackConfAdd(obj interface{}) {
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
@@ -1632,7 +1632,7 @@ func (c *Config) onSlackConfDel(obj interface{}) {
 			c.ch <- p
 			<-p.done
 		} else {
-			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "tenantKey", c.tenantKey)
+			_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "type", p.opType, "tenantKey", c.tenantKey)
 		}
 	}
 }
