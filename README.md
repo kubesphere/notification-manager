@@ -183,9 +183,7 @@ spec:
   # optional
   # One of toUser, toParty, toParty should be specified.
   toUser: < wechat-user >
-  # optional
   toParty: < wechat-party >
-  # optional
   toTag: < wechat-tag >
 ---
 apiVersion: v1
