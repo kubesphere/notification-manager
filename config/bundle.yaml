@@ -936,6 +936,23 @@ spec:
                           description: Notification Sending Timeout
                           format: int32
                           type: integer
+                        subjectTemplate:
+                          description: The name of the template to generate email
+                            subject,like `{{ template "email.default.subject" . }}`
+                          type: string
+                        template:
+                          description: The name of the template to generate email
+                            message,like '{{ template "email.default.html" . }}'
+                          type: string
+                      type: object
+                    global:
+                      properties:
+                        templateFile:
+                          description: The file which template be in, must be a absolute
+                            path.
+                          items:
+                            type: string
+                          type: array
                       type: object
                     slack:
                       properties:
@@ -943,6 +960,10 @@ spec:
                           description: Notification Sending Timeout
                           format: int32
                           type: integer
+                        template:
+                          description: The name of the template to generate slack
+                            message,like '{{ template "slack.default" . }}'
+                          type: string
                       type: object
                     webhook:
                       properties:
@@ -950,6 +971,10 @@ spec:
                           description: Notification Sending Timeout
                           format: int32
                           type: integer
+                        template:
+                          description: The name of the template to generate webhook
+                            message,like '{{ template "webhook.default" . }}'
+                          type: string
                       type: object
                     wechat:
                       properties:
@@ -957,6 +982,10 @@ spec:
                           description: Notification Sending Timeout
                           format: int32
                           type: integer
+                        template:
+                          description: The name of the template to generate wechat
+                            message,like '{{ template "wechat.default" . }}'
+                          type: string
                       type: object
                   type: object
                 tenantKey:
@@ -1141,56 +1170,8 @@ spec:
         spec:
           description: SlackConfigSpec defines the desired state of SlackConfig
           properties:
-            httpConfigSelector:
-              description: HttpConfig used for slack
-              properties:
-                matchExpressions:
-                  description: matchExpressions is a list of label selector requirements.
-                    The requirements are ANDed.
-                  items:
-                    description: A label selector requirement is a selector that contains
-                      values, a key, and an operator that relates the key and values.
-                    properties:
-                      key:
-                        description: key is the label key that the selector applies
-                          to.
-                        type: string
-                      operator:
-                        description: operator represents a key's relationship to a
-                          set of values. Valid operators are In, NotIn, Exists and
-                          DoesNotExist.
-                        type: string
-                      values:
-                        description: values is an array of string values. If the operator
-                          is In or NotIn, the values array must be non-empty. If the
-                          operator is Exists or DoesNotExist, the values array must
-                          be empty. This array is replaced during a strategic merge
-                          patch.
-                        items:
-                          type: string
-                        type: array
-                    required:
-                    - key
-                    - operator
-                    type: object
-                  type: array
-                matchLabels:
-                  additionalProperties:
-                    type: string
-                  description: matchLabels is a map of {key,value} pairs. A single
-                    {key,value} in the matchLabels map is equivalent to an element
-                    of matchExpressions, whose key field is "key", the operator is
-                    "In", and the values array contains only "value". The requirements
-                    are ANDed.
-                  type: object
-              type: object
-            slackApiUrl:
-              description: The API URL to use for Slack notifications.
-              type: string
-            slackApiUrlSecret:
-              description: The URL to send HTTP POST requests to. SlackApiUrlSecret
-                takes precedence over SlackApiUrl. One of SlackApiUrlSecret and SlackApiUrl
-                should be defined.
+            slackToken:
+              description: The token of user or bot.
               properties:
                 key:
                   description: The key of the secret to select from.  Must be a valid

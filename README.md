@@ -8,18 +8,18 @@ Supported senders includes:
 Supported receivers includes:
 - Email
 - [Wechat Work](https://work.weixin.qq.com/)
-- Slack (Coming soon)
+- Slack 
 - Webhook (Coming soon)
 
 ## CustomResourceDefinitions
 Notification Manager uses the following CRDs to define the desired alerts/notifications webhook and receiver configs.
 - NotificationManager: Defines the desired alerts/notification webhook deployment. The Notification Manager Operator ensures a deployment meeting the resource requirements is running.
-- EmailConfig: Defines the email configs like SmartHost, AuthUserName, AuthPassword, From, RequireTLS etc. There are also global options like NotificationTimeout, DeliveryType, MaxEmailReceivers to define email configs.
+- EmailConfig: Defines the email configs like SmartHost, AuthUserName, AuthPassword, From, RequireTLS etc. 
 - EmailReceiver: Define email receiver's mail addresses and the EmailConfig selector.
-- WechatConfig: Define the wechat configs like ApiUrl, ApiCorpId, AgentId and ApiSecret. There are also global options like NotificationTimeout to define email configs.
+- WechatConfig: Define the wechat configs like ApiUrl, ApiCorpId, AgentId and ApiSecret. 
 - WechatReceiver: Define the wechat receiver related info like ToUser, ToParty, ToTag as well as WechatConfig Selector.
-- SlackConfig: Define the slack configs like ApiUrl.
-- SlackReceiver: Define the slack channel or user to send notifications to and the SlackConfig selector.
+- SlackConfig: Define the slack configs like SlackToken.
+- SlackReceiver: Define the slack channel to send notifications to and the SlackConfig selector.
 - WebhookConfig: Define the webhook Url, HttpConfig.
 - WebhookReceiver: Define the WebhookConfig selector.
 
@@ -85,6 +85,8 @@ spec:
         deliveryType: bulk
         maxEmailReceivers: 200
       wechat:
+        notificationTimeout: 5
+      slack:
         notificationTimeout: 5
 EOF
 ```
@@ -178,8 +180,12 @@ spec:
     matchLabels:
       type: tenant
       user: admin
+  # optional
+  # One of toUser, toParty, toParty should be specified.
   toUser: < wechat-user >
+  # optional
   toParty: < wechat-party >
+  # optional
   toTag: < wechat-tag >
 ---
 apiVersion: v1
@@ -196,6 +202,55 @@ EOF
 ```
 
 >WechatApiAgentId is the id of app which sending message to user in your Wechat Work, wechatApiSecret is the secret of this app, you can get these two parameters in App Managerment of your Wechat Work. Note that any user, party or tag who wants to rerceive notifications must be in the allowed users list of this app.
+
+Deploy SlackConfig and SlackReceivers
+
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: SlackConfig
+metadata:
+  name: admin-slack-config
+  namespace: kubesphere-monitoring-system
+  labels:
+    app: notification-manager
+    type: tenant
+    user: admin
+spec:
+  slackToken: 
+    key: token
+    name: < slack-token-secret >
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: SlackReceiver
+metadata:
+  name: admin-slack
+  namespace: kubesphere-monitoring-system
+  labels:
+    app: notification-manager
+    type: tenant
+    user: admin
+spec:
+  slackConfigSelector:
+    matchLabels:
+      type: tenant
+      user: admin
+  channel: < slack-channel >
+---
+apiVersion: v1
+data:
+  token: dGVzdA==
+kind: Secret
+metadata:
+  labels:
+    app: notification-manager
+  name: < slack-token-secret >
+  namespace: kubesphere-monitoring-system
+type: Opaque
+EOF
+```
+
+>SlackToken is the OAuth Access Token or Bot User OAuth Access Token when you create a slack app. This app must have the scope chat:write. The user who created the app or bot user must be in the channel which you want to send notification to.
 
 ### Deploy Notification Manager in any other Kubernetes cluster (Uses `namespace` to distinguish each tenant user):
 Deploy Notification Manager
@@ -324,8 +379,12 @@ spec:
     matchLabels:
       type: tenant
       namespace: default
+  # optional
+  # One of toUser, toParty, toParty should be specified.
   toUser: < wechat-user >
+  # optional
   toParty: < wechat-party >
+  # optional
   toTag: < wechat-tag >
 ---
 apiVersion: v1
@@ -336,6 +395,51 @@ metadata:
   labels:
     app: notification-manager
   name: < wechat-api-secret >
+  namespace: default
+type: Opaque
+EOF
+```
+
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: SlackConfig
+metadata:
+  name: admin-slack-config
+  namespace: default
+  labels:
+    app: notification-manager
+    type: tenant
+    namespace: default
+spec:
+  slackToken: 
+    key: token
+    name: < slack-token-secret >
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: SlackReceiver
+metadata:
+  name: admin-slack
+  namespace: default
+  labels:
+    app: notification-manager
+    type: tenant
+    namespace: default
+spec:
+  slackConfigSelector:
+    matchLabels:
+      type: tenant
+      namespace: default
+  channel: < slack-channel >
+---
+apiVersion: v1
+data:
+  token: dGVzdA==
+kind: Secret
+metadata:
+  labels:
+    app: notification-manager
+  name: < slack-token-secret >
   namespace: default
 type: Opaque
 EOF

@@ -23,13 +23,8 @@ import (
 
 // SlackConfigSpec defines the desired state of SlackConfig
 type SlackConfigSpec struct {
-	// The URL to send HTTP POST requests to.
-	// SlackApiUrlSecret takes precedence over SlackApiUrl. One of SlackApiUrlSecret and SlackApiUrl should be defined.
-	SlackApiUrlSecret *v1.SecretKeySelector `json:"slackApiUrlSecret,omitempty"`
-	// The API URL to use for Slack notifications.
-	SlackApiUrl *string `json:"slackApiUrl,omitempty"`
-	// HttpConfig used for slack
-	HttpConfigSelector *metav1.LabelSelector `json:"httpConfigSelector,omitempty"`
+	// The token of user or bot.
+	SlackToken *v1.SecretKeySelector `json:"slackToken,omitempty"`
 }
 
 // SlackConfigStatus defines the observed state of SlackConfig

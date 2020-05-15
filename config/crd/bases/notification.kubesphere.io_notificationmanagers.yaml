@@ -731,6 +731,23 @@ spec:
                           description: Notification Sending Timeout
                           format: int32
                           type: integer
+                        subjectTemplate:
+                          description: The name of the template to generate email
+                            subject,like `{{ template "email.default.subject" . }}`
+                          type: string
+                        template:
+                          description: The name of the template to generate email
+                            message,like '{{ template "email.default.html" . }}'
+                          type: string
+                      type: object
+                    global:
+                      properties:
+                        templateFile:
+                          description: The file which template be in, must be a absolute
+                            path.
+                          items:
+                            type: string
+                          type: array
                       type: object
                     slack:
                       properties:
@@ -738,6 +755,10 @@ spec:
                           description: Notification Sending Timeout
                           format: int32
                           type: integer
+                        template:
+                          description: The name of the template to generate slack
+                            message,like '{{ template "slack.default" . }}'
+                          type: string
                       type: object
                     webhook:
                       properties:
@@ -745,6 +766,10 @@ spec:
                           description: Notification Sending Timeout
                           format: int32
                           type: integer
+                        template:
+                          description: The name of the template to generate webhook
+                            message,like '{{ template "webhook.default" . }}'
+                          type: string
                       type: object
                     wechat:
                       properties:
@@ -752,6 +777,10 @@ spec:
                           description: Notification Sending Timeout
                           format: int32
                           type: integer
+                        template:
+                          description: The name of the template to generate wechat
+                            message,like '{{ template "wechat.default" . }}'
+                          type: string
                       type: object
                   type: object
                 tenantKey:

@@ -11,6 +11,7 @@ import (
 	nmconfig "github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/prometheus/alertmanager/config"
+	"github.com/prometheus/alertmanager/notify"
 	"github.com/prometheus/alertmanager/template"
 	"io"
 	"io/ioutil"
@@ -26,14 +27,17 @@ const (
 	ToPartyBatchSize   = 100
 	ToTagBatchSize     = 100
 	AccessTokenInvalid = 42001
+	DefaultTemplate    = `{{ template "wechat.default.message" . }}`
 )
 
 type Notifier struct {
-	wechat      map[string]*config.WechatConfig
-	accessToken string
-	client      *http.Client
-	timeout     time.Duration
-	logger      log.Logger
+	wechat       map[string]*config.WechatConfig
+	accessToken  string
+	client       *http.Client
+	timeout      time.Duration
+	logger       log.Logger
+	template     *notifier.Template
+	templateName string
 }
 
 type weChatMessageContent struct {
@@ -63,15 +67,34 @@ func NewWechatNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Opti
 		return nil
 	}
 
-	n := &Notifier{
-		wechat:  make(map[string]*config.WechatConfig),
-		logger:  logger,
-		timeout: DefaultSendTimeout,
-		client:  ats.client,
+	var path []string
+	if opts != nil && opts.Global != nil {
+		path = opts.Global.TemplateFiles
+	}
+	tmpl, err := notifier.NewTemplate(path)
+	if err != nil {
+		_ = level.Error(logger).Log("msg", "WechatNotifier: get template error", "error", err.Error())
+		return nil
 	}
 
-	if opts != nil && opts.Wechat != nil && opts.Wechat.NotificationTimeout != nil {
-		n.timeout = time.Second * time.Duration(*opts.Wechat.NotificationTimeout)
+	n := &Notifier{
+		wechat:       make(map[string]*config.WechatConfig),
+		logger:       logger,
+		timeout:      DefaultSendTimeout,
+		client:       ats.client,
+		template:     tmpl,
+		templateName: DefaultTemplate,
+	}
+
+	if opts != nil && opts.Wechat != nil {
+
+		if opts.Wechat.NotificationTimeout != nil {
+			n.timeout = time.Second * time.Duration(*opts.Wechat.NotificationTimeout)
+		}
+
+		if len(opts.Wechat.Template) > 0 {
+			n.templateName = opts.Wechat.Template
+		}
 	}
 
 	for _, v := range sv {
@@ -118,13 +141,21 @@ func NewWechatNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Opti
 func (n *Notifier) Notify(data template.Data) []error {
 
 	var errs []error
-	send := func(c *config.WechatConfig) (bool, error) {
+	send := func(c *config.WechatConfig, data template.Data) (bool, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
+		ctx = notify.WithGroupLabels(ctx, notifier.KvToLabelSet(data.GroupLabels))
+		ctx = notify.WithReceiverName(ctx, data.Receiver)
 		defer cancel()
 
-		msg := &weChatMessage{
+		msg, err := n.template.TemlText(ctx, n.templateName, n.logger, data)
+		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "WechatNotifier: generate wechat message error", "error", err.Error())
+			return false, err
+		}
+
+		wechatMsg := &weChatMessage{
 			Text: weChatMessageContent{
-				Content: c.Message,
+				Content: msg,
 			},
 			ToUser:  c.ToUser,
 			ToParty: c.ToParty,
@@ -135,7 +166,7 @@ func (n *Notifier) Notify(data template.Data) []error {
 		}
 
 		var buf bytes.Buffer
-		if err := jsoniter.NewEncoder(&buf).Encode(msg); err != nil {
+		if err := jsoniter.NewEncoder(&buf).Encode(wechatMsg); err != nil {
 			_ = level.Error(n.logger).Log("msg", "WechatNotifier: encode error", "error", err.Error())
 			return false, err
 		}
@@ -250,11 +281,17 @@ func (n *Notifier) Notify(data template.Data) []error {
 			c.ToTag = batch(toTag, &ts, ToTagBatchSize)
 
 			for _, alert := range data.Alerts {
-				c.Message = n.getMsg(alert)
-				retry, err := send(c)
+				d := template.Data{
+					Alerts: template.Alerts{
+						alert,
+					},
+					Receiver:    data.Receiver,
+					GroupLabels: data.GroupLabels,
+				}
+				retry, err := send(c, d)
 				if err != nil {
 					if retry {
-						_, err = send(c)
+						_, err = send(c, d)
 					}
 					if err != nil {
 						errs = append(errs, err)

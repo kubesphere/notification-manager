@@ -5,10 +5,9 @@ metadata:
   labels:
     type: global
 spec:
-  slackApiUrlSecret:
-    key: slack-api-url
-    name: slack-api-url-secret
-  slackApiUrl: slack_url_xxx
+  slackToken:
+    key: token
+    name: slack-token-secret
   httpConfigSelector:
     matchLabels:
       type: tenant

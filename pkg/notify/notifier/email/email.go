@@ -15,23 +15,28 @@ import (
 	"github.com/prometheus/alertmanager/types"
 	"github.com/prometheus/common/model"
 	"math"
-	"net/url"
 	"strings"
 	"time"
 )
 
 const (
-	Bulk               = "Bulk"
-	MaxEmailReceivers  = math.MaxInt32
-	DefaultSendTimeout = time.Second * 3
+	Bulk                    = "Bulk"
+	MaxEmailReceivers       = math.MaxInt32
+	DefaultSendTimeout      = time.Second * 3
+	DefaultTemplate         = `{{ template "email.default.html" . }}`
+	DefaultTSubjectTemplate = `{{ template "email.default.subject" . }}`
 )
 
 type Notifier struct {
 	email    map[string]*nmconfig.Email
-	template *template.Template
-	timeout  time.Duration
-	logger   log.Logger
-	// Email delivery type, single or bulk
+	template *notifier.Template
+	// The name of template to generate email message.
+	templateName string
+	// The name of template to generate email subject.
+	subjectTemplateName string
+	timeout             time.Duration
+	logger              log.Logger
+	// Email delivery type, single or bulk.
 	delivery string
 	// The maximum size of receivers in one email.
 	maxEmailReceivers int
@@ -44,19 +49,26 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 		return nil
 	}
 
-	n := &Notifier{
-		email:             make(map[string]*nmconfig.Email),
-		logger:            logger,
-		timeout:           DefaultSendTimeout,
-		delivery:          Bulk,
-		maxEmailReceivers: MaxEmailReceivers}
-
-	tmpl, err := template.FromGlobs()
+	var path []string
+	if opts != nil && opts.Global != nil {
+		path = opts.Global.TemplateFiles
+	}
+	tmpl, err := notifier.NewTemplate(path)
 	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "EmailNotifier: template error", "error", err.Error())
+		_ = level.Error(logger).Log("msg", "EmailNotifier: get template error", "error", err.Error())
 		return nil
 	}
-	n.template = tmpl
+
+	n := &Notifier{
+		email:               make(map[string]*nmconfig.Email),
+		logger:              logger,
+		timeout:             DefaultSendTimeout,
+		delivery:            Bulk,
+		maxEmailReceivers:   MaxEmailReceivers,
+		template:            tmpl,
+		templateName:        DefaultTemplate,
+		subjectTemplateName: DefaultTSubjectTemplate,
+	}
 
 	if opts != nil && opts.Email != nil {
 		if opts.Email.NotificationTimeout != nil {
@@ -69,6 +81,14 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 
 		if len(opts.Email.DeliveryType) > 0 {
 			n.delivery = opts.Email.DeliveryType
+		}
+
+		if len(opts.Email.Template) > 0 {
+			n.templateName = opts.Email.Template
+		}
+
+		if len(opts.Email.SubjectTemplate) > 0 {
+			n.subjectTemplateName = opts.Email.SubjectTemplate
 		}
 	}
 
@@ -114,7 +134,6 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 }
 
 func (n *Notifier) Notify(data template.Data) []error {
-	n.template.ExternalURL, _ = url.Parse(data.ExternalURL)
 
 	var as []*types.Alert
 	for _, a := range data.Alerts {
@@ -133,8 +152,9 @@ func (n *Notifier) Notify(data template.Data) []error {
 	sendEmail := func(c *config.EmailConfig, to string) {
 		cc := n.clone(c)
 		cc.To = to
-		cc.HTML = `{{ template "email.default.html" . }}`
-		e := email.New(cc, n.template, n.logger)
+		cc.HTML = n.templateName
+		cc.Headers["Subject"] = n.subjectTemplateName
+		e := email.New(cc, n.template.Tmpl, n.logger)
 
 		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
 		ctx = notify.WithGroupLabels(ctx, notifier.KvToLabelSet(data.GroupLabels))

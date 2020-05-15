@@ -6,7 +6,8 @@ metadata:
     type: global
 spec:
   wechatApiUrl: wechat-api-url
+  wechatApiCorpId: wechat-api-corp-id
+  wechatApiAgentId: wechat-api-agent-id
   wechatApiSecret:
     key: wechat
     name: wechat-api-secret
-  wechatApiCorpId: wechat-api-corp-id
