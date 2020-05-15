@@ -65,7 +65,7 @@ type ReceiversSpec struct {
 }
 
 type GlobalOptions struct {
-	// Files which template be in, must be a absolute path.
+	// Template file path, must be a absolute path.
 	TemplateFiles []string `json:"templateFile,omitempty"`
 }
 
