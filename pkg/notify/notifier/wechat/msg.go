@@ -105,6 +105,11 @@ func NewWechatNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Opti
 			continue
 		}
 
+		if wv.WechatConfig == nil {
+			_ = level.Warn(logger).Log("msg", "WechatNotifier: ignore receiver because of empty config")
+			continue
+		}
+
 		c := n.clone(wv.WechatConfig)
 		key, err := notifier.Md5key(c)
 		if err != nil {
@@ -302,27 +307,6 @@ func (n *Notifier) Notify(data template.Data) []error {
 	}
 
 	return errs
-}
-
-func (n *Notifier) getMsg(alert template.Alert) string {
-
-	msg := fmt.Sprintf("[1] %s\n", alert.Status)
-
-	if len(alert.Labels) > 0 {
-		msg = fmt.Sprintf("%s\nLabels", msg)
-	}
-	for k, v := range alert.Labels {
-		msg = fmt.Sprintf("%s\n%s = %s", msg, k, v)
-	}
-
-	if len(alert.Annotations) > 0 {
-		msg = fmt.Sprintf("%s\nAnnotations", msg)
-	}
-	for k, v := range alert.Annotations {
-		msg = fmt.Sprintf("%s\n%s = %s", msg, k, v)
-	}
-
-	return msg
 }
 
 func (n *Notifier) clone(c *config.WechatConfig) *config.WechatConfig {

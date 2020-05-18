@@ -13,7 +13,5 @@ spec:
   # optional
   # One of toUser, toParty, toParty should be specified.
   toUser: abc
-  # optional
   toParty: wechat-party
-  # optional
   toTag: wechat-tag

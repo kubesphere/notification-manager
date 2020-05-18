@@ -90,6 +90,11 @@ func NewSlackNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 			continue
 		}
 
+		if s.SlackConfig == nil {
+			_ = level.Warn(logger).Log("msg", "SlackNotifier: ignore receiver because of empty config")
+			continue
+		}
+
 		n.slack = append(n.slack, s)
 	}
 
@@ -126,7 +131,7 @@ func (n *Notifier) Notify(data template.Data) []error {
 
 		postMessageURL := url
 		q := postMessageURL.Query()
-		q.Set("token", c.Token)
+		q.Set("token", c.SlackConfig.Token)
 		q.Set("channel", c.Channel)
 		q.Set("text", msg)
 		postMessageURL.RawQuery = q.Encode()
@@ -185,14 +190,13 @@ func (n *Notifier) Notify(data template.Data) []error {
 	return errs
 }
 
-func (n *Notifier) clone(c *nmconfig.Slack) *nmconfig.Slack {
+func (n *Notifier) clone(c *nmconfig.SlackConfig) *nmconfig.SlackConfig {
 
 	if c == nil {
 		return nil
 	}
 
-	return &nmconfig.Slack{
-		Channel: c.Channel,
-		Token:   c.Token,
+	return &nmconfig.SlackConfig{
+		Token: c.Token,
 	}
 }
