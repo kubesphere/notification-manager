@@ -99,6 +99,11 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 			continue
 		}
 
+		if ev.EmailConfig == nil {
+			_ = level.Warn(logger).Log("msg", "EmailNotifier: ignore receiver because of empty config")
+			continue
+		}
+
 		if n.delivery == Bulk {
 			c := n.clone(ev.EmailConfig)
 			key, err := notifier.Md5key(c)
