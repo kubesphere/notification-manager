@@ -1140,17 +1140,17 @@ func (c *Config) generateSlack(sc *nmv1alpha1.SlackConfig) *Slack {
 		SlackConfig: &SlackConfig{},
 	}
 
-	if sc.Spec.SlackToken == nil {
+	if sc.Spec.SlackTokenSecret == nil {
 		return nil
 	}
 
 	secret := v1.Secret{}
-	if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: sc.Namespace, Name: sc.Spec.SlackToken.Name}, &secret); err != nil {
+	if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: sc.Namespace, Name: sc.Spec.SlackTokenSecret.Name}, &secret); err != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to get slack token", "err", err)
 		return nil
 	}
 
-	s.SlackConfig.Token = string(secret.Data[sc.Spec.SlackToken.Key])
+	s.SlackConfig.Token = string(secret.Data[sc.Spec.SlackTokenSecret.Key])
 
 	return s
 }

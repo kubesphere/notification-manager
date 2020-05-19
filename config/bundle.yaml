@@ -1170,7 +1170,7 @@ spec:
         spec:
           description: SlackConfigSpec defines the desired state of SlackConfig
           properties:
-            slackToken:
+            slackTokenSecret:
               description: The token of user or bot.
               properties:
                 key:
