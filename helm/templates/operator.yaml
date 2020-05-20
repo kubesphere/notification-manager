@@ -4,7 +4,6 @@ metadata:
   labels:
     control-plane: controller-manager
   name: notification-manager-operator
-  namespace: kubesphere-monitoring-system
 spec:
   replicas: 1
   selector:

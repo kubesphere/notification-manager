@@ -9,7 +9,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: notification-manager-sa
-  namespace: kubesphere-monitoring-system
+  namespace: {{ .Release.Namespace }}
   
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -23,5 +23,5 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: notification-manager-sa
-  namespace: kubesphere-monitoring-system
+  namespace: {{ .Release.Namespace }}
   
