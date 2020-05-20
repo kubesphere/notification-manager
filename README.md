@@ -55,6 +55,7 @@ apiVersion: notification.kubesphere.io/v1alpha1
 kind: NotificationManager
 metadata:
   name: notificationmanager-sample
+  namespace: kubesphere-monitoring-system
 spec:
   replicas: 1
   resources:
@@ -258,6 +259,7 @@ apiVersion: notification.kubesphere.io/v1alpha1
 kind: NotificationManager
 metadata:
   name: notificationmanager-sample
+  namespace: default
 spec:
   replicas: 1
   resources:

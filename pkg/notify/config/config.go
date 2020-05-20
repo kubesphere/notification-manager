@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	kcache "k8s.io/client-go/tools/cache"
+	"net/url"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -1191,14 +1192,14 @@ func (c *Config) generateWechat(wc *nmv1alpha1.WechatConfig) *Wechat {
 	w.WechatConfig = &config.WechatConfig{}
 
 	if len(wc.Spec.WechatApiUrl) > 0 {
-		url := &config.URL{}
+		u := &url.URL{}
 		var err error
-		url.URL, err = url.Parse(wc.Spec.WechatApiUrl)
+		u, err = u.Parse(wc.Spec.WechatApiUrl)
 		if err != nil {
 			_ = level.Error(c.logger).Log("msg", "Unable to parse Wechat apiurl", "url", wc.Spec.WechatApiUrl, "err", err)
 			return nil
 		}
-		w.WechatConfig.APIURL = url
+		w.WechatConfig.APIURL = &config.URL{URL: u}
 	}
 
 	if wc.Spec.WechatApiSecret == nil {

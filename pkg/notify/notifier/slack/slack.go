@@ -17,6 +17,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -122,14 +123,14 @@ func (n *Notifier) Notify(data template.Data) []error {
 			return err
 		}
 
-		url := &config.URL{}
-		url.URL, err = url.Parse(URL)
+		u := &url.URL{}
+		u, err = u.Parse(URL)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "SlackNotifier: Unable to parse slack url", "url", URL, "err", err)
 			return err
 		}
 
-		postMessageURL := url
+		postMessageURL := &config.URL{URL: u}
 		q := postMessageURL.Query()
 		q.Set("token", c.SlackConfig.Token)
 		q.Set("channel", c.Channel)
