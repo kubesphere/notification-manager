@@ -27,5 +27,10 @@ spec:
       matchLabels:
         type: tenant
     options:
-      notificationTimeout:
-        email: 5
+      email:
+        notificationTimeout: 5
+        deliveryType: bulk
+      slack:
+        notificationTimeout: 5
+      wechat:
+        notificationTimeout: 5

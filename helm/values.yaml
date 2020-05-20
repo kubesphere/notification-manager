@@ -1,0 +1,50 @@
+# value of notification-manager-operator
+operator: 
+  containers:
+    proxy:
+      image:
+        tag: v0.4.1
+        pullPolicy: IfNotPresent
+      resources: {}
+    operator:
+      image:
+        tag: latest
+        pullPolicy: IfNotPresent
+      resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+
+# value of notification-manager
+notificationmanager:
+  name: notification-manager
+  image:
+    tag: latest
+    pullPolicy: Always
+  replicas: 1
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  globalConfigSelector:
+    matchLabels:
+      type: global
+  receivers:
+    tenantKey: user
+    globalReceiverSelector:
+      matchLabels:
+        type: global
+    tenantReceiverSelector:
+      matchLabels:
+        type: tenant
+    options:
+      email:
+        notificationTimeout: 5
+        deliveryType: bulk
+      slack:
+        notificationTimeout: 5
+      wechat:
+        notificationTimeout: 5
+    
+

@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	kcache "k8s.io/client-go/tools/cache"
+	"net/url"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -1140,17 +1141,17 @@ func (c *Config) generateSlack(sc *nmv1alpha1.SlackConfig) *Slack {
 		SlackConfig: &SlackConfig{},
 	}
 
-	if sc.Spec.SlackToken == nil {
+	if sc.Spec.SlackTokenSecret == nil {
 		return nil
 	}
 
 	secret := v1.Secret{}
-	if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: sc.Namespace, Name: sc.Spec.SlackToken.Name}, &secret); err != nil {
+	if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: sc.Namespace, Name: sc.Spec.SlackTokenSecret.Name}, &secret); err != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to get slack token", "err", err)
 		return nil
 	}
 
-	s.SlackConfig.Token = string(secret.Data[sc.Spec.SlackToken.Key])
+	s.SlackConfig.Token = string(secret.Data[sc.Spec.SlackTokenSecret.Key])
 
 	return s
 }
@@ -1191,14 +1192,14 @@ func (c *Config) generateWechat(wc *nmv1alpha1.WechatConfig) *Wechat {
 	w.WechatConfig = &config.WechatConfig{}
 
 	if len(wc.Spec.WechatApiUrl) > 0 {
-		url := &config.URL{}
+		u := &url.URL{}
 		var err error
-		url.URL, err = url.Parse(wc.Spec.WechatApiUrl)
+		u, err = u.Parse(wc.Spec.WechatApiUrl)
 		if err != nil {
 			_ = level.Error(c.logger).Log("msg", "Unable to parse Wechat apiurl", "url", wc.Spec.WechatApiUrl, "err", err)
 			return nil
 		}
-		w.WechatConfig.APIURL = url
+		w.WechatConfig.APIURL = &config.URL{URL: u}
 	}
 
 	if wc.Spec.WechatApiSecret == nil {

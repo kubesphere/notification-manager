@@ -5,7 +5,7 @@ metadata:
   labels:
     type: global
 spec:
-  slackToken:
+  slackTokenSecret:
     key: token
     name: slack-token-secret
   httpConfigSelector:

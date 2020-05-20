@@ -16,6 +16,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -329,9 +330,9 @@ func (n *Notifier) clone(c *config.WechatConfig) *config.WechatConfig {
 	}
 
 	if wc.APIURL == nil || len(wc.APIURL.URL.String()) == 0 {
-		url := &config.URL{}
-		url.URL, _ = url.Parse(DefaultApiURL)
-		wc.APIURL = url
+		u := &url.URL{}
+		u, _ = u.Parse(DefaultApiURL)
+		wc.APIURL = &config.URL{URL: u}
 	}
 
 	return wc

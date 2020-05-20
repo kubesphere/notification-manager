@@ -24,7 +24,7 @@ import (
 // SlackConfigSpec defines the desired state of SlackConfig
 type SlackConfigSpec struct {
 	// The token of user or bot.
-	SlackToken *v1.SecretKeySelector `json:"slackToken,omitempty"`
+	SlackTokenSecret *v1.SecretKeySelector `json:"slackTokenSecret,omitempty"`
 }
 
 // SlackConfigStatus defines the observed state of SlackConfig

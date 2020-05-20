@@ -18,7 +18,7 @@ Notification Manager uses the following CRDs to define the desired alerts/notifi
 - EmailReceiver: Define email receiver's mail addresses and the EmailConfig selector.
 - WechatConfig: Define the wechat configs like ApiUrl, ApiCorpId, AgentId and ApiSecret. 
 - WechatReceiver: Define the wechat receiver related info like ToUser, ToParty, ToTag as well as WechatConfig Selector.
-- SlackConfig: Define the slack configs like SlackToken.
+- SlackConfig: Define the slack configs like SlackTokenSecret.
 - SlackReceiver: Define the slack channel to send notifications to and the SlackConfig selector.
 - WebhookConfig: Define the webhook Url, HttpConfig.
 - WebhookReceiver: Define the WebhookConfig selector.
@@ -55,6 +55,7 @@ apiVersion: notification.kubesphere.io/v1alpha1
 kind: NotificationManager
 metadata:
   name: notificationmanager-sample
+  namespace: kubesphere-monitoring-system
 spec:
   replicas: 1
   resources:
@@ -215,7 +216,7 @@ metadata:
     type: tenant
     user: admin
 spec:
-  slackToken: 
+  slackTokenSecret: 
     key: token
     name: < slack-token-secret >
 ---
@@ -248,7 +249,7 @@ type: Opaque
 EOF
 ```
 
->SlackToken is the OAuth Access Token or Bot User OAuth Access Token when you create a slack app. This app must have the scope chat:write. The user who created the app or bot user must be in the channel which you want to send notification to.
+>Slack token is the OAuth Access Token or Bot User OAuth Access Token when you create a slack app. This app must have the scope chat:write. The user who created the app or bot user must be in the channel which you want to send notification to.
 
 ### Deploy Notification Manager in any other Kubernetes cluster (Uses `namespace` to distinguish each tenant user):
 Deploy Notification Manager
@@ -258,6 +259,7 @@ apiVersion: notification.kubesphere.io/v1alpha1
 kind: NotificationManager
 metadata:
   name: notificationmanager-sample
+  namespace: default
 spec:
   replicas: 1
   resources:
@@ -408,7 +410,7 @@ metadata:
     type: tenant
     namespace: default
 spec:
-  slackToken: 
+  slackTokenSecret: 
     key: token
     name: < slack-token-secret >
 ---
