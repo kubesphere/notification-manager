@@ -4,7 +4,6 @@ metadata:
   labels:
     control-plane: controller-manager
   name: notification-manager-controller-metrics
-  namespace: kubesphere-monitoring-system
 spec:
   ports:
   - name: https
