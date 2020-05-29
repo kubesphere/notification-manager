@@ -112,7 +112,7 @@ metadata:
   name: notificationmanager-sample
   namespace: kubesphere-monitoring-system
 spec:
-  globalConfigSelector:
+  defaultConfigSelector:
     matchLabels:
       type: default
   image: kubesphere/notification-manager:latest

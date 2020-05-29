@@ -607,8 +607,8 @@ spec:
                       type: array
                   type: object
               type: object
-            globalConfigSelector:
-              description: Global default Email/Wechat/Slack/Webhook Config to be
+            defaultConfigSelector:
+              description: Default Email/Wechat/Slack/Webhook Config to be
                 selected
               properties:
                 matchExpressions:

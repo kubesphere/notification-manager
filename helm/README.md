@@ -53,4 +53,4 @@ Parameter | Description | Default
 `notificationmanager.tolerations` | The tolerations of notification-manager | []
 `notificationmanager.affinity` | The affinity of notification-manager | {}
 `notificationmanager.receivers` | The receivers configure of notification-manager | {}
-`notificationmanager.globalConfigSelector` | The global config selector of notification-manager | {}
+`notificationmanager.defaultConfigSelector` | The default config selector of notification-manager | {}

@@ -397,8 +397,8 @@ func (in *NotificationManagerSpec) DeepCopyInto(out *NotificationManagerSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.GlobalConfigSelector != nil {
-		in, out := &in.GlobalConfigSelector, &out.GlobalConfigSelector
+	if in.DefaultConfigSelector != nil {
+		in, out := &in.DefaultConfigSelector, &out.DefaultConfigSelector
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}

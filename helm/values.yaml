@@ -27,9 +27,9 @@ notificationmanager:
   nodeSelector: {}
   tolerations: []
   affinity: {}
-  globalConfigSelector:
+  defaultConfigSelector:
     matchLabels:
-      type: global
+      type: default
   receivers:
     tenantKey: user
     globalReceiverSelector:

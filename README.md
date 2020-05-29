@@ -69,7 +69,7 @@ spec:
   imagePullPolicy: Always
   serviceAccountName: notification-manager-sa
   portName: webhook
-  globalConfigSelector:
+  defaultConfigSelector:
     matchLabels:
       type: default
   receivers:
@@ -273,7 +273,7 @@ spec:
   imagePullPolicy: Always
   serviceAccountName: notification-manager-sa
   portName: webhook
-  globalConfigSelector:
+  defaultConfigSelector:
     matchLabels:
       type: default
   receivers:
