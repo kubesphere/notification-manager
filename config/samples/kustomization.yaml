@@ -1,5 +1,4 @@
 resources:
-- notification_v1alpha1_global_emailconfig.yaml
 - notification_v1alpha1_default_emailconfig.yaml
 - notification_v1alpha1_tenant_emailconfig.yaml
 - notification_v1alpha1_tenant_emailreceiver.yaml

@@ -608,8 +608,7 @@ spec:
                   type: object
               type: object
             defaultConfigSelector:
-              description: Default Email/Wechat/Slack/Webhook Config to be
-                selected
+              description: Default Email/Wechat/Slack/Webhook Config to be selected
               properties:
                 matchExpressions:
                   description: matchExpressions is a list of label selector requirements.
@@ -659,6 +658,11 @@ spec:
               description: Image pull policy. One of Always, Never, IfNotPresent.
                 Defaults to IfNotPresent if not specified
               type: string
+            monitorNamespaces:
+              description: Monitor namespaces
+              items:
+                type: string
+              type: array
             nodeSelector:
               additionalProperties:
                 type: string
@@ -743,8 +747,7 @@ spec:
                     global:
                       properties:
                         templateFile:
-                          description: The file which template be in, must be a absolute
-                            path.
+                          description: Template file path, must be a absolute path.
                           items:
                             type: string
                           type: array

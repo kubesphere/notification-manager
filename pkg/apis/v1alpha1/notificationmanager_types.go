@@ -48,6 +48,8 @@ type NotificationManagerSpec struct {
 	DefaultConfigSelector *metav1.LabelSelector `json:"defaultConfigSelector,omitempty"`
 	// Receivers to send notifications to
 	Receivers *ReceiversSpec `json:"receivers"`
+	// Monitor namespaces
+	MonitorNamespaces []string `json:"monitorNamespaces,omitempty"`
 }
 
 type ReceiversSpec struct {

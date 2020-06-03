@@ -33,8 +33,7 @@ Usually alerts received from Alertmanager contains a `namespace` label, Notifica
 
 For alerts without a `namespace` label, for example alerts of node or kubelet, user can setup a receiver with `type = global` label to receive alerts without a `namespace` label. A global receiver sends notifications for all alerts received regardless any label. A global receiver is usually set for a admin role.
 
-Config CRDs like EmailConfig, WechatConfig, SlackConfig, WebhookConfig can be categorized into 3 types `global`, `tenant` and `default` by label like `type = global`, `type = tenant`, `type = default`. 
-- Global EmailConfig is to be selected by a Global EmailReceiver. 
+Config CRDs like EmailConfig, WechatConfig, SlackConfig, WebhookConfig can be categorized into 2 types `tenant` and `default` by label like `type = tenant`, `type = default`. 
 - Tenant EmailConfig is to be selected by a tenant EmailReceiver which means each tenant can have his own EmailConfig. 
 - If no EmailConfig selector is configured in a EmailReceiver, then this EmailReceiver will try to find a `default` EmailConfig. Usually admin will set a global default config.
 

@@ -18,8 +18,10 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"strings"
 
 	"github.com/go-logr/logr"
 	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
@@ -186,6 +188,16 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 			},
 		}
 
+		if len(nm.Spec.MonitorNamespaces) > 0 {
+			mns := ""
+			for _, ns := range nm.Spec.MonitorNamespaces {
+				mns = fmt.Sprintf("%s:%s", mns, ns)
+			}
+			mns = strings.TrimPrefix(mns, ":")
+			newC.Command = append(newC.Command, "/notification-manager")
+			newC.Command = append(newC.Command, fmt.Sprintf("--monitorNamespaces=%s", mns))
+		}
+
 		// Make sure existing Containers match expected Containers
 		for i, c := range deploy.Spec.Template.Spec.Containers {
 			if c.Name == newC.Name {
@@ -193,6 +205,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 				deploy.Spec.Template.Spec.Containers[i].Image = newC.Image
 				deploy.Spec.Template.Spec.Containers[i].ImagePullPolicy = newC.ImagePullPolicy
 				deploy.Spec.Template.Spec.Containers[i].Ports = newC.Ports
+				deploy.Spec.Template.Spec.Containers[i].Command = newC.Command
 				break
 			}
 		}

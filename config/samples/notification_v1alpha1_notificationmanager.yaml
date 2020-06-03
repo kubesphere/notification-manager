@@ -34,3 +34,5 @@ spec:
         notificationTimeout: 5
       wechat:
         notificationTimeout: 5
+  monitorNamespaces:
+  - kubesphere-monitoring-system
