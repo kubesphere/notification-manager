@@ -18,8 +18,10 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"strings"
 
 	"github.com/go-logr/logr"
 	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
@@ -184,6 +186,26 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
+			Env: []corev1.EnvVar{
+				corev1.EnvVar{
+					Name: "NAMESPACE",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.namespace",
+						},
+					},
+				},
+			},
+		}
+
+		if len(nm.Spec.NotificationManagerNamespaces) > 0 {
+			mns := ""
+			for _, ns := range nm.Spec.NotificationManagerNamespaces {
+				mns = fmt.Sprintf("%s:%s", mns, ns)
+			}
+			mns = strings.TrimPrefix(mns, ":")
+			newC.Command = append(newC.Command, "/notification-manager")
+			newC.Command = append(newC.Command, fmt.Sprintf("--notification-manager-namespaces=%s", mns))
 		}
 
 		// Make sure existing Containers match expected Containers
@@ -193,6 +215,8 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 				deploy.Spec.Template.Spec.Containers[i].Image = newC.Image
 				deploy.Spec.Template.Spec.Containers[i].ImagePullPolicy = newC.ImagePullPolicy
 				deploy.Spec.Template.Spec.Containers[i].Ports = newC.Ports
+				deploy.Spec.Template.Spec.Containers[i].Command = newC.Command
+				deploy.Spec.Template.Spec.Containers[i].Env = newC.Env
 				break
 			}
 		}

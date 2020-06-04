@@ -44,7 +44,6 @@ Parameter | Description | Default
 `operator.nodeSelector` | The nodeSelector of notification-manager-operator | {}
 `operator.tolerations` | The tolerations of notification-manager-operator | []
 `operator.affinity` | The affinity of notification-manager-operator | {}
-`notificationmanager.name` | The name of notification-manager | notification-manager
 `notificationmanager.replicas` | The replicas of notification-manager | 1
 `notificationmanager.image.tag` | The image tag of notification-manager | `latest`
 `notificationmanager.image.pullPolicy` | The image pull policy of notification-manager | `IfNotPresent`
@@ -53,4 +52,5 @@ Parameter | Description | Default
 `notificationmanager.tolerations` | The tolerations of notification-manager | []
 `notificationmanager.affinity` | The affinity of notification-manager | {}
 `notificationmanager.receivers` | The receivers configure of notification-manager | {}
-`notificationmanager.globalConfigSelector` | The global config selector of notification-manager | {}
+`notificationmanager.defaultConfigSelector` | The default config selector of notification-manager | {}
+`notificationmanager.notificationManagerNamespaces` | The namespace which will be watched by notification-manager | []

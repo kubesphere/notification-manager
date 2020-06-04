@@ -44,10 +44,12 @@ type NotificationManagerSpec struct {
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 	// Port name used for the pods and service, defaults to webhook
 	PortName string `json:"portName,omitempty"`
-	// Global default Email/Wechat/Slack/Webhook Config to be selected
-	GlobalConfigSelector *metav1.LabelSelector `json:"globalConfigSelector,omitempty"`
+	// Default Email/Wechat/Slack/Webhook Config to be selected
+	DefaultConfigSelector *metav1.LabelSelector `json:"defaultConfigSelector,omitempty"`
 	// Receivers to send notifications to
 	Receivers *ReceiversSpec `json:"receivers"`
+	// Notification manager namespaces, default is all namespaces.
+	NotificationManagerNamespaces []string `json:"notificationManagerNamespaces,omitempty"`
 }
 
 type ReceiversSpec struct {

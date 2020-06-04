@@ -17,10 +17,12 @@ import (
 	"k8s.io/client-go/rest"
 	kcache "k8s.io/client-go/tools/cache"
 	"net/url"
+	"os"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	kconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	"strings"
 	"sync"
 	"time"
 )
@@ -28,7 +30,7 @@ import (
 const (
 	user                = "User"
 	globalTenantID      = "notification-manager/type/global"
-	globalDefaultConf   = "notification-manager/type/default"
+	defaultConfig       = "notification-manager/type/default"
 	defaultTenantKey    = "user"
 	notificationManager = "notification-manager"
 	emailReceiver       = "email"
@@ -54,25 +56,29 @@ type Config struct {
 	ctx    context.Context
 	cache  cache.Cache
 	client client.Client
-	// Global default config selector
-	globalConfigSelector *metav1.LabelSelector
-	// Global config for email, wechat, slack etc.
-	globalConfig *Receiver
+	// Default config selector
+	defaultConfigSelector *metav1.LabelSelector
+	// Default config for email, wechat, slack etc.
+	defaultConfig *Receiver
 	// Label key used to distinguish different user
 	tenantKey string
 	// Label selector to filter valid global Receiver CR
 	globalReceiverSelector *metav1.LabelSelector
 	// Label selector to filter valid tenant Receiver CR
-	tenantReceiverSelector *metav1.LabelSelector // Receiver config for each tenant user, in form of map[tenantID]map[type/namespace/name]*Receiver
-	receivers              map[string]map[string]*Receiver
-	ReceiverOpts           *nmv1alpha1.Options
+	tenantReceiverSelector *metav1.LabelSelector
+	// Receiver config for each tenant user, in form of map[tenantID]map[type/namespace/name]*Receiver
+	receivers    map[string]map[string]*Receiver
+	ReceiverOpts *nmv1alpha1.Options
 	// Channel to receive receiver create/update/delete operations and then update receivers
-	ch chan *param
+	ch           chan *param
+	nmNamespaces []string
 }
 
 type Email struct {
 	To          []string
 	EmailConfig *config.EmailConfig
+	// True means receiver use the default config.
+	UseDefault bool
 }
 
 type Wechat struct {
@@ -80,12 +86,16 @@ type Wechat struct {
 	ToParty      string
 	ToTag        string
 	WechatConfig *config.WechatConfig
+	// True means receiver use the default config.
+	UseDefault bool
 }
 
 type Slack struct {
 	// The channel or user to send notifications to.
 	Channel     string
 	SlackConfig *SlackConfig
+	// True means receiver use the default config.
+	UseDefault bool
 }
 
 type SlackConfig struct {
@@ -95,6 +105,8 @@ type SlackConfig struct {
 
 type Webhook struct {
 	WebhookConfig *config.WebhookConfig
+	// True means receiver use the default config.
+	UseDefault bool
 }
 
 type Receiver struct {
@@ -111,13 +123,14 @@ type param struct {
 	opType                 string
 	namespace              string
 	name                   string
-	globalConfig           *Receiver
+	defaultConfig          *Receiver
 	tenantKey              string
-	globalConfigSelector   *metav1.LabelSelector
+	defaultConfigSelector  *metav1.LabelSelector
 	tenantReceiverSelector *metav1.LabelSelector
 	globalReceiverSelector *metav1.LabelSelector
 	receiver               *Receiver
 	ReceiverOpts           *nmv1alpha1.Options
+	nmNamespaces           []string
 	done                   chan interface{}
 }
 
@@ -131,7 +144,7 @@ type changeEvent struct {
 	isConfig  bool
 }
 
-func New(ctx context.Context, logger log.Logger) (*Config, error) {
+func New(ctx context.Context, logger log.Logger, namespaces string) (*Config, error) {
 	scheme := runtime.NewScheme()
 	_ = nmv1alpha1.AddToScheme(scheme)
 	_ = v1.AddToScheme(scheme)
@@ -140,11 +153,31 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 	cfg, err := kconfig.GetConfig()
 	if err != nil {
 		_ = level.Error(logger).Log("msg", "Failed to get kubeconfig ", "err", err)
+		return nil, err
 	}
 
-	informerCache, err := cache.New(cfg, cache.Options{
-		Scheme: scheme,
-	})
+	var informerCache cache.Cache
+	var nmNamespaces []string
+	if len(namespaces) > 0 {
+		ns := os.Getenv("NAMESPACE")
+		if len(ns) == 0 {
+			return nil, fmt.Errorf("namespace unknown")
+		}
+
+		// Notification manager namespaces must include the namespace notifcation manager in.
+		nmNamespaces = strings.Split(namespaces, ":")
+		if !sliceIn(nmNamespaces, ns) {
+			nmNamespaces = append(nmNamespaces, ns)
+		}
+		ncf := cache.MultiNamespacedCacheBuilder(nmNamespaces)
+		informerCache, err = ncf(cfg, cache.Options{
+			Scheme: scheme,
+		})
+	} else {
+		informerCache, err = cache.New(cfg, cache.Options{
+			Scheme: scheme,
+		})
+	}
 	if err != nil {
 		_ = level.Error(logger).Log("msg", "Failed to create cache", "err", err)
 		return nil, err
@@ -161,14 +194,15 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		logger:                 logger,
 		cache:                  informerCache,
 		client:                 c,
-		globalConfig:           &Receiver{},
+		defaultConfig:          &Receiver{},
 		tenantKey:              defaultTenantKey,
-		globalConfigSelector:   nil,
+		defaultConfigSelector:  nil,
 		tenantReceiverSelector: nil,
 		globalReceiverSelector: nil,
 		receivers:              make(map[string]map[string]*Receiver),
 		ReceiverOpts:           nil,
 		ch:                     make(chan *param, ChannelCapacity),
+		nmNamespaces:           nmNamespaces,
 	}, nil
 }
 
@@ -336,16 +370,20 @@ func (c *Config) sync(p *param) {
 		switch p.opType {
 		case notificationManager:
 			c.tenantKey = p.tenantKey
-			c.globalConfigSelector = p.globalConfigSelector
+			c.defaultConfigSelector = p.defaultConfigSelector
 			c.tenantReceiverSelector = p.tenantReceiverSelector
 			c.globalReceiverSelector = p.globalReceiverSelector
 			if p.ReceiverOpts != nil {
 				c.ReceiverOpts = p.ReceiverOpts
 			}
+			c.nmNamespaces = p.nmNamespaces
 		case emailReceiver:
-			// Setup EmailConfig with global default if emailconfig cannot be found
-			if p.receiver.Email.EmailConfig == nil && c.globalConfig.Email != nil {
-				p.receiver.Email.EmailConfig = c.globalConfig.Email.EmailConfig
+			// Setup EmailConfig with default if emailconfig cannot be found
+			if p.receiver.Email.EmailConfig == nil {
+				p.receiver.Email.UseDefault = true
+				if c.defaultConfig.Email != nil {
+					p.receiver.Email.EmailConfig = c.defaultConfig.Email.EmailConfig
+				}
 			}
 			rcvKey := fmt.Sprintf("%s/%s/%s", emailReceiver, p.namespace, p.name)
 			if _, exist := c.receivers[p.tenantID]; exist {
@@ -355,26 +393,37 @@ func (c *Config) sync(p *param) {
 				c.receivers[p.tenantID][rcvKey] = p.receiver
 			}
 		case emailConfig:
-			// Setup global email config
-			if p.globalConfig != nil && p.globalConfig.Email != nil {
-				c.globalConfig.Email = p.globalConfig.Email
+			// Setup default email config
+			if p.defaultConfig != nil && p.defaultConfig.Email != nil {
+				c.defaultConfig.Email = p.defaultConfig.Email
+				// Update EmailConfig of the receivers who use default email config
+				for tenantID := range c.receivers {
+					for k := range c.receivers[tenantID] {
+						if c.receivers[tenantID][k].Email != nil && c.receivers[tenantID][k].Email.UseDefault {
+							c.receivers[tenantID][k].Email.EmailConfig = p.defaultConfig.Email.EmailConfig
+						}
+					}
+				}
+
 				break
 			}
 
-			if p.receiver.Email == nil {
-				return
-			}
-
-			// Update EmailConfig of the recerver with the same tenantID
-			if _, exist := c.receivers[p.tenantID]; exist {
-				for k := range c.receivers[p.tenantID] {
-					c.receivers[p.tenantID][k].Email.EmailConfig = p.receiver.Email.EmailConfig
+			// Update tenant email config
+			if p.receiver != nil && p.receiver.Email != nil && p.receiver.Email.EmailConfig != nil {
+				// Update EmailConfig of the recerver with the same tenantID
+				if _, exist := c.receivers[p.tenantID]; exist {
+					for k := range c.receivers[p.tenantID] {
+						if c.receivers[p.tenantID][k].Email != nil {
+							c.receivers[p.tenantID][k].Email.EmailConfig = p.receiver.Email.EmailConfig
+							c.receivers[p.tenantID][k].Email.UseDefault = false
+						}
+					}
 				}
 			}
 		case wechatReceiver:
 			// Setup WechatConfig with global default if wechatconfig cannot be found
-			if p.receiver.Wechat.WechatConfig == nil && c.globalConfig.Wechat != nil {
-				p.receiver.Wechat.WechatConfig = c.globalConfig.Wechat.WechatConfig
+			if p.receiver.Wechat.WechatConfig == nil && c.defaultConfig.Wechat != nil {
+				p.receiver.Wechat.WechatConfig = c.defaultConfig.Wechat.WechatConfig
 			}
 			rcvKey := fmt.Sprintf("%s/%s/%s", wechatReceiver, p.namespace, p.name)
 			if _, exist := c.receivers[p.tenantID]; exist {
@@ -384,26 +433,37 @@ func (c *Config) sync(p *param) {
 				c.receivers[p.tenantID][rcvKey] = p.receiver
 			}
 		case wechatConfig:
-			// Setup global wechat config
-			if p.globalConfig != nil && p.globalConfig.Wechat != nil {
-				c.globalConfig.Wechat = p.globalConfig.Wechat
+			// Setup default wechat config
+			if p.defaultConfig != nil && p.defaultConfig.Wechat != nil {
+				c.defaultConfig.Wechat = p.defaultConfig.Wechat
+				// Update WechatConfig of the receivers who use default wechat config
+				for tenantID := range c.receivers {
+					for k := range c.receivers[tenantID] {
+						if c.receivers[tenantID][k].Wechat != nil && c.receivers[tenantID][k].Wechat.UseDefault {
+							c.receivers[tenantID][k].Wechat.WechatConfig = p.defaultConfig.Wechat.WechatConfig
+						}
+					}
+				}
+
 				break
 			}
 
-			if p.receiver.Wechat == nil {
-				return
-			}
-
-			// Update globalWechatConfig of the recerver with the same tenantID
-			if _, exist := c.receivers[p.tenantID]; exist {
-				for k := range c.receivers[p.tenantID] {
-					c.receivers[p.tenantID][k].Wechat.WechatConfig = p.receiver.Wechat.WechatConfig
+			// Update tenant wechat config
+			if p.receiver != nil && p.receiver.Wechat != nil && p.receiver.Wechat.WechatConfig != nil {
+				// Update WechatConfig of the recerver with the same tenantID
+				if _, exist := c.receivers[p.tenantID]; exist {
+					for k := range c.receivers[p.tenantID] {
+						if c.receivers[p.tenantID][k].Wechat != nil {
+							c.receivers[p.tenantID][k].Wechat.WechatConfig = p.receiver.Wechat.WechatConfig
+							c.receivers[p.tenantID][k].Wechat.UseDefault = false
+						}
+					}
 				}
 			}
 		case slackReceiver:
 			// Setup SlackConfig with global default if slackReceiver cannot be found
-			if p.receiver.Slack.SlackConfig == nil && c.globalConfig.Slack != nil {
-				p.receiver.Slack.SlackConfig = c.globalConfig.Slack.SlackConfig
+			if p.receiver.Slack.SlackConfig == nil && c.defaultConfig.Slack != nil {
+				p.receiver.Slack.SlackConfig = c.defaultConfig.Slack.SlackConfig
 			}
 			rcvKey := fmt.Sprintf("%s/%s/%s", slackReceiver, p.namespace, p.name)
 			if _, exist := c.receivers[p.tenantID]; exist {
@@ -413,20 +473,31 @@ func (c *Config) sync(p *param) {
 				c.receivers[p.tenantID][rcvKey] = p.receiver
 			}
 		case slackConfig:
-			// Setup global slack config
-			if p.globalConfig != nil && p.globalConfig.Slack != nil {
-				c.globalConfig.Slack = p.globalConfig.Slack
+			// Setup default slack config
+			if p.defaultConfig != nil && p.defaultConfig.Slack != nil {
+				c.defaultConfig.Slack = p.defaultConfig.Slack
+				// Update SlackConfig of the receivers who use default slack config
+				for tenantID := range c.receivers {
+					for k := range c.receivers[tenantID] {
+						if c.receivers[tenantID][k].Slack != nil && c.receivers[tenantID][k].Slack.UseDefault {
+							c.receivers[tenantID][k].Slack.SlackConfig = p.defaultConfig.Slack.SlackConfig
+						}
+					}
+				}
+
 				break
 			}
 
-			if p.receiver.Slack == nil {
-				return
-			}
-
-			// Update globalSlackConfig of the recerver with the same tenantID
-			if _, exist := c.receivers[p.tenantID]; exist {
-				for k := range c.receivers[p.tenantID] {
-					c.receivers[p.tenantID][k].Slack.SlackConfig = p.receiver.Slack.SlackConfig
+			// Update tenant slack config
+			if p.receiver != nil && p.receiver.Slack != nil && p.receiver.Slack.SlackConfig != nil {
+				// Update SlackConfig of the recerver with the same tenantID
+				if _, exist := c.receivers[p.tenantID]; exist {
+					for k := range c.receivers[p.tenantID] {
+						if c.receivers[p.tenantID][k].Slack != nil {
+							c.receivers[p.tenantID][k].Slack.SlackConfig = p.receiver.Slack.SlackConfig
+							c.receivers[p.tenantID][k].Slack.UseDefault = false
+						}
+					}
 				}
 			}
 		default:
@@ -437,7 +508,7 @@ func (c *Config) sync(p *param) {
 			c.tenantKey = defaultTenantKey
 			c.globalReceiverSelector = nil
 			c.tenantReceiverSelector = nil
-			c.globalConfigSelector = nil
+			c.defaultConfigSelector = nil
 			c.ReceiverOpts = nil
 		case emailReceiver:
 			rcvKey := fmt.Sprintf("%s/%s/%s", emailReceiver, p.namespace, p.name)
@@ -448,15 +519,29 @@ func (c *Config) sync(p *param) {
 				}
 			}
 		case emailConfig:
-			// Reset global email config
-			if p.globalConfig != nil {
-				c.globalConfig.Email = nil
-				break
-			}
-			// Delete EmailConfig of the recerver with the same tenantID by setting the EmailConfig to nil
-			if _, exist := c.receivers[p.tenantID]; exist {
-				for k := range c.receivers[p.tenantID] {
-					c.receivers[p.tenantID][k].Email.EmailConfig = nil
+			if p.tenantID == defaultConfig {
+				// Reset default email config
+				c.defaultConfig.Email = nil
+				// Delete EmailConfig of recervers who use default email config.
+				for tenantID := range c.receivers {
+					for k := range c.receivers[tenantID] {
+						if c.receivers[tenantID][k].Email != nil && c.receivers[tenantID][k].Email.UseDefault {
+							c.receivers[tenantID][k].Email.EmailConfig = nil
+						}
+					}
+				}
+			} else {
+				// Delete EmailConfig of the recerver with the same tenantID by setting the EmailConfig to nil
+				if _, exist := c.receivers[p.tenantID]; exist {
+					for k := range c.receivers[p.tenantID] {
+						if c.receivers[p.tenantID][k].Email != nil {
+							c.receivers[p.tenantID][k].Email.EmailConfig = nil
+							c.receivers[p.tenantID][k].Email.UseDefault = true
+							if c.defaultConfig.Email != nil {
+								c.receivers[p.tenantID][k].Email.EmailConfig = c.defaultConfig.Email.EmailConfig
+							}
+						}
+					}
 				}
 			}
 		case wechatReceiver:
@@ -468,15 +553,29 @@ func (c *Config) sync(p *param) {
 				}
 			}
 		case wechatConfig:
-			// Reset global wechat config
-			if p.globalConfig != nil {
-				c.globalConfig.Wechat = nil
-				break
-			}
-			// Delete WechatConfig of the recerver with the same tenantID by setting the WechatConfig to nil
-			if _, exist := c.receivers[p.tenantID]; exist {
-				for k := range c.receivers[p.tenantID] {
-					c.receivers[p.tenantID][k].Wechat.WechatConfig = nil
+			if p.tenantID == defaultConfig {
+				// Reset default wechat config
+				c.defaultConfig.Wechat = nil
+				// Delete WechatConfig of recervers who use default wechat config.
+				for tenantID := range c.receivers {
+					for k := range c.receivers[tenantID] {
+						if c.receivers[tenantID][k].Wechat != nil && c.receivers[tenantID][k].Wechat.UseDefault {
+							c.receivers[tenantID][k].Wechat.WechatConfig = nil
+						}
+					}
+				}
+			} else {
+				// Delete WechatConfig of the recerver with the same tenantID by setting the WechatConfig to nil
+				if _, exist := c.receivers[p.tenantID]; exist {
+					for k := range c.receivers[p.tenantID] {
+						if c.receivers[p.tenantID][k].Wechat != nil {
+							c.receivers[p.tenantID][k].Wechat.WechatConfig = nil
+							c.receivers[p.tenantID][k].Wechat.UseDefault = true
+							if c.defaultConfig.Wechat != nil {
+								c.receivers[p.tenantID][k].Wechat.WechatConfig = c.defaultConfig.Wechat.WechatConfig
+							}
+						}
+					}
 				}
 			}
 		case slackReceiver:
@@ -488,15 +587,29 @@ func (c *Config) sync(p *param) {
 				}
 			}
 		case slackConfig:
-			// Reset global slack config
-			if p.globalConfig != nil {
-				c.globalConfig.Slack = nil
-				break
-			}
-			// Delete SlackConfig of the recerver with the same tenantID by setting the EmailConfig to nil
-			if _, exist := c.receivers[p.tenantID]; exist {
-				for k := range c.receivers[p.tenantID] {
-					c.receivers[p.tenantID][k].Slack.SlackConfig = nil
+			if p.tenantID == defaultConfig {
+				// Reset default slack config
+				c.defaultConfig.Slack = nil
+				// Delete SlackConfig of recervers who use default slack config.
+				for tenantID := range c.receivers {
+					for k := range c.receivers[tenantID] {
+						if c.receivers[tenantID][k].Slack != nil && c.receivers[tenantID][k].Slack.UseDefault {
+							c.receivers[tenantID][k].Slack.SlackConfig = nil
+						}
+					}
+				}
+			} else {
+				// Delete SlackConfig of the recerver with the same tenantID by setting the SlackConfig to nil
+				if _, exist := c.receivers[p.tenantID]; exist {
+					for k := range c.receivers[p.tenantID] {
+						if c.receivers[p.tenantID][k].Slack != nil {
+							c.receivers[p.tenantID][k].Slack.SlackConfig = nil
+							c.receivers[p.tenantID][k].Slack.UseDefault = true
+							if c.defaultConfig.Wechat != nil {
+								c.receivers[p.tenantID][k].Slack.SlackConfig = c.defaultConfig.Slack.SlackConfig
+							}
+						}
+					}
 				}
 			}
 		default:
@@ -593,9 +706,10 @@ func (c *Config) onNmAdd(obj interface{}) {
 		p.namespace = nm.Namespace
 		p.opType = notificationManager
 		p.tenantKey = nm.Spec.Receivers.TenantKey
-		p.globalConfigSelector = nm.Spec.GlobalConfigSelector
+		p.defaultConfigSelector = nm.Spec.DefaultConfigSelector
 		p.globalReceiverSelector = nm.Spec.Receivers.GlobalReceiverSelector
 		p.tenantReceiverSelector = nm.Spec.Receivers.TenantReceiverSelector
+		p.nmNamespaces = nm.Spec.NotificationManagerNamespaces
 		if nm.Spec.Receivers.Options != nil {
 			p.ReceiverOpts = nm.Spec.Receivers.Options
 		}
@@ -944,14 +1058,11 @@ func (c *Config) onChange(event *changeEvent) {
 		for k, expected := range c.globalReceiverSelector.MatchLabels {
 			if v, exists := event.labels[k]; exists && v == expected {
 				p.tenantID = globalTenantID
-				if event.op == opAdd && event.isConfig {
-					p.receiver = c.generateConfig(event)
-				}
-
 				break
 			}
 		}
 	}
+
 	// If crd's label matches tenantReceiverSelector such as "type = tenant",
 	// then crd's tenantKey's value should be used as tenantID,
 	// For example, if tenantKey is "user" and label "user=admin" exists,
@@ -970,17 +1081,13 @@ func (c *Config) onChange(event *changeEvent) {
 		}
 	}
 
-	if event.isConfig {
-		// If it is a config crd, update global default configs if crd's label match globalConfigSelector
-		if c.globalConfigSelector != nil {
-			sel, _ := metav1.LabelSelectorAsSelector(c.globalConfigSelector)
-			if sel.Matches(labels.Set(event.labels)) {
-				p.tenantID = globalDefaultConf
-				if p.op == opAdd {
-					p.globalConfig = c.generateConfig(event)
-				} else if p.op == opDel {
-					p.globalConfig = &Receiver{}
-				}
+	// If it is a config crd, update global default configs if crd's label match defaultConfigSelector
+	if c.defaultConfigSelector != nil && event.isConfig {
+		sel, _ := metav1.LabelSelectorAsSelector(c.defaultConfigSelector)
+		if sel.Matches(labels.Set(event.labels)) {
+			p.tenantID = defaultConfig
+			if p.op == opAdd {
+				p.defaultConfig = c.generateConfig(event)
 			}
 		}
 	}
@@ -997,12 +1104,10 @@ func (c *Config) onChange(event *changeEvent) {
 		p.receiver = c.generateReceiver(event)
 	}
 
-	if p.receiver == nil {
-		_ = level.Warn(c.logger).Log("msg", "Ignore nil receiver", "op", p.op, "type", p.opType, "tenantKey", c.tenantKey, "name", event.name, "namespace", event.namespace)
-		return
+	if p.receiver != nil {
+		p.receiver.TenantID = &p.tenantID
 	}
 
-	p.receiver.TenantID = &p.tenantID
 	p.done = make(chan interface{}, 1)
 	c.ch <- p
 	<-p.done
@@ -1126,6 +1231,11 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 		},
 	}
 	for _, mc := range mcList.Items {
+
+		if len(c.nmNamespaces) > 0 || !sliceIn(c.nmNamespaces, mc.Namespace) {
+			continue
+		}
+
 		e := c.generateEmail(&mc)
 		if e != nil {
 			rcv.Email.EmailConfig = e.EmailConfig
@@ -1177,6 +1287,11 @@ func (c *Config) generateSlackReceiver(sr *nmv1alpha1.SlackReceiver) *Receiver {
 		},
 	}
 	for _, sc := range scList.Items {
+
+		if len(c.nmNamespaces) > 0 || !sliceIn(c.nmNamespaces, sc.Namespace) {
+			continue
+		}
+
 		s := c.generateSlack(&sc)
 		if s != nil {
 			rcv.Slack.SlackConfig = s.SlackConfig
@@ -1243,6 +1358,11 @@ func (c *Config) generateWechatReceiver(wr *nmv1alpha1.WechatReceiver) *Receiver
 		},
 	}
 	for _, wc := range wcList.Items {
+
+		if len(c.nmNamespaces) > 0 || !sliceIn(c.nmNamespaces, wc.Namespace) {
+			continue
+		}
+
 		w := c.generateWechat(&wc)
 		if w != nil {
 			rcv.Wechat.WechatConfig = w.WechatConfig
@@ -1251,4 +1371,14 @@ func (c *Config) generateWechatReceiver(wr *nmv1alpha1.WechatReceiver) *Receiver
 	}
 
 	return rcv
+}
+
+func sliceIn(src []string, elem string) bool {
+	for _, s := range src {
+		if s == elem {
+			return true
+		}
+	}
+
+	return false
 }
