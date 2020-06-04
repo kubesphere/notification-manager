@@ -22,10 +22,7 @@ spec:
         - --logtostderr=true
         - --v=10
         {{- if .Values.operator.containers.proxy.image.tag }}
-        image: "gcr.io/kubebuilder/kube-rbac-proxy:{{ .Values.operator.containers.proxy.image.tag }}"
-        {{- else }}
-        image: "gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1"
-        {{- end}}
+        image: {{ .Values.operator.containers.proxy.image.repo }}:{{ .Values.operator.containers.proxy.image.tag }}
         {{- if .Values.operator.containers.proxy.image.pullPolicy }}
         imagePullPolicy: {{ .Values.operator.containers.proxy.image.pullPolicy }}
         {{- end}}
@@ -44,10 +41,7 @@ spec:
         command:
         - /notification-manager-operator
         {{- if .Values.operator.containers.operator.image.tag }}
-        image: "kubesphere/notification-manager-operator:{{ .Values.operator.containers.operator.image.tag }}"
-        {{- else }}
-        image: "kubesphere/notification-manager-operator:latest"
-        {{- end}}
+        image: {{ .Values.operator.containers.operator.image.repo }}:{{ .Values.operator.containers.operator.image.tag }}
         {{- if .Values.operator.containers.operator.image.pullPolicy }}
         imagePullPolicy: {{ .Values.operator.containers.operator.image.pullPolicy }}
         {{- end}}

@@ -812,9 +812,8 @@ spec:
                       type: array
                   type: object
               type: object
-            globalConfigSelector:
-              description: Global default Email/Wechat/Slack/Webhook Config to be
-                selected
+            defaultConfigSelector:
+              description: Default Email/Wechat/Slack/Webhook Config to be selected
               properties:
                 matchExpressions:
                   description: matchExpressions is a list of label selector requirements.
@@ -869,6 +868,11 @@ spec:
                 type: string
               description: Define which Nodes the Pods will be scheduled to.
               type: object
+            notificationManagerNamespaces:
+              description: Notification manager namespaces, default is all namespaces.
+              items:
+                type: string
+              type: array
             portName:
               description: Port name used for the pods and service, defaults to webhook
               type: string
@@ -948,8 +952,7 @@ spec:
                     global:
                       properties:
                         templateFile:
-                          description: The file which template be in, must be a absolute
-                            path.
+                          description: Template file path, must be a absolute path.
                           items:
                             type: string
                           type: array
@@ -1914,7 +1917,7 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=10
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
+        image: kubesphere/kube-rbac-proxy:v0.4.1
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443

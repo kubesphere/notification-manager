@@ -1,9 +1,9 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WebhookConfig
 metadata:
-  name: global-webhook-config
+  name: default-webhook-config
   labels:
-    type: global
+    type: default
 spec:
   url: xxx
   urlSecret:

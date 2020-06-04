@@ -51,26 +51,6 @@ spec:
     port: "25"
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
-kind: EmailConfig
-metadata:
-  labels:
-    app: notification-manager
-    type: global
-  name: global-admin1-email-config
-  namespace: kubesphere-monitoring-system
-spec:
-  authPassword:
-    key: password
-    name: global-email-secret
-    namespace: kubesphere-monitoring-system
-  authUsername: abc
-  from: abc@xyz.com
-  requireTLS: true
-  smartHost:
-    host: imap.xyz.com
-    port: "25"
----
-apiVersion: notification.kubesphere.io/v1alpha1
 kind: EmailReceiver
 metadata:
   labels:
@@ -112,7 +92,7 @@ metadata:
   name: notificationmanager-sample
   namespace: kubesphere-monitoring-system
 spec:
-  globalConfigSelector:
+  defaultConfigSelector:
     matchLabels:
       type: default
   image: kubesphere/notification-manager:latest
@@ -123,8 +103,13 @@ spec:
       matchLabels:
         type: global
     options:
-      notificationTimeout:
-        email: 5
+      email:
+        deliveryType: bulk
+        notificationTimeout: 5
+      slack:
+        notificationTimeout: 5
+      wechat:
+        notificationTimeout: 5
     tenantKey: user
     tenantReceiverSelector:
       matchLabels:
@@ -144,18 +129,17 @@ kind: SlackConfig
 metadata:
   labels:
     app: notification-manager
-    type: global
-  name: global-slack-config
+    type: default
+  name: default-slack-config
   namespace: kubesphere-monitoring-system
 spec:
   httpConfigSelector:
     matchLabels:
       type: tenant
       user: admin
-  slackApiUrl: slack_url_xxx
-  slackApiUrlSecret:
-    key: slack-api-url
-    name: slack-api-url-secret
+  slackTokenSecret:
+    key: token
+    name: slack-token-secret
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: SlackReceiver
@@ -178,8 +162,8 @@ kind: WebhookConfig
 metadata:
   labels:
     app: notification-manager
-    type: global
-  name: global-webhook-config
+    type: default
+  name: default-webhook-config
   namespace: kubesphere-monitoring-system
 spec:
   httpConfigSelector:
@@ -211,10 +195,11 @@ kind: WechatConfig
 metadata:
   labels:
     app: notification-manager
-    type: global
-  name: global-wechat-config
+    type: default
+  name: default-wechat-config
   namespace: kubesphere-monitoring-system
 spec:
+  wechatApiAgentId: wechat-api-agent-id
   wechatApiCorpId: wechat-api-corp-id
   wechatApiSecret:
     key: wechat
@@ -231,8 +216,6 @@ metadata:
   name: admin-wechat
   namespace: kubesphere-monitoring-system
 spec:
-  agentId: wechat-agent-id
-  message: wechat-test-message
   toParty: wechat-party
   toTag: wechat-tag
   toUser: abc
