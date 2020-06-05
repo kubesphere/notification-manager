@@ -21,7 +21,7 @@ spec:
         - /notification-manager-operator
         args:
         - --enable-leader-election
-        image: controller:latest
+        image: controller:v0.1.0
         name: notification-manager-operator
         resources:
           limits:
