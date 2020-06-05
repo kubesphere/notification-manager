@@ -95,7 +95,7 @@ spec:
   defaultConfigSelector:
     matchLabels:
       type: default
-  image: kubesphere/notification-manager:latest
+  image: kubesphere/notification-manager:v0.1.0
   imagePullPolicy: Always
   portName: webhook
   receivers:

@@ -1927,7 +1927,7 @@ spec:
         - --enable-leader-election
         command:
         - /notification-manager-operator
-        image: kubesphere/notification-manager-operator:latest
+        image: kubesphere/notification-manager-operator:v0.1.0
         name: notification-manager-operator
         resources:
           limits:
