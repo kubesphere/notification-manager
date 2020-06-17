@@ -53,7 +53,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: NotificationManager
 metadata:
-  name: notificationmanager-sample
+  name: notification-manager
   namespace: kubesphere-monitoring-system
 spec:
   replicas: 1
@@ -65,7 +65,7 @@ spec:
       cpu: 100m
       memory: 20Mi
   image: kubesphere/notification-manager:v0.1.0
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
   serviceAccountName: notification-manager-sa
   portName: webhook
   defaultConfigSelector:
@@ -257,7 +257,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: NotificationManager
 metadata:
-  name: notificationmanager-sample
+  name: notification-manager
   namespace: default
 spec:
   replicas: 1
@@ -269,7 +269,7 @@ spec:
       cpu: 100m
       memory: 20Mi
   image: kubesphere/notification-manager:v0.1.0
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
   serviceAccountName: notification-manager-sa
   portName: webhook
   defaultConfigSelector:
@@ -450,7 +450,7 @@ To receive Alertmanager alerts, add webhook config like below to the `receivers`
     "receivers":
      - "name": "notification-manager"
        "webhook_configs":
-       - "url": "http://notificationmanager-sample-svc.kubesphere-monitoring-system.svc:19093/api/v2/alerts"
+       - "url": "http://notification-manager-svc.kubesphere-monitoring-system.svc:19093/api/v2/alerts"
 ```
 
 ## Development

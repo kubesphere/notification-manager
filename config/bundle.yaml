@@ -1928,6 +1928,7 @@ spec:
         command:
         - /notification-manager-operator
         image: kubesphere/notification-manager-operator:v0.1.0
+        imagePullPolicy: IfNotPresent
         name: notification-manager-operator
         resources:
           limits:
