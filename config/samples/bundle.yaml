@@ -89,14 +89,14 @@ kind: NotificationManager
 metadata:
   labels:
     app: notification-manager
-  name: notificationmanager-sample
+  name: notification-manager
   namespace: kubesphere-monitoring-system
 spec:
   defaultConfigSelector:
     matchLabels:
       type: default
   image: kubesphere/notification-manager:v0.1.0
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
   portName: webhook
   receivers:
     globalReceiverSelector:

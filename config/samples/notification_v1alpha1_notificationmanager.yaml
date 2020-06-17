@@ -1,7 +1,7 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: NotificationManager
 metadata:
-  name: notificationmanager-sample
+  name: notification-manager
 spec:
   replicas: 1
   resources:
@@ -12,7 +12,7 @@ spec:
       cpu: 100m
       memory: 20Mi
   image: kubesphere/notification-manager:v0.1.0
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
   serviceAccountName: notification-manager-sa
   portName: webhook
   defaultConfigSelector:
