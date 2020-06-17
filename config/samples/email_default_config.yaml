@@ -1,18 +1,17 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: EmailConfig
 metadata:
-  name: admin-email-config
+  name: default-email-config
   labels:
-    type: tenant
-    user: admin
+    type: default
 spec:
-  from: abc1@xyz.com
+  from: sender1@xyz.com
   smartHost:
     host: imap.xyz.com
     port: "25"
-  authUsername: abc1
+  authUsername: sender1
   authPassword:
     namespace: kubesphere-monitoring-system
-    name: global-email-secret
+    name: default-email-secret
     key: password
   requireTLS: true

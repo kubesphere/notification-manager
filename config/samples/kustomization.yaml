@@ -1,16 +1,16 @@
 resources:
-- notification_v1alpha1_default_emailconfig.yaml
-- notification_v1alpha1_tenant_emailconfig.yaml
-- notification_v1alpha1_tenant_emailreceiver.yaml
-- notification_v1alpha1_global_emailreceiver.yaml
-- notification_v1alpha1_notificationmanager.yaml
-- notification_v1alpha1_slackconfig.yaml
-- notification_v1alpha1_slackreceiver.yaml
-- notification_v1alpha1_webhookconfig.yaml
-- notification_v1alpha1_webhookreceiver.yaml
-- notification_v1alpha1_wechatconfig.yaml
-- notification_v1alpha1_wechatreceiver.yaml
-- global_email_secret.yaml
+- email_default_config.yaml
+- email_tenant_config.yaml
+- email_tenant_receiver.yaml
+- email_global_receiver.yaml
+- notification_manager.yaml
+- slack_default_config.yaml
+- slack_global_receiver.yaml
+- webhook_default_config.yaml
+- webhook_global_receiver.yaml
+- wechat_default_config.yaml
+- wechat_global_receiver.yaml
+- email_default_secret.yaml
 
 namespace: kubesphere-monitoring-system
 

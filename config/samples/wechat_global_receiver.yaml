@@ -1,15 +1,13 @@
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WechatReceiver
 metadata:
-  name: admin-wechat
+  name: global-wechat-receiver
   labels:
-    type: tenant
-    user: admin
+    type: global
 spec:
   wechatConfigSelector:
     matchLabels:
-      type: tenant
-      user: admin
+      type: default
   # optional
   # One of toUser, toParty, toParty should be specified.
   toUser: abc
