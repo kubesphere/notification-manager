@@ -3,10 +3,8 @@ kind: WebhookReceiver
 metadata:
   name: admin-webhook
   labels:
-    type: tenant
-    user: admin
+    type: global
 spec:
   webhookConfigSelector:
     matchLabels:
-      type: tenant
-      user: admin
+      type: default

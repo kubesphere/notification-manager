@@ -1,0 +1,10 @@
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: EmailReceiver
+metadata:
+  name: global-email-receiver
+  labels:
+    type: global
+spec:
+  to:
+  - receiver1@xyz.com
+  - receiver2@xyz.com
