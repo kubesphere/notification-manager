@@ -8,7 +8,3 @@ spec:
   slackTokenSecret:
     key: token
     name: slack-token-secret
-  httpConfigSelector:
-    matchLabels:
-      type: tenant
-      user: admin

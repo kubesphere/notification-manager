@@ -5,30 +5,9 @@ kind: Secret
 metadata:
   labels:
     app: notification-manager
-  name: global-email-secret
+  name: default-email-secret
   namespace: kubesphere-monitoring-system
 type: Opaque
----
-apiVersion: notification.kubesphere.io/v1alpha1
-kind: EmailConfig
-metadata:
-  labels:
-    app: notification-manager
-    type: tenant
-    user: admin
-  name: admin-email-config
-  namespace: kubesphere-monitoring-system
-spec:
-  authPassword:
-    key: password
-    name: global-email-secret
-    namespace: kubesphere-monitoring-system
-  authUsername: abc1
-  from: abc1@xyz.com
-  requireTLS: true
-  smartHost:
-    host: imap.xyz.com
-    port: "25"
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: EmailConfig
@@ -41,10 +20,31 @@ metadata:
 spec:
   authPassword:
     key: password
-    name: global-email-secret
+    name: default-email-secret
     namespace: kubesphere-monitoring-system
-  authUsername: abc999
-  from: abc999@xyz.com
+  authUsername: sender1
+  from: sender1@xyz.com
+  requireTLS: true
+  smartHost:
+    host: imap.xyz.com
+    port: "25"
+---
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: EmailConfig
+metadata:
+  labels:
+    app: notification-manager
+    type: tenant
+    user: user1
+  name: user1-email-config
+  namespace: kubesphere-monitoring-system
+spec:
+  authPassword:
+    key: password
+    name: default-email-secret
+    namespace: kubesphere-monitoring-system
+  authUsername: sender1
+  from: sender1@xyz.com
   requireTLS: true
   smartHost:
     host: imap.xyz.com
@@ -55,48 +55,45 @@ kind: EmailReceiver
 metadata:
   labels:
     app: notification-manager
-    type: tenant
-    user: admin
-  name: admin-email
+    type: global
+  name: global-email-receiver
   namespace: kubesphere-monitoring-system
 spec:
-  emailConfigSelector:
-    matchLabels:
-      type: tenant
-      user: admin
   to:
-  - abc2@xyz.com
-  - abc3@xyz.com
+  - receiver1@xyz.com
+  - receiver2@xyz.com
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: EmailReceiver
 metadata:
   labels:
     app: notification-manager
-    type: global
-  name: global-admin1-email
+    type: tenant
+    user: user1
+  name: user1-email-receiver
   namespace: kubesphere-monitoring-system
 spec:
   emailConfigSelector:
     matchLabels:
-      type: global
+      type: tenant
+      user: user1
   to:
-  - abc1@xyz.com
-  - abc12@xyz.com
+  - receiver3@xyz.com
+  - receiver4@xyz.com
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: NotificationManager
 metadata:
   labels:
     app: notification-manager
-  name: notificationmanager-sample
+  name: notification-manager
   namespace: kubesphere-monitoring-system
 spec:
   defaultConfigSelector:
     matchLabels:
       type: default
   image: kubesphere/notification-manager:v0.1.0
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
   portName: webhook
   receivers:
     globalReceiverSelector:
@@ -133,10 +130,6 @@ metadata:
   name: default-slack-config
   namespace: kubesphere-monitoring-system
 spec:
-  httpConfigSelector:
-    matchLabels:
-      type: tenant
-      user: admin
   slackTokenSecret:
     key: token
     name: slack-token-secret
@@ -146,16 +139,14 @@ kind: SlackReceiver
 metadata:
   labels:
     app: notification-manager
-    type: tenant
-    user: admin
-  name: admin-slack
+    type: global
+  name: global-slack-receiver
   namespace: kubesphere-monitoring-system
 spec:
   channel: slack_channel_x
   slackConfigSelector:
     matchLabels:
-      type: tenant
-      user: admin
+      type: default
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WebhookConfig
@@ -168,8 +159,7 @@ metadata:
 spec:
   httpConfigSelector:
     matchLabels:
-      type: tenant
-      user: admin
+      type: default
   url: xxx
   urlSecret:
     key: webhook-url
@@ -180,15 +170,13 @@ kind: WebhookReceiver
 metadata:
   labels:
     app: notification-manager
-    type: tenant
-    user: admin
+    type: global
   name: admin-webhook
   namespace: kubesphere-monitoring-system
 spec:
   webhookConfigSelector:
     matchLabels:
-      type: tenant
-      user: admin
+      type: default
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: WechatConfig
@@ -211,9 +199,8 @@ kind: WechatReceiver
 metadata:
   labels:
     app: notification-manager
-    type: tenant
-    user: admin
-  name: admin-wechat
+    type: global
+  name: global-wechat-receiver
   namespace: kubesphere-monitoring-system
 spec:
   toParty: wechat-party
@@ -221,5 +208,4 @@ spec:
   toUser: abc
   wechatConfigSelector:
     matchLabels:
-      type: tenant
-      user: admin
+      type: default
