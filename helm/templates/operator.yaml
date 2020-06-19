@@ -11,7 +11,6 @@ spec:
       control-plane: controller-manager
   template:
     metadata:
-      creationTimestamp: null
       labels:
         control-plane: controller-manager
     spec:
@@ -21,11 +20,8 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=10
-        {{- if .Values.operator.containers.proxy.image.tag }}
         image: {{ .Values.operator.containers.proxy.image.repo }}:{{ .Values.operator.containers.proxy.image.tag }}
-        {{- if .Values.operator.containers.proxy.image.pullPolicy }}
         imagePullPolicy: {{ .Values.operator.containers.proxy.image.pullPolicy }}
-        {{- end}}
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
@@ -40,11 +36,8 @@ spec:
         - --enable-leader-election
         command:
         - /notification-manager-operator
-        {{- if .Values.operator.containers.operator.image.tag }}
         image: {{ .Values.operator.containers.operator.image.repo }}:{{ .Values.operator.containers.operator.image.tag }}
-        {{- if .Values.operator.containers.operator.image.pullPolicy }}
         imagePullPolicy: {{ .Values.operator.containers.operator.image.pullPolicy }}
-        {{- end}}
         name: notification-manager-operator
         resources: 
         {{- toYaml .Values.operator.containers.operator.resources | nindent 10 }}
