@@ -3,17 +3,11 @@ kind: NotificationManager
 metadata:
   labels:
     app: notification-manager
-  {{- if .Values.notificationmanager.name }}
   name: notification-manager
 spec:
-  {{- if .Values.notificationmanager.replicas }}
   replicas: {{ .Values.notificationmanager.replicas }}
-  {{- end}}
-  {{- if .Values.notificationmanager.image.tag }}
   image: {{ .Values.notificationmanager.image.repo }}:{{ .Values.notificationmanager.image.tag }}
-  {{- if .Values.notificationmanager.image.pullPolicy }}
   imagePullPolicy: {{ .Values.notificationmanager.image.pullPolicy }}
-  {{- end}}
   serviceAccountName: notification-manager-sa
   portName: webhook
   nodeSelector:
