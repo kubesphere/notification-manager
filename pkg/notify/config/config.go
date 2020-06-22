@@ -1232,7 +1232,8 @@ func (c *Config) generateMailReceiver(mr *nmv1alpha1.EmailReceiver) *Receiver {
 	}
 	for _, mc := range mcList.Items {
 
-		if len(c.nmNamespaces) > 0 || !sliceIn(c.nmNamespaces, mc.Namespace) {
+		if len(c.nmNamespaces) > 0 && !sliceIn(c.nmNamespaces, mc.Namespace) {
+			_ = level.Warn(c.logger).Log("msg", "don't need to be watched", "name", mc.Name, "namespace", mc.Namespace)
 			continue
 		}
 
@@ -1288,7 +1289,8 @@ func (c *Config) generateSlackReceiver(sr *nmv1alpha1.SlackReceiver) *Receiver {
 	}
 	for _, sc := range scList.Items {
 
-		if len(c.nmNamespaces) > 0 || !sliceIn(c.nmNamespaces, sc.Namespace) {
+		if len(c.nmNamespaces) > 0 && !sliceIn(c.nmNamespaces, sc.Namespace) {
+			_ = level.Warn(c.logger).Log("msg", "don't need to be watched", "name", sc.Name, "namespace", sc.Namespace)
 			continue
 		}
 
@@ -1359,7 +1361,8 @@ func (c *Config) generateWechatReceiver(wr *nmv1alpha1.WechatReceiver) *Receiver
 	}
 	for _, wc := range wcList.Items {
 
-		if len(c.nmNamespaces) > 0 || !sliceIn(c.nmNamespaces, wc.Namespace) {
+		if len(c.nmNamespaces) > 0 && !sliceIn(c.nmNamespaces, wc.Namespace) {
+			_ = level.Warn(c.logger).Log("msg", "don't need to be watched", "name", wc.Name, "namespace", wc.Namespace)
 			continue
 		}
 
