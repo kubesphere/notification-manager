@@ -23,7 +23,7 @@ import (
 // SlackReceiverSpec defines the desired state of SlackReceiver
 type SlackReceiverSpec struct {
 	// SlackConfig to be selected for this receiver
-	SlackConfigSelector *metav1.LabelSelector `json:"slackConfigSelector"`
+	SlackConfigSelector *metav1.LabelSelector `json:"slackConfigSelector,omitempty"`
 	// The channel or user to send notifications to.
 	Channel string `json:"channel"`
 }
