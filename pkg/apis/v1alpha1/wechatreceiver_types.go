@@ -23,7 +23,7 @@ import (
 // WechatReceiverSpec defines the desired state of WechatReceiver
 type WechatReceiverSpec struct {
 	// WechatConfig to be selected for this receiver
-	WechatConfigSelector *metav1.LabelSelector `json:"wechatConfigSelector"`
+	WechatConfigSelector *metav1.LabelSelector `json:"wechatConfigSelector,omitempty"`
 	// +optional
 	ToUser string `json:"toUser,omitempty"`
 
