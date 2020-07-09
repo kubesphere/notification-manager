@@ -11,6 +11,16 @@ Supported receivers includes:
 - Slack 
 - Webhook (Coming soon)
 
+## Architecture
+Notification Manager uses CRDs to store notification configs like email, wechat and slack. It also includes an operator to create and reconcile NotificationManager CRD which watches all notification config CRDs, updates notification settings accordingly and sends notifications to users.
+
+![Architecture](docs/images/architecture.png)
+
+## Integration with Alertmanager
+Notification Manager could receive webhook notifications from Alertmanager and then send notifications to users in a multi-tenancy way.
+
+![Notification Manager](docs/images/notification-manager.png)
+
 ## CustomResourceDefinitions
 Notification Manager uses the following CRDs to define the desired alerts/notifications webhook and receiver configs:
 - NotificationManager: Defines the desired alerts/notification webhook deployment. The Notification Manager Operator ensures a deployment meeting the resource requirements is running.
