@@ -33,6 +33,10 @@ Notification Manager uses the following CRDs to define the desired alerts/notifi
 - WebhookConfig: Define the webhook Url, HttpConfig.
 - WebhookReceiver: Define the WebhookConfig selector.
 
+The relationship between receivers and configs can be demostrated as below:
+
+![Receivers & Configs](docs/images/receivers_configs.png)
+
 Receiver CRDs like EmailReceiver, WechatReceiver, SlackReceiver and WebhookReceiver can be categorized into 2 types `global` and `tenant` by label like `type = global`, `type = tenant` :
 - A global EmailReceiver receives all alerts and then send notifications regardless tenant info(user or namespace).
 - A tenant EmailReceiver receives alerts with specified tenant label like `user` or `namespace` 
