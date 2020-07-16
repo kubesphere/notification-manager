@@ -127,7 +127,6 @@ spec:
   authPassword:
     key: password
     name: default-email-secret
-    namespace: kubesphere-monitoring-system
   authUsername: sender1 
   from: sender1@xyz.com
   requireTLS: true
@@ -178,7 +177,6 @@ spec:
   authPassword:
     key: password
     name: default-email-secret
-    namespace: kubesphere-monitoring-system
   authUsername: sender1 
   from: sender1@xyz.com
   requireTLS: true
@@ -376,7 +374,6 @@ spec:
   authPassword:
     key: password
     name: default-email-secret
-    namespace: default
   authUsername: sender1
   from: sender1@xyz.com
   requireTLS: true
@@ -427,7 +424,6 @@ spec:
   authPassword:
     key: password
     name: user1-email-secret
-    namespace: default
   authUsername: sender1 
   from: sender1@xyz.com
   requireTLS: true
