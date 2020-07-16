@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,9 +34,9 @@ type EmailConfigSpec struct {
 	// The identity for PLAIN authentication.
 	AuthIdentify *string `json:"authIdentify,omitempty"`
 	// The secret contains the SMTP password for LOGIN and PLAIN authentications.
-	AuthPassword *SecretKeyRef `json:"authPassword,omitempty"`
+	AuthPassword *v1.SecretKeySelector `json:"authPassword,omitempty"`
 	// The secret contains the SMTP secret for CRAM-MD5 authentication.
-	AuthSecret *SecretKeyRef `json:"authSecret,omitempty"`
+	AuthSecret *v1.SecretKeySelector `json:"authSecret,omitempty"`
 	// The default SMTP TLS requirement.
 	RequireTLS *bool `json:"requireTLS,omitempty"`
 }
@@ -43,12 +44,6 @@ type EmailConfigSpec struct {
 type HostPort struct {
 	Host string `json:"host"`
 	Port string `json:"port"`
-}
-
-type SecretKeyRef struct {
-	Namespace string `json:"namespace"`
-	Name      string `json:"name"`
-	Key       string `json:"key"`
 }
 
 // EmailConfigStatus defines the observed state of EmailConfig

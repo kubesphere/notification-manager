@@ -694,7 +694,6 @@ func (c *Config) RcvsFromNs(namespace *string) []*Receiver {
 		}
 	}
 
-	// TODO: Add receiver generation logic for wechat, slack and webhook
 	return rcvs
 }
 
@@ -1187,7 +1186,7 @@ func (c *Config) generateEmail(mc *nmv1alpha1.EmailConfig) *Email {
 
 	if mc.Spec.AuthPassword != nil {
 		authPassword := v1.Secret{}
-		if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: mc.Spec.AuthPassword.Namespace, Name: mc.Spec.AuthPassword.Name}, &authPassword); err != nil {
+		if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: mc.Namespace, Name: mc.Spec.AuthPassword.Name}, &authPassword); err != nil {
 			_ = level.Error(c.logger).Log("msg", "Unable to get AuthPassword secret", "err", err)
 			return nil
 		}
@@ -1196,7 +1195,7 @@ func (c *Config) generateEmail(mc *nmv1alpha1.EmailConfig) *Email {
 
 	if mc.Spec.AuthSecret != nil {
 		authSecret := v1.Secret{}
-		if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: mc.Spec.AuthSecret.Namespace, Name: mc.Spec.AuthSecret.Name}, &authSecret); err != nil {
+		if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: mc.Namespace, Name: mc.Spec.AuthSecret.Name}, &authSecret); err != nil {
 			_ = level.Error(c.logger).Log("msg", "Unable to get AuthSecret secret", "err", err)
 			return nil
 		}
