@@ -95,7 +95,7 @@ func Main() int {
 		return 1
 	}
 
-	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
+	logger = log.With(logger, "ts", log.DefaultTimestamp)
 	logger = log.With(logger, "caller", log.DefaultCaller)
 	_ = level.Info(logger).Log("msg", "Starting notification manager...", "addr", *listenAddress, "timeout", *webhookTimeout)
 
