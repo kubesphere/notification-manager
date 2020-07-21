@@ -31,4 +31,12 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        volumeMounts:
+          - mountPath: /etc/localtime
+            name: host-time
+      volumes:
+        - hostPath:
+            path: /etc/localtime
+            type: ""
+          name: host-time
       terminationGracePeriodSeconds: 10

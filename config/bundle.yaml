@@ -1940,5 +1940,13 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        volumeMounts:
+        - mountPath: /etc/localtime
+          name: host-time
       serviceAccountName: notification-manager-sa
       terminationGracePeriodSeconds: 10
+      volumes:
+      - hostPath:
+          path: /etc/localtime
+          type: ""
+        name: host-time
