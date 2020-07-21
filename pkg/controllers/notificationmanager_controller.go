@@ -196,6 +196,12 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 					},
 				},
 			},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      "host-time",
+					MountPath: "/etc/localtime",
+				},
+			},
 		}
 
 		if len(nm.Spec.NotificationManagerNamespaces) > 0 {
@@ -217,6 +223,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 				deploy.Spec.Template.Spec.Containers[i].Ports = newC.Ports
 				deploy.Spec.Template.Spec.Containers[i].Command = newC.Command
 				deploy.Spec.Template.Spec.Containers[i].Env = newC.Env
+				deploy.Spec.Template.Spec.Containers[i].VolumeMounts = newC.VolumeMounts
 				break
 			}
 		}
@@ -224,6 +231,19 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 		// Create new Containers if no existing Containers exist
 		if len(deploy.Spec.Template.Spec.Containers) == 0 {
 			deploy.Spec.Template.Spec.Containers = []corev1.Container{newC}
+		}
+
+		if len(deploy.Spec.Template.Spec.Volumes) == 0 {
+			deploy.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: "host-time",
+					VolumeSource: corev1.VolumeSource{
+						HostPath: &corev1.HostPathVolumeSource{
+							Path: "/etc/localtime",
+						},
+					},
+				},
+			}
 		}
 
 		deploy.SetOwnerReferences(nil)
