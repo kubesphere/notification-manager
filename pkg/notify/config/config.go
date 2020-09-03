@@ -422,8 +422,11 @@ func (c *Config) sync(p *param) {
 			}
 		case wechatReceiver:
 			// Setup WechatConfig with global default if wechatconfig cannot be found
-			if p.receiver.Wechat.WechatConfig == nil && c.defaultConfig.Wechat != nil {
-				p.receiver.Wechat.WechatConfig = c.defaultConfig.Wechat.WechatConfig
+			if p.receiver.Wechat.WechatConfig == nil {
+				p.receiver.Wechat.UseDefault = true
+				if c.defaultConfig.Wechat != nil {
+					p.receiver.Wechat.WechatConfig = c.defaultConfig.Wechat.WechatConfig
+				}
 			}
 			rcvKey := fmt.Sprintf("%s/%s/%s", wechatReceiver, p.namespace, p.name)
 			if _, exist := c.receivers[p.tenantID]; exist {
@@ -462,8 +465,11 @@ func (c *Config) sync(p *param) {
 			}
 		case slackReceiver:
 			// Setup SlackConfig with global default if slackReceiver cannot be found
-			if p.receiver.Slack.SlackConfig == nil && c.defaultConfig.Slack != nil {
-				p.receiver.Slack.SlackConfig = c.defaultConfig.Slack.SlackConfig
+			if p.receiver.Slack.SlackConfig == nil {
+				p.receiver.Slack.UseDefault = true
+				if c.defaultConfig.Slack != nil {
+					p.receiver.Slack.SlackConfig = c.defaultConfig.Slack.SlackConfig
+				}
 			}
 			rcvKey := fmt.Sprintf("%s/%s/%s", slackReceiver, p.namespace, p.name)
 			if _, exist := c.receivers[p.tenantID]; exist {
