@@ -44,9 +44,9 @@ var (
 	ownerKey               = ".metadata.controller"
 	apiGVStr               = nmv1alpha1.GroupVersion.String()
 	log                    logr.Logger
-	minReplicas            int32             = 1
-	defaultImage           string            = "kubesphere/notification-manager:v0.1.0"
-	defaultImagePullPolicy corev1.PullPolicy = corev1.PullIfNotPresent
+	minReplicas            int32 = 1
+	defaultImage                 = "kubesphere/notification-manager:v0.1.0"
+	defaultImagePullPolicy       = corev1.PullIfNotPresent
 )
 
 // NotificationManagerReconciler reconciles a NotificationManager object
@@ -187,7 +187,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 				},
 			},
 			Env: []corev1.EnvVar{
-				corev1.EnvVar{
+				{
 					Name: "NAMESPACE",
 					ValueFrom: &corev1.EnvVarSource{
 						FieldRef: &corev1.ObjectFieldSelector{
@@ -202,6 +202,10 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 					MountPath: "/etc/localtime",
 				},
 			},
+		}
+
+		if nm.Spec.VolumeMounts != nil {
+			newC.VolumeMounts = append(newC.VolumeMounts, nm.Spec.VolumeMounts...)
 		}
 
 		if len(nm.Spec.NotificationManagerNamespaces) > 0 {
@@ -233,18 +237,17 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 			deploy.Spec.Template.Spec.Containers = []corev1.Container{newC}
 		}
 
-		if len(deploy.Spec.Template.Spec.Volumes) == 0 {
-			deploy.Spec.Template.Spec.Volumes = []corev1.Volume{
-				{
-					Name: "host-time",
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/etc/localtime",
-						},
+		deploy.Spec.Template.Spec.Volumes = []corev1.Volume{
+			{
+				Name: "host-time",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/etc/localtime",
 					},
 				},
-			}
+			},
 		}
+		deploy.Spec.Template.Spec.Volumes = append(deploy.Spec.Template.Spec.Volumes, nm.Spec.Volumes...)
 
 		deploy.SetOwnerReferences(nil)
 		return ctrl.SetControllerReference(nm, deploy, r.Scheme)

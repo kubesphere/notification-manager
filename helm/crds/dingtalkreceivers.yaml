@@ -1,18 +1,18 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: wechatreceivers.notification.kubesphere.io
+  name: dingtalkreceivers.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
   names:
-    kind: WechatReceiver
-    listKind: WechatReceiverList
-    plural: wechatreceivers
-    singular: wechatreceiver
+    kind: DingTalkReceiver
+    listKind: DingTalkReceiverList
+    plural: dingtalkreceivers
+    singular: dingtalkreceiver
   scope: Namespaced
   validation:
     openAPIV3Schema:
-      description: WechatReceiver is the Schema for the wechatreceivers API
+      description: DingTalkReceiver is the Schema for the dingtalkreceivers API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -27,16 +27,10 @@ spec:
         metadata:
           type: object
         spec:
-          description: WechatReceiverSpec defines the desired state of WechatReceiver
+          description: DingTalkReceiverSpec defines the desired state of DingTalkReceiver
           properties:
-            toParty:
-              type: string
-            toTag:
-              type: string
-            toUser:
-              type: string
-            wechatConfigSelector:
-              description: WechatConfig to be selected for this receiver
+            dingTalkConfigSelector:
+              description: WebhookConfig to be selected for this receiver
               properties:
                 matchExpressions:
                   description: matchExpressions is a list of label selector requirements.
@@ -80,7 +74,7 @@ spec:
               type: object
           type: object
         status:
-          description: WechatReceiverStatus defines the observed state of WechatReceiver
+          description: DingTalkReceiverStatus defines the observed state of DingTalkReceiver
           type: object
       type: object
   version: v1alpha1

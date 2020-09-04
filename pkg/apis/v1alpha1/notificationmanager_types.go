@@ -50,6 +50,11 @@ type NotificationManagerSpec struct {
 	Receivers *ReceiversSpec `json:"receivers"`
 	// Notification manager namespaces, default is all namespaces.
 	NotificationManagerNamespaces []string `json:"notificationManagerNamespaces,omitempty"`
+	// List of volumes that can be mounted by containers belonging to the pod.
+	Volumes []v1.Volume `json:"volumes,omitempty"`
+	// Pod volumes to mount into the container's filesystem.
+	// Cannot be updated.
+	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
 }
 
 type ReceiversSpec struct {
@@ -78,39 +83,52 @@ type EmailOptions struct {
 	DeliveryType string `json:"deliveryType,omitempty"`
 	// The maximum size of receivers in one email.
 	MaxEmailReceivers int `json:"maxEmailReceivers,omitempty"`
-	// The name of the template to generate email message,like '{{ template "email.default.html" . }}'
+	// The name of the template to generate email message,like `{{ template "nm.default.html" . }}`
 	Template string `json:"template,omitempty"`
-	// The name of the template to generate email subject,like `{{ template "email.default.subject" . }}`
+	// The name of the template to generate email subject,like `{{ template "nm.default.subject" . }}`
 	SubjectTemplate string `json:"subjectTemplate,omitempty"`
 }
 
 type WechatOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
-	// The name of the template to generate wechat message,like '{{ template "wechat.default" . }}'
+	// The name of the template to generate wechat message,like `{{ template "nm.default.text" . }}`
 	Template string `json:"template,omitempty"`
 }
 
 type SlackOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
-	// The name of the template to generate slack message,like '{{ template "slack.default" . }}'
+	// The name of the template to generate slack message,like `{{ template "nm.default.text" . }}`
 	Template string `json:"template,omitempty"`
 }
 
 type WebhookOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
-	// The name of the template to generate webhook message,like '{{ template "webhook.default" . }}'
+	// The name of the template to generate webhook message,like `{{ template "nm.default.text" . }}`
+	Template string `json:"template,omitempty"`
+}
+
+type DingTalkOptions struct {
+	// Notification Sending Timeout
+	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
+	// A DingTalk ChatBot only can send 20 message per minute, if it reached the threshold, it will wait for a few second.
+	// This value used to set the maximum tolerable waiting time, if the actual waiting time is more than this time, it will
+	// return a error, else it will wait for the flow restriction lifted, and send the message.
+	// Nil means do not wait, the maximum value is 60.
+	MaxWaitTime *int32 `json:"maxWaitTime,omitempty"`
+	// The name of the template to generate DingTalk message,like `{{ template "nm.default.text" . }}`
 	Template string `json:"template,omitempty"`
 }
 
 type Options struct {
-	Global  *GlobalOptions  `json:"global,omitempty"`
-	Email   *EmailOptions   `json:"email,omitempty"`
-	Wechat  *WechatOptions  `json:"wechat,omitempty"`
-	Slack   *SlackOptions   `json:"slack,omitempty"`
-	Webhook *WebhookOptions `json:"webhook,omitempty"`
+	Global   *GlobalOptions   `json:"global,omitempty"`
+	Email    *EmailOptions    `json:"email,omitempty"`
+	Wechat   *WechatOptions   `json:"wechat,omitempty"`
+	Slack    *SlackOptions    `json:"slack,omitempty"`
+	Webhook  *WebhookOptions  `json:"webhook,omitempty"`
+	DingTalk *DingTalkOptions `json:"dingtalk,omitempty"`
 }
 
 // NotificationManagerStatus defines the observed state of NotificationManager

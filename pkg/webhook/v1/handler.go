@@ -115,7 +115,7 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 					ns = &k
 				}
 				receivers := h.notifierCfg.RcvsFromNs(ns)
-				n := notify.NewNotification(h.logger, receivers, h.notifierCfg.ReceiverOpts, d)
+				n := notify.NewNotification(h.logger, receivers, h.notifierCfg, d)
 				errs := n.Notify()
 				if errs != nil && len(errs) > 0 {
 					_ = level.Error(h.logger).Log("msg", "Worker: notification sent error")
@@ -196,4 +196,12 @@ func (h *HttpHandler) handle(w http.ResponseWriter, resp *response) {
 	} else {
 		_ = level.Debug(h.logger).Log("msg", resp.Message)
 	}
+}
+
+func (h *HttpHandler) GetReceivers(w http.ResponseWriter, r *http.Request) {
+
+	_ = r.ParseForm()
+	bs, _ := jsoniter.MarshalIndent(h.notifierCfg.OutputReceiver(r.FormValue("tenant"), r.FormValue("type")), "", "  ")
+	_, _ = w.Write(bs)
+	return
 }

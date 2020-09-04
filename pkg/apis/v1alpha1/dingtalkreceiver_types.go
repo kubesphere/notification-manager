@@ -20,36 +20,36 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// WebhookReceiverSpec defines the desired state of WebhookReceiver
-type WebhookReceiverSpec struct {
+// DingTalkReceiverSpec defines the desired state of DingTalkReceiver
+type DingTalkReceiverSpec struct {
 	// WebhookConfig to be selected for this receiver
-	WebhookConfigSelector *metav1.LabelSelector `json:"webhookConfigSelector,omitempty"`
+	DingTalkConfigSelector *metav1.LabelSelector `json:"dingTalkConfigSelector,omitempty"`
 }
 
-// WebhookReceiverStatus defines the observed state of WebhookReceiver
-type WebhookReceiverStatus struct {
+// DingTalkReceiverStatus defines the observed state of DingTalkReceiver
+type DingTalkReceiverStatus struct {
 }
 
 // +kubebuilder:object:root=true
 
-// WebhookReceiver is the Schema for the webhookreceivers API
-type WebhookReceiver struct {
+// DingTalkReceiver is the Schema for the dingtalkreceivers API
+type DingTalkReceiver struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   WebhookReceiverSpec   `json:"spec,omitempty"`
-	Status WebhookReceiverStatus `json:"status,omitempty"`
+	Spec   DingTalkReceiverSpec   `json:"spec,omitempty"`
+	Status DingTalkReceiverStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
 // WebhookReceiverList contains a list of WebhookReceiver
-type WebhookReceiverList struct {
+type DingTalkReceiverList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []WebhookReceiver `json:"items"`
+	Items           []DingTalkReceiver `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&WebhookReceiver{}, &WebhookReceiverList{})
+	SchemeBuilder.Register(&DingTalkReceiver{}, &DingTalkReceiverList{})
 }

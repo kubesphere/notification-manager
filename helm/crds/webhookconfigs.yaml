@@ -1,11 +1,6 @@
-
----
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
   name: webhookconfigs.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -87,7 +82,7 @@ spec:
                   description: TLSConfig to use to connect to the targets.
                   properties:
                     ca:
-                      description: The service root ca to use for the targets.
+                      description: The CA cert to use for the targets.
                       properties:
                         key:
                           description: The key of the secret to select from.  Must
@@ -203,12 +198,12 @@ spec:
       type: object
   version: v1alpha1
   versions:
-  - name: v1alpha1
-    served: true
-    storage: true
+    - name: v1alpha1
+      served: true
+      storage: true
 status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: [ ]
+  storedVersions: [ ]

@@ -1,0 +1,6 @@
+apiVersion: notification.kubesphere.io/v1alpha1
+kind: DingTalkReceiver
+metadata:
+  name: global-dingtalk-receiver
+  labels:
+    type: global

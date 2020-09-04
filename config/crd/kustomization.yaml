@@ -2,15 +2,17 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/notification.kubesphere.io_notificationmanagers.yaml
-- bases/notification.kubesphere.io_emailconfigs.yaml
-- bases/notification.kubesphere.io_emailreceivers.yaml
-- bases/notification.kubesphere.io_slackconfigs.yaml
-- bases/notification.kubesphere.io_slackreceivers.yaml
-- bases/notification.kubesphere.io_webhookconfigs.yaml
-- bases/notification.kubesphere.io_webhookreceivers.yaml
-- bases/notification.kubesphere.io_wechatconfigs.yaml
-- bases/notification.kubesphere.io_wechatreceivers.yaml
+  - bases/notification.kubesphere.io_notificationmanagers.yaml
+  - bases/notification.kubesphere.io_dingtalkconfigs.yaml
+  - bases/notification.kubesphere.io_dingtalkreceivers.yaml
+  - bases/notification.kubesphere.io_emailconfigs.yaml
+  - bases/notification.kubesphere.io_emailreceivers.yaml
+  - bases/notification.kubesphere.io_slackconfigs.yaml
+  - bases/notification.kubesphere.io_slackreceivers.yaml
+  - bases/notification.kubesphere.io_webhookconfigs.yaml
+  - bases/notification.kubesphere.io_webhookreceivers.yaml
+  - bases/notification.kubesphere.io_wechatconfigs.yaml
+  - bases/notification.kubesphere.io_wechatreceivers.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

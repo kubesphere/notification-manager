@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
 	nmconfig "github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/prometheus/alertmanager/config"
@@ -23,13 +22,14 @@ const (
 	Bulk                    = "Bulk"
 	MaxEmailReceivers       = math.MaxInt32
 	DefaultSendTimeout      = time.Second * 3
-	DefaultTemplate         = `{{ template "email.default.html" . }}`
-	DefaultTSubjectTemplate = `{{ template "email.default.subject" . }}`
+	DefaultTemplate         = `{{ template "nm.default.html" . }}`
+	DefaultTSubjectTemplate = `{{ template "nm.default.subject" . }}`
 )
 
 type Notifier struct {
-	email    map[string]*nmconfig.Email
-	template *notifier.Template
+	notifierCfg *nmconfig.Config
+	email       map[string]*nmconfig.Email
+	template    *notifier.Template
 	// The name of template to generate email message.
 	templateName string
 	// The name of template to generate email subject.
@@ -42,14 +42,10 @@ type Notifier struct {
 	maxEmailReceivers int
 }
 
-func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Options) notifier.Notifier {
-	sv, ok := val.([]interface{})
-	if !ok {
-		_ = level.Error(logger).Log("msg", "EmailNotifier: value type error")
-		return nil
-	}
+func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifierCfg *nmconfig.Config) notifier.Notifier {
 
 	var path []string
+	opts := notifierCfg.ReceiverOpts
 	if opts != nil && opts.Global != nil {
 		path = opts.Global.TemplateFiles
 	}
@@ -60,6 +56,7 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 	}
 
 	n := &Notifier{
+		notifierCfg:         notifierCfg,
 		email:               make(map[string]*nmconfig.Email),
 		logger:              logger,
 		timeout:             DefaultSendTimeout,
@@ -92,20 +89,19 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 		}
 	}
 
-	for _, v := range sv {
-		ev, ok := v.(*nmconfig.Email)
-		if !ok || ev == nil {
-			_ = level.Error(logger).Log("msg", "EmailNotifier: value type error")
+	for _, r := range receivers {
+		receiver, ok := r.(*nmconfig.Email)
+		if !ok || receiver == nil {
 			continue
 		}
 
-		if ev.EmailConfig == nil {
+		if receiver.EmailConfig == nil {
 			_ = level.Warn(logger).Log("msg", "EmailNotifier: ignore receiver because of empty config")
 			continue
 		}
 
 		if n.delivery == Bulk {
-			c := n.clone(ev.EmailConfig)
+			c := n.clone(receiver.EmailConfig)
 			key, err := notifier.Md5key(c)
 			if err != nil {
 				_ = level.Error(logger).Log("msg", "EmailNotifier: get notifier error", "error", err.Error())
@@ -114,24 +110,24 @@ func NewEmailNotifier(logger log.Logger, val interface{}, opts *nmv1alpha1.Optio
 
 			e, ok := n.email[key]
 			if !ok {
-				e = &nmconfig.Email{
-					EmailConfig: c,
-				}
+				e := nmconfig.NewEmail(nil)
+				_ = e.SetConfig(c)
+				e.SetNamespace(receiver.GetNamespace())
 			}
 
-			e.To = append(e.To, ev.To...)
+			e.To = append(e.To, receiver.To...)
 			n.email[key] = e
 		} else {
-			key, err := notifier.Md5key(ev)
+			key, err := notifier.Md5key(receiver)
 			if err != nil {
 				_ = level.Error(logger).Log("msg", "EmailNotifier: get notifier error", "error", err.Error())
 				continue
 			}
 
-			n.email[key] = &nmconfig.Email{
-				To:          ev.To,
-				EmailConfig: n.clone(ev.EmailConfig),
-			}
+			e := nmconfig.NewEmail(receiver.To)
+			_ = e.SetConfig(n.clone(receiver.EmailConfig))
+			e.SetNamespace(receiver.GetNamespace())
+			n.email[key] = e
 		}
 	}
 
@@ -154,24 +150,29 @@ func (n *Notifier) Notify(data template.Data) []error {
 	}
 
 	var errs []error
-	sendEmail := func(c *config.EmailConfig, to string) {
-		cc := n.clone(c)
-		cc.To = to
-		cc.HTML = n.templateName
-		cc.Headers["Subject"] = n.subjectTemplateName
-		e := email.New(cc, n.template.Tmpl, n.logger)
+	sendEmail := func(e *nmconfig.Email, to string) {
+		emailConfig, err := n.getEmailConfig(e)
+		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "EmailNotifier: get email config error", "error", err.Error())
+			errs = append(errs, err)
+			return
+		}
+		emailConfig.To = to
+		emailConfig.HTML = n.templateName
+		emailConfig.Headers["Subject"] = n.subjectTemplateName
+		sender := email.New(emailConfig, n.template.Tmpl, n.logger)
 
 		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
 		ctx = notify.WithGroupLabels(ctx, notifier.KvToLabelSet(data.GroupLabels))
 		ctx = notify.WithReceiverName(ctx, data.Receiver)
 		defer cancel()
 
-		_, err := e.Notify(ctx, as...)
+		_, err = sender.Notify(ctx, as...)
 		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "EmailNotifier: notify error", "from", cc.From, "to", cc.To, "error", err.Error())
+			_ = level.Error(n.logger).Log("msg", "EmailNotifier: notify error", "from", emailConfig.From, "to", emailConfig.To, "error", err.Error())
 			errs = append(errs, err)
 		}
-		_ = level.Debug(n.logger).Log("msg", "EmailNotifier: send email", "from", cc.From, "to", cc.To)
+		_ = level.Debug(n.logger).Log("msg", "EmailNotifier: send message", "from", emailConfig.From, "to", emailConfig.To)
 	}
 
 	for _, e := range n.email {
@@ -196,11 +197,11 @@ func (n *Notifier) Notify(data template.Data) []error {
 					to += fmt.Sprintf("%s,", t)
 				}
 				to = strings.TrimSuffix(to, ",")
-				sendEmail(e.EmailConfig, to)
+				sendEmail(e, to)
 			}
 		} else {
 			for _, to := range e.To {
-				sendEmail(e.EmailConfig, to)
+				sendEmail(e, to)
 			}
 		}
 	}
@@ -208,28 +209,58 @@ func (n *Notifier) Notify(data template.Data) []error {
 	return errs
 }
 
-func (n *Notifier) clone(ec *config.EmailConfig) *config.EmailConfig {
+func (n *Notifier) clone(ec *nmconfig.EmailConfig) *nmconfig.EmailConfig {
 
 	if ec == nil {
 		return nil
 	}
 
-	emailConfig := &config.EmailConfig{
-		NotifierConfig: config.NotifierConfig{},
-		To:             "",
-		From:           ec.From,
-		Hello:          ec.Hello,
-		Smarthost:      ec.Smarthost,
-		AuthUsername:   ec.AuthUsername,
-		AuthPassword:   ec.AuthPassword,
-		AuthSecret:     ec.AuthSecret,
-		AuthIdentity:   ec.AuthIdentity,
-		Headers:        make(map[string]string),
-		HTML:           ec.HTML,
-		Text:           ec.Text,
-		RequireTLS:     &(*ec.RequireTLS),
-		TLSConfig:      ec.TLSConfig,
+	return &nmconfig.EmailConfig{
+		From:         ec.From,
+		SmartHost:    ec.SmartHost,
+		Hello:        ec.Hello,
+		AuthUsername: ec.AuthUsername,
+		AuthIdentify: ec.AuthIdentify,
+		AuthPassword: ec.AuthPassword,
+		AuthSecret:   ec.AuthSecret,
+		RequireTLS:   ec.RequireTLS,
+	}
+}
+
+func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error) {
+
+	ec := &config.EmailConfig{
+		From:  e.EmailConfig.From,
+		Hello: e.EmailConfig.Hello,
+		Smarthost: config.HostPort{
+			Host: e.EmailConfig.SmartHost.Host,
+			Port: e.EmailConfig.SmartHost.Port,
+		},
+		AuthUsername: e.EmailConfig.AuthUsername,
+		AuthPassword: "",
+		AuthSecret:   "",
+		AuthIdentity: e.EmailConfig.AuthIdentify,
+		RequireTLS:   &e.EmailConfig.RequireTLS,
+		Headers:      make(map[string]string),
 	}
 
-	return emailConfig
+	if e.EmailConfig.AuthPassword != nil {
+		pass, err := n.notifierCfg.GetSecretData(e.GetNamespace(), e.EmailConfig.AuthPassword)
+		if err != nil {
+			return nil, err
+		}
+
+		ec.AuthPassword = config.Secret(pass)
+	}
+
+	if e.EmailConfig.AuthSecret != nil {
+		secret, err := n.notifierCfg.GetSecretData(e.GetNamespace(), e.EmailConfig.AuthSecret)
+		if err != nil {
+			return nil, err
+		}
+
+		ec.AuthSecret = config.Secret(secret)
+	}
+
+	return ec, nil
 }

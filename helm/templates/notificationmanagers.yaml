@@ -15,12 +15,16 @@ spec:
   affinity:
     {{- toYaml .Values.notificationmanager.affinity | nindent 4 }}
   tolerations:
-    {{- toYaml .Values.notificationmanager.tolerations | nindent 4 }}
+  {{- toYaml .Values.notificationmanager.tolerations | nindent 4 }}
   resources:
-    {{- toYaml .Values.notificationmanager.resources | nindent 4 }}
+  {{- toYaml .Values.notificationmanager.resources | nindent 4 }}
   receivers:
-    {{- toYaml .Values.notificationmanager.receivers | nindent 4 }}
+  {{- toYaml .Values.notificationmanager.receivers | nindent 4 }}
   defaultConfigSelector:
-    {{- toYaml .Values.notificationmanager.defaultConfigSelector | nindent 4 }}
+  {{- toYaml .Values.notificationmanager.defaultConfigSelector | nindent 4 }}
   notificationManagerNamespaces:
-    {{- toYaml .Values.notificationmanager.notificationManagerNamespaces | nindent 4 }}
+  {{- toYaml .Values.notificationmanager.notificationManagerNamespaces | nindent 4 }}
+  volumeMounts:
+  {{- toYaml .Values.notificationmanager.volumeMounts | nindent 4 }}
+  volumes:
+  {{- toYaml .Values.notificationmanager.volumes | nindent 4 }}
