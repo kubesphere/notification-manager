@@ -19,9 +19,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"strings"
 
 	"github.com/go-logr/logr"
 	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
@@ -257,13 +258,13 @@ func (r *NotificationManagerReconciler) makeCommonLabels(nm *nmv1alpha1.Notifica
 
 func (r *NotificationManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(&corev1.Service{}, ownerKey, func(rawObj runtime.Object) []string {
-		// grab the job object, extract the owner.
+		// grab the service object, extract the owner.
 		svc := rawObj.(*corev1.Service)
 		owner := metav1.GetControllerOf(svc)
 		if owner == nil {
 			return nil
 		}
-		// Make sure it's a FluentBit. If so, return it.
+		// Make sure it's a NotificationManager. If so, return it.
 		if owner.APIVersion != apiGVStr || owner.Kind != "NotificationManager" {
 			return nil
 		}
@@ -273,13 +274,13 @@ func (r *NotificationManagerReconciler) SetupWithManager(mgr ctrl.Manager) error
 	}
 
 	if err := mgr.GetFieldIndexer().IndexField(&appsv1.Deployment{}, ownerKey, func(rawObj runtime.Object) []string {
-		// grab the job object, extract the owner.
+		// grab the deployment object, extract the owner.
 		deploy := rawObj.(*appsv1.Deployment)
 		owner := metav1.GetControllerOf(deploy)
 		if owner == nil {
 			return nil
 		}
-		// Make sure it's a FluentBit. If so, return it.
+		// Make sure it's a NotificationManager. If so, return it.
 		if owner.APIVersion != apiGVStr || owner.Kind != "NotificationManager" {
 			return nil
 		}
