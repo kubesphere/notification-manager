@@ -1,7 +1,11 @@
 VERSION?=$(shell cat VERSION | tr -d " \t\n\r")
 # Image URL to use all building/pushing image targets
-IMG ?= kubesphere/notification-manager-operator:$(VERSION)
-NM_IMG ?= kubesphere/notification-manager:$(VERSION)
+IMG ?= kubespheredev/notification-manager-operator:$(VERSION)
+NM_IMG ?= kubespheredev/notification-manager:$(VERSION)
+# Image URL for arm64 to use all building/pushing image targets
+ARM64 ?= -arm64
+IMG_ARM64 ?= kubespheredev/notification-manager-operator:$(VERSION)$(ARM64)
+NM_IMG_ARM64 ?= kubespheredev/notification-manager:$(VERSION)$(ARM64)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -86,6 +90,17 @@ build-nm: test
 push:
 	docker push ${IMG}
 	docker push ${NM_IMG}
+
+# Build all docker images for arm64
+build-arm64: build-op-arm64 build-nm-arm64
+
+# Build the docker image for arm64
+build-op-arm64: test
+	docker buildx build --push --platform linux/arm64 -f cmd/operator/Dockerfile . -t ${IMG_ARM64}
+
+# Build the docker image for arm64
+build-nm-arm64: test
+	docker buildx build --push --platform linux/arm64 -f cmd/notification-manager/Dockerfile . -t ${NM_IMG_ARM64}
 
 #docker-clean:
 #	docker rmi `docker image ls|awk '{print $2,$3}'|grep none|awk '{print $2}'|tr "\n" " "`
