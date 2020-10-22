@@ -61,6 +61,8 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 
 		if len(opts.Webhook.Template) > 0 {
 			n.templateName = opts.Webhook.Template
+		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
+			n.templateName = opts.Global.Template
 		}
 	}
 

@@ -56,12 +56,12 @@ spec:
                             be defined
                           type: boolean
                       required:
-                        - key
+                      - key
                       type: object
                     username:
                       type: string
                   required:
-                    - username
+                  - username
                   type: object
                 bearerToken:
                   description: The bearer token for the targets.
@@ -78,7 +78,7 @@ spec:
                       description: Specify whether the Secret or its key must be defined
                       type: boolean
                   required:
-                    - key
+                  - key
                   type: object
                 proxyUrl:
                   description: HTTP proxy server to use to connect to the targets.
@@ -102,7 +102,7 @@ spec:
                             be defined
                           type: boolean
                       required:
-                        - key
+                      - key
                       type: object
                     cert:
                       description: The client cert file for the targets.
@@ -120,7 +120,7 @@ spec:
                             be defined
                           type: boolean
                       required:
-                        - key
+                      - key
                       type: object
                     insecureSkipVerify:
                       description: Disable target certificate validation.
@@ -141,13 +141,13 @@ spec:
                             be defined
                           type: boolean
                       required:
-                        - key
+                      - key
                       type: object
                     serverName:
                       description: Used to verify the hostname for the targets.
                       type: string
                   required:
-                    - insecureSkipVerify
+                  - insecureSkipVerify
                   type: object
               type: object
             service:
@@ -175,8 +175,8 @@ spec:
                   description: Http scheme, default is http.
                   type: string
               required:
-                - name
-                - namespace
+              - name
+              - namespace
               type: object
             url:
               description: "`url` gives the location of the webhook, in standard URL

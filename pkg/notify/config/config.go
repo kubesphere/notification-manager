@@ -676,7 +676,7 @@ func (c *Config) getReceiver(p *param) {
 
 	lbs := accessor.GetLabels()
 
-	_ = level.Debug(c.logger).Log("msg", "resource change", "op", p.op, "type", p.opType, "name", p.name, "namespace", p.namespace)
+	_ = level.Info(c.logger).Log("msg", "resource change", "op", p.op, "type", p.opType, "name", p.name, "namespace", p.namespace)
 
 	// If crd's label matches globalSelector such as "type = global",
 	// then this is a global receiver or config, and tenantID should be set to an unique tenantID
@@ -770,7 +770,7 @@ func (c *Config) OutputReceiver(tenant, receiver string) interface{} {
 func (c *Config) GetSecretData(namespace string, selector *v1.SecretKeySelector) (string, error) {
 
 	if selector == nil {
-		return "", nil
+		return "", fmt.Errorf("SecretKeySelector is nil")
 	}
 
 	secret := v1.Secret{}

@@ -82,6 +82,8 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 
 		if len(opts.Email.Template) > 0 {
 			n.templateName = opts.Email.Template
+		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
+			n.templateName = opts.Global.Template
 		}
 
 		if len(opts.Email.SubjectTemplate) > 0 {

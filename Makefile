@@ -72,25 +72,25 @@ vet:
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-# Build all docker images
+# Build all docker images for amd64 and arm64
 build: build-op build-nm
 
-# Build the docker image
+# Build the docker image for amd64 and arm64
 build-op: test
 	docker buildx build --push --platform linux/amd64,linux/arm64 -f cmd/operator/Dockerfile . -t ${IMG}
 
-# Build the docker image
+# Build the docker image for amd64 and arm64
 build-nm: test
 	docker buildx build --push --platform linux/amd64,linux/arm64 -f cmd/notification-manager/Dockerfile . -t ${NM_IMG}
 
-# Build all docker images
+# Build all docker images for amd64
 build-amd64: build-op-amd64 build-nm-amd64
 
-# Build the docker image
+# Build the docker image for amd64
 build-op-amd64: test
 	docker build -f cmd/operator/Dockerfile . -t ${IMG}${AMD64}
 
-# Build the docker image
+# Build the docker image for amd64
 build-nm-amd64: test
 	docker build -f cmd/notification-manager/Dockerfile . -t ${NM_IMG}${AMD64}
 

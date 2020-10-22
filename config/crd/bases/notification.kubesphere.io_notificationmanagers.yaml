@@ -741,7 +741,8 @@ spec:
                           type: integer
                         template:
                           description: The name of the template to generate DingTalk
-                            message,like `{{ template "nm.default.text" . }}`
+                            message. If the global template is not set, it will use
+                            default.
                           type: string
                       type: object
                     email:
@@ -758,15 +759,20 @@ spec:
                           type: integer
                         subjectTemplate:
                           description: The name of the template to generate email
-                            subject,like `{{ template "nm.default.subject" . }}`
+                            subject
                           type: string
                         template:
                           description: The name of the template to generate email
-                            message,like `{{ template "nm.default.html" . }}`
+                            message. If the global template is not set, it will use
+                            default.
                           type: string
                       type: object
                     global:
                       properties:
+                        template:
+                          description: The name of the template to generate message.
+                            If the receiver dose not setup template, it will use this.
+                          type: string
                         templateFile:
                           description: Template file path, must be a absolute path.
                           items:
@@ -781,7 +787,8 @@ spec:
                           type: integer
                         template:
                           description: The name of the template to generate slack
-                            message,like `{{ template "nm.default.text" . }}`
+                            message. If the global template is not set, it will use
+                            default.
                           type: string
                       type: object
                     webhook:
@@ -792,7 +799,8 @@ spec:
                           type: integer
                         template:
                           description: The name of the template to generate webhook
-                            message,like `{{ template "nm.default.text" . }}`
+                            message. If the global template is not set, it will use
+                            default.
                           type: string
                       type: object
                     wechat:
@@ -803,7 +811,7 @@ spec:
                           type: integer
                         template:
                           description: The name of the template to generate wechat
-                            message,like `{{ template "nm.default.text" . }}`
+                            message.
                           type: string
                       type: object
                   type: object
@@ -972,8 +980,8 @@ spec:
                       SubPath are mutually exclusive.
                     type: string
                 required:
-                  - mountPath
-                  - name
+                - mountPath
+                - name
                 type: object
               type: array
             volumes:
@@ -1015,7 +1023,7 @@ spec:
                           AWS (Amazon EBS volume). More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore'
                         type: string
                     required:
-                      - volumeID
+                    - volumeID
                     type: object
                   azureDisk:
                     description: AzureDisk represents an Azure Data Disk mount on
@@ -1046,8 +1054,8 @@ spec:
                           will force the ReadOnly setting in VolumeMounts.
                         type: boolean
                     required:
-                      - diskName
-                      - diskURI
+                    - diskName
+                    - diskURI
                     type: object
                   azureFile:
                     description: AzureFile represents an Azure File Service mount
@@ -1065,8 +1073,8 @@ spec:
                         description: Share Name
                         type: string
                     required:
-                      - secretName
-                      - shareName
+                    - secretName
+                    - shareName
                     type: object
                   cephfs:
                     description: CephFS represents a Ceph FS mount on the host that
@@ -1105,7 +1113,7 @@ spec:
                           is admin More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it'
                         type: string
                     required:
-                      - monitors
+                    - monitors
                     type: object
                   cinder:
                     description: 'Cinder represents a cinder volume attached and mounted
@@ -1136,7 +1144,7 @@ spec:
                           More info: https://examples.k8s.io/mysql-cinder-pd/README.md'
                         type: string
                     required:
-                      - volumeID
+                    - volumeID
                     type: object
                   configMap:
                     description: ConfigMap represents a configMap that should populate
@@ -1183,8 +1191,8 @@ spec:
                                 '..'.
                               type: string
                           required:
-                            - key
-                            - path
+                          - key
+                          - path
                           type: object
                         type: array
                       name:
@@ -1236,7 +1244,7 @@ spec:
                           documentation for supported values.
                         type: object
                     required:
-                      - driver
+                    - driver
                     type: object
                   downwardAPI:
                     description: DownwardAPI represents downward API about the pod
@@ -1270,7 +1278,7 @@ spec:
                                     specified API version.
                                   type: string
                               required:
-                                - fieldPath
+                              - fieldPath
                               type: object
                             mode:
                               description: 'Optional: mode bits to use on this file,
@@ -1299,8 +1307,8 @@ spec:
                                   type: string
                                 divisor:
                                   anyOf:
-                                    - type: integer
-                                    - type: string
+                                  - type: integer
+                                  - type: string
                                   description: Specifies the output format of the
                                     exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
@@ -1309,10 +1317,10 @@ spec:
                                   description: 'Required: resource to select'
                                   type: string
                               required:
-                                - resource
+                              - resource
                               type: object
                           required:
-                            - path
+                          - path
                           type: object
                         type: array
                     type: object
@@ -1328,8 +1336,8 @@ spec:
                         type: string
                       sizeLimit:
                         anyOf:
-                          - type: integer
-                          - type: string
+                        - type: integer
+                        - type: string
                         description: 'Total amount of local storage required for this
                           EmptyDir volume. The size limit is also applicable for memory
                           medium. The maximum usage on memory medium EmptyDir would
@@ -1408,7 +1416,7 @@ spec:
                             type: string
                         type: object
                     required:
-                      - driver
+                    - driver
                     type: object
                   flocker:
                     description: Flocker represents a Flocker volume attached to a
@@ -1455,7 +1463,7 @@ spec:
                           in VolumeMounts. Defaults to false. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk'
                         type: boolean
                     required:
-                      - pdName
+                    - pdName
                     type: object
                   gitRepo:
                     description: 'GitRepo represents a git repository at a particular
@@ -1478,7 +1486,7 @@ spec:
                         description: Commit hash for the specified revision.
                         type: string
                     required:
-                      - repository
+                    - repository
                     type: object
                   glusterfs:
                     description: 'Glusterfs represents a Glusterfs mount on the host
@@ -1498,8 +1506,8 @@ spec:
                           More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod'
                         type: boolean
                     required:
-                      - endpoints
-                      - path
+                    - endpoints
+                    - path
                     type: object
                   hostPath:
                     description: 'HostPath represents a pre-existing file or directory
@@ -1520,7 +1528,7 @@ spec:
                           info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath'
                         type: string
                     required:
-                      - path
+                    - path
                     type: object
                   iscsi:
                     description: 'ISCSI represents an ISCSI Disk resource that is
@@ -1584,9 +1592,9 @@ spec:
                           TCP ports 860 and 3260).
                         type: string
                     required:
-                      - iqn
-                      - lun
-                      - targetPortal
+                    - iqn
+                    - lun
+                    - targetPortal
                     type: object
                   name:
                     description: 'Volume''s name. Must be a DNS_LABEL and unique within
@@ -1610,8 +1618,8 @@ spec:
                           NFS server. More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs'
                         type: string
                     required:
-                      - path
-                      - server
+                    - path
+                    - server
                     type: object
                   persistentVolumeClaim:
                     description: 'PersistentVolumeClaimVolumeSource represents a reference
@@ -1628,7 +1636,7 @@ spec:
                           Default false.
                         type: boolean
                     required:
-                      - claimName
+                    - claimName
                     type: object
                   photonPersistentDisk:
                     description: PhotonPersistentDisk represents a PhotonController
@@ -1644,7 +1652,7 @@ spec:
                           disk
                         type: string
                     required:
-                      - pdID
+                    - pdID
                     type: object
                   portworxVolume:
                     description: PortworxVolume represents a portworx volume attached
@@ -1664,7 +1672,7 @@ spec:
                         description: VolumeID uniquely identifies a Portworx volume
                         type: string
                     required:
-                      - volumeID
+                    - volumeID
                     type: object
                   projected:
                     description: Items for all in one resources secrets, configmaps,
@@ -1724,8 +1732,8 @@ spec:
                                           May not start with the string '..'.
                                         type: string
                                     required:
-                                      - key
-                                      - path
+                                    - key
+                                    - path
                                     type: object
                                   type: array
                                 name:
@@ -1765,7 +1773,7 @@ spec:
                                               in the specified API version.
                                             type: string
                                         required:
-                                          - fieldPath
+                                        - fieldPath
                                         type: object
                                       mode:
                                         description: 'Optional: mode bits to use on
@@ -1796,8 +1804,8 @@ spec:
                                             type: string
                                           divisor:
                                             anyOf:
-                                              - type: integer
-                                              - type: string
+                                            - type: integer
+                                            - type: string
                                             description: Specifies the output format
                                               of the exposed resources, defaults to
                                               "1"
@@ -1807,10 +1815,10 @@ spec:
                                             description: 'Required: resource to select'
                                             type: string
                                         required:
-                                          - resource
+                                        - resource
                                         type: object
                                     required:
-                                      - path
+                                    - path
                                     type: object
                                   type: array
                               type: object
@@ -1853,8 +1861,8 @@ spec:
                                           May not start with the string '..'.
                                         type: string
                                     required:
-                                      - key
-                                      - path
+                                    - key
+                                    - path
                                     type: object
                                   type: array
                                 name:
@@ -1896,12 +1904,12 @@ spec:
                                     point of the file to project the token into.
                                   type: string
                               required:
-                                - path
+                              - path
                               type: object
                           type: object
                         type: array
                     required:
-                      - sources
+                    - sources
                     type: object
                   quobyte:
                     description: Quobyte represents a Quobyte mount on the host that
@@ -1934,8 +1942,8 @@ spec:
                           created Quobyte volume by name.
                         type: string
                     required:
-                      - registry
-                      - volume
+                    - registry
+                    - volume
                     type: object
                   rbd:
                     description: 'RBD represents a Rados Block Device mount on the
@@ -1985,8 +1993,8 @@ spec:
                           info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
                         type: string
                     required:
-                      - image
-                      - monitors
+                    - image
+                    - monitors
                     type: object
                   scaleIO:
                     description: ScaleIO represents a ScaleIO persistent volume attached
@@ -2039,9 +2047,9 @@ spec:
                           system that is associated with this volume source.
                         type: string
                     required:
-                      - gateway
-                      - secretRef
-                      - system
+                    - gateway
+                    - secretRef
+                    - system
                     type: object
                   secret:
                     description: 'Secret represents a secret that should populate
@@ -2088,8 +2096,8 @@ spec:
                                 '..'.
                               type: string
                           required:
-                            - key
-                            - path
+                          - key
+                          - path
                           type: object
                         type: array
                       optional:
@@ -2161,10 +2169,10 @@ spec:
                         description: Path that identifies vSphere volume vmdk
                         type: string
                     required:
-                      - volumePath
+                    - volumePath
                     type: object
                 required:
-                  - name
+                - name
                 type: object
               type: array
           required:

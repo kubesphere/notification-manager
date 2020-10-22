@@ -69,6 +69,8 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 
 		if len(opts.Slack.Template) > 0 {
 			n.templateName = opts.Slack.Template
+		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
+			n.templateName = opts.Global.Template
 		}
 	}
 

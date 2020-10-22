@@ -84,6 +84,8 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 
 		if len(opts.DingTalk.Template) > 0 {
 			n.templateName = opts.DingTalk.Template
+		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
+			n.templateName = opts.Global.Template
 		}
 
 		if opts.DingTalk.MaxWaitTime != nil {
@@ -239,15 +241,15 @@ func (n *Notifier) sendToWebhook(ctx context.Context, d *config.DingTalk, data t
 	return nil
 }
 
-func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, datas template.Data) []error {
+func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, data template.Data) []error {
 
-	send := func(data template.Data) error {
+	send := func(alert template.Data) error {
 		token, err := n.getToken(ctx, d)
 		if err != nil {
 			return err
 		}
 
-		msg, err := n.template.TemlText(n.templateName, n.logger, data)
+		msg, err := n.template.TemlText(n.templateName, n.logger, alert)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: generate message error", "error", err.Error())
 			return err
@@ -311,13 +313,13 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 	}
 
 	var errs []error
-	for _, alert := range datas.Alerts {
+	for _, alert := range data.Alerts {
 		d := template.Data{
 			Alerts: template.Alerts{
 				alert,
 			},
-			Receiver:    datas.Receiver,
-			GroupLabels: datas.GroupLabels,
+			Receiver:    data.Receiver,
+			GroupLabels: data.GroupLabels,
 		}
 		if e := send(d); e != nil {
 			errs = append(errs, e)
@@ -335,11 +337,13 @@ func (n *Notifier) getToken(ctx context.Context, d *config.DingTalk) (string, er
 
 	appkey, err := n.notifierCfg.GetSecretData(d.GetNamespace(), d.DingTalkConfig.Conversation.AppKey)
 	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get appkey error", "error", err)
 		return "", err
 	}
 
 	appsecret, err := n.notifierCfg.GetSecretData(d.GetNamespace(), d.DingTalkConfig.Conversation.AppSecret)
 	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get appsecret error", "error", err)
 		return "", err
 	}
 

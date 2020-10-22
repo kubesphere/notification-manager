@@ -151,7 +151,7 @@ metadata:
 spec:
   chatbot:
     keywords:
-      - kubesphere
+    - kubesphere
     secret:
       key: secret
       name: default-dingtalk-secret
@@ -225,8 +225,8 @@ metadata:
   namespace: kubesphere-monitoring-system
 spec:
   to:
-    - receiver1@xyz.com
-    - receiver2@xyz.com
+  - receiver1@xyz.com
+  - receiver2@xyz.com
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: EmailReceiver
@@ -243,8 +243,8 @@ spec:
       type: tenant
       user: user1
   to:
-    - receiver3@xyz.com
-    - receiver4@xyz.com
+  - receiver3@xyz.com
+  - receiver4@xyz.com
 ---
 apiVersion: notification.kubesphere.io/v1alpha1
 kind: NotificationManager
@@ -271,17 +271,17 @@ spec:
         deliveryType: bulk
         notificationTimeout: 5
       global:
-        - /etc/notification-manager/template
+      - /etc/notification-manager/template
       slack:
         notificationTimeout: 5
       volumeMounts:
-        - mountPath: /etc/notification-manager/
-          name: noification-manager-template
+      - mountPath: /etc/notification-manager/
+        name: noification-manager-template
       volumes:
-        - configMap:
-            defaultMode: 420
-            name: noification-manager-template
+      - configMap:
+          defaultMode: 420
           name: noification-manager-template
+        name: noification-manager-template
       webhook:
         notificationTimeout: 5
       wechat:

@@ -84,6 +84,8 @@ func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierC
 
 		if len(opts.Wechat.Template) > 0 {
 			n.templateName = opts.Wechat.Template
+		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
+			n.templateName = opts.Global.Template
 		}
 	}
 
