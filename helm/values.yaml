@@ -64,7 +64,8 @@ notificationmanager:
         notificationTimeout: 5
         deliveryType: bulk
       global:
-        - /etc/notification-manager/template
+        templateFile:
+          - /etc/notification-manager/template
       slack:
         notificationTimeout: 5
       webhook:

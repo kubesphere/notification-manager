@@ -74,6 +74,9 @@ type ReceiversSpec struct {
 type GlobalOptions struct {
 	// Template file path, must be a absolute path.
 	TemplateFiles []string `json:"templateFile,omitempty"`
+	// The name of the template to generate message.
+	// If the receiver dose not setup template, it will use this.
+	Template string `json:"template,omitempty"`
 }
 
 type EmailOptions struct {
@@ -83,30 +86,33 @@ type EmailOptions struct {
 	DeliveryType string `json:"deliveryType,omitempty"`
 	// The maximum size of receivers in one email.
 	MaxEmailReceivers int `json:"maxEmailReceivers,omitempty"`
-	// The name of the template to generate email message,like `{{ template "nm.default.html" . }}`
+	// The name of the template to generate email message.
+	// If the global template is not set, it will use default.
 	Template string `json:"template,omitempty"`
-	// The name of the template to generate email subject,like `{{ template "nm.default.subject" . }}`
+	// The name of the template to generate email subject
 	SubjectTemplate string `json:"subjectTemplate,omitempty"`
 }
 
 type WechatOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
-	// The name of the template to generate wechat message,like `{{ template "nm.default.text" . }}`
+	// The name of the template to generate wechat message.
 	Template string `json:"template,omitempty"`
 }
 
 type SlackOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
-	// The name of the template to generate slack message,like `{{ template "nm.default.text" . }}`
+	// The name of the template to generate slack message.
+	// If the global template is not set, it will use default.
 	Template string `json:"template,omitempty"`
 }
 
 type WebhookOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
-	// The name of the template to generate webhook message,like `{{ template "nm.default.text" . }}`
+	// The name of the template to generate webhook message.
+	// If the global template is not set, it will use default.
 	Template string `json:"template,omitempty"`
 }
 
@@ -118,7 +124,8 @@ type DingTalkOptions struct {
 	// return a error, else it will wait for the flow restriction lifted, and send the message.
 	// Nil means do not wait, the maximum value is 60.
 	MaxWaitTime *int32 `json:"maxWaitTime,omitempty"`
-	// The name of the template to generate DingTalk message,like `{{ template "nm.default.text" . }}`
+	// The name of the template to generate DingTalk message.
+	// If the global template is not set, it will use default.
 	Template string `json:"template,omitempty"`
 }
 
