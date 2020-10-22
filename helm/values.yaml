@@ -58,13 +58,26 @@ notificationmanager:
       matchLabels:
         type: tenant
     options:
+      dingtalk:
+        notificationTimeout: 5
       email:
         notificationTimeout: 5
         deliveryType: bulk
+      global:
+        - /etc/notification-manager/template
       slack:
+        notificationTimeout: 5
+      webhook:
         notificationTimeout: 5
       wechat:
         notificationTimeout: 5
   notificationManagerNamespaces:
     - kubesphere-monitoring-system
-
+  volumeMounts:
+    - mountPath: /etc/notification-manager/
+      name: noification-manager-template
+  volumes:
+    - configMap:
+        defaultMode: 420
+        name: noification-manager-template
+      name: noification-manager-template

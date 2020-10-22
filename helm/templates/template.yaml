@@ -1,56 +1,3 @@
-apiVersion: notification.kubesphere.io/v1alpha1
-kind: NotificationManager
-metadata:
-  name: notification-manager
-spec:
-  replicas: 1
-  resources:
-    limits:
-      cpu: 500m
-      memory: 1Gi
-    requests:
-      cpu: 100m
-      memory: 20Mi
-  image: kubespheredev/notification-manager:v0.1.0
-  imagePullPolicy: IfNotPresent
-  serviceAccountName: notification-manager-sa
-  portName: webhook
-  defaultConfigSelector:
-    matchLabels:
-      type: default
-  receivers:
-    tenantKey: user
-    globalReceiverSelector:
-      matchLabels:
-        type: global
-    tenantReceiverSelector:
-      matchLabels:
-        type: tenant
-    options:
-      global:
-        - /etc/notification-manager/template
-      email:
-        notificationTimeout: 5
-        deliveryType: bulk
-      slack:
-        notificationTimeout: 5
-      wechat:
-        notificationTimeout: 5
-      webhook:
-        notificationTimeout: 5
-      dingtalk:
-        notificationTimeout: 5
-      volumeMounts:
-        - mountPath: /etc/notification-manager/
-          name: noification-manager-template
-      volumes:
-        - configMap:
-            defaultMode: 420
-            name: noification-manager-template
-          name: noification-manager-template
-
-
----
 apiVersion: v1
 data:
   template: |2
@@ -95,34 +42,34 @@ data:
               <table width="100%" cellpadding="0" cellspacing="0" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; border-radius: 3px; background-color: #fff; margin: 0; border: 1px solid #e9e9e9;" bgcolor="#fff">
                 <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                   <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 16px; vertical-align: top; color: #fff; font-weight: 500; text-align: center; border-radius: 3px 3px 0 0; background-color: #E6522C; margin: 0; padding: 20px;" align="center" bgcolor="#E6522C" valign="top">
-                    {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}s{{ end }} for {{ range .GroupLabels.SortedPairs }}
-                      {{ .Name }}={{ .Value }}
-                    {{ end }}
+    {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}s{{ end }} for {{ range .GroupLabels.SortedPairs }}
+    {{ .Name }}={{ .Value }}
+    {{ end }}
                   </td>
                 </tr>
                 <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                   <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 10px;" valign="top">
                     <table width="100%" cellpadding="0" cellspacing="0" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
-                      {{ if gt (len .Alerts.Firing) 0 }}
+    {{ if gt (len .Alerts.Firing) 0 }}
                         <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                           <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;" valign="top">
                             <strong style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">[{{ .Alerts.Firing | len }}] Firing</strong>
                           </td>
                         </tr>
-                      {{ end }}
-                      {{ range .Alerts.Firing }}
+    {{ end }}
+    {{ range .Alerts.Firing }}
                         <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                           <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;" valign="top">
                             <strong style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">Labels</strong><br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />
-                            {{ range .Labels.SortedPairs }}{{ if ne .Name "runbook_url" }}{{ .Name }} = {{ .Value }}{{ end }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
-                            {{ if gt (len .Annotations) 0 }}<strong style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">Annotations</strong><br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
-                            {{ range .Annotations.SortedPairs }}{{ if ne .Name "runbook_url" }}{{ .Name }} = {{ .Value }}{{ end }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
+    {{ range .Labels.SortedPairs }}{{ if ne .Name "runbook_url" }}{{ .Name }} = {{ .Value }}{{ end }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
+    {{ if gt (len .Annotations) 0 }}<strong style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">Annotations</strong><br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
+    {{ range .Annotations.SortedPairs }}{{ if ne .Name "runbook_url" }}{{ .Name }} = {{ .Value }}{{ end }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
                           </td>
                         </tr>
-                      {{ end }}
+    {{ end }}
 
-                      {{ if gt (len .Alerts.Resolved) 0 }}
-                        {{ if gt (len .Alerts.Firing) 0 }}
+    {{ if gt (len .Alerts.Resolved) 0 }}
+    {{ if gt (len .Alerts.Firing) 0 }}
                           <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                             <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;" valign="top">
                               <br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />
@@ -130,23 +77,23 @@ data:
                               <br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />
                             </td>
                           </tr>
-                        {{ end }}
+    {{ end }}
                         <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                           <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;" valign="top">
                             <strong style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">[{{ .Alerts.Resolved | len }}] Resolved</strong>
                           </td>
                         </tr>
-                      {{ end }}
-                      {{ range .Alerts.Resolved }}
+    {{ end }}
+    {{ range .Alerts.Resolved }}
                         <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                           <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;" valign="top">
                             <strong style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">Labels</strong><br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />
-                            {{ range .Labels.SortedPairs }}{{ if ne .Name "runbook_url" }}{{ .Name }} = {{ .Value }}{{ end }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
-                            {{ if gt (len .Annotations) 0 }}<strong style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">Annotations</strong><br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
-                            {{ range .Annotations.SortedPairs }}{{ if ne .Name "runbook_url" }}{{ .Name }} = {{ .Value }}{{ end }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
+    {{ range .Labels.SortedPairs }}{{ if ne .Name "runbook_url" }}{{ .Name }} = {{ .Value }}{{ end }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
+    {{ if gt (len .Annotations) 0 }}<strong style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">Annotations</strong><br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
+    {{ range .Annotations.SortedPairs }}{{ if ne .Name "runbook_url" }}{{ .Name }} = {{ .Value }}{{ end }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
                           </td>
                         </tr>
-                      {{ end }}
+    {{ end }}
                     </table>
                   </td>
                 </tr>
@@ -160,8 +107,7 @@ data:
       </body>
       </html>
 
-    {{ end }}
+  {{ end }}
 kind: ConfigMap
 metadata:
   name: template
-  namespace: kubesphere-monitoring-system

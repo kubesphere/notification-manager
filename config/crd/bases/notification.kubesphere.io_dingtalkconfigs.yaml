@@ -1,0 +1,144 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.5
+  creationTimestamp: null
+  name: dingtalkconfigs.notification.kubesphere.io
+spec:
+  group: notification.kubesphere.io
+  names:
+    kind: DingTalkConfig
+    listKind: DingTalkConfigList
+    plural: dingtalkconfigs
+    singular: dingtalkconfig
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: DingTalkConfig is the Schema for the dingtalkconfigs API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: DingTalkConfigSpec defines the desired state of DingTalkConfig
+          properties:
+            chatbot:
+              description: Be careful, a ChatBot only can send 20 message per minute.
+              properties:
+                keywords:
+                  description: Custom keywords of ChatBot
+                  items:
+                    type: string
+                  type: array
+                secret:
+                  description: Secret of ChatBot, you can get it after enabled Additional
+                    Signature of ChatBot.
+                  properties:
+                    key:
+                      description: The key of the secret to select from.  Must be
+                        a valid secret key.
+                      type: string
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                    optional:
+                      description: Specify whether the Secret or its key must be defined
+                      type: boolean
+                  required:
+                    - key
+                  type: object
+                webhook:
+                  description: The webhook of ChatBot which the message will send
+                    to.
+                  properties:
+                    key:
+                      description: The key of the secret to select from.  Must be
+                        a valid secret key.
+                      type: string
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                    optional:
+                      description: Specify whether the Secret or its key must be defined
+                      type: boolean
+                  required:
+                    - key
+                  type: object
+              required:
+                - webhook
+              type: object
+            conversation:
+              description: The conversation which message will send to.
+              properties:
+                appkey:
+                  description: The key of the application which sending message.
+                  properties:
+                    key:
+                      description: The key of the secret to select from.  Must be
+                        a valid secret key.
+                      type: string
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                    optional:
+                      description: Specify whether the Secret or its key must be defined
+                      type: boolean
+                  required:
+                    - key
+                  type: object
+                appsecret:
+                  description: The secret of the application which sending message.
+                  properties:
+                    key:
+                      description: The key of the secret to select from.  Must be
+                        a valid secret key.
+                      type: string
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                    optional:
+                      description: Specify whether the Secret or its key must be defined
+                      type: boolean
+                  required:
+                    - key
+                  type: object
+                chatid:
+                  description: The id of the conversation.
+                  type: string
+              required:
+                - appkey
+                - appsecret
+                - chatid
+              type: object
+          type: object
+        status:
+          description: DingTalkConfigStatus defines the observed state of DingTalkConfig
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: [ ]
+  storedVersions: [ ]

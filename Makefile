@@ -1,7 +1,8 @@
 VERSION?=$(shell cat VERSION | tr -d " \t\n\r")
 # Image URL to use all building/pushing image targets
-IMG ?= kubesphere/notification-manager-operator:$(VERSION)
-NM_IMG ?= kubesphere/notification-manager:$(VERSION)
+IMG ?= kubespheredev/notification-manager-operator:$(VERSION)
+NM_IMG ?= kubespheredev/notification-manager:$(VERSION)
+AMD64 ?= -amd64
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -76,16 +77,27 @@ build: build-op build-nm
 
 # Build the docker image
 build-op: test
-	docker build -f cmd/operator/Dockerfile . -t ${IMG} --network host
+	docker buildx build --push --platform linux/amd64,linux/arm64 -f cmd/operator/Dockerfile . -t ${IMG}
 
 # Build the docker image
 build-nm: test
-	docker build -f cmd/notification-manager/Dockerfile . -t ${NM_IMG} --network host
+	docker buildx build --push --platform linux/amd64,linux/arm64 -f cmd/notification-manager/Dockerfile . -t ${NM_IMG}
+
+# Build all docker images
+build-amd64: build-op-amd64 build-nm-amd64
+
+# Build the docker image
+build-op-amd64: test
+	docker build -f cmd/operator/Dockerfile . -t ${IMG}${AMD64}
+
+# Build the docker image
+build-nm-amd64: test
+	docker build -f cmd/notification-manager/Dockerfile . -t ${NM_IMG}${AMD64}
 
 # Push the docker image
-push:
-	docker push ${IMG}
-	docker push ${NM_IMG}
+push-amd64:
+	docker push ${IMG}${AMD64}
+	docker push ${NM_IMG}${AMD64}
 
 #docker-clean:
 #	docker rmi `docker image ls|awk '{print $2,$3}'|grep none|awk '{print $2}'|tr "\n" " "`

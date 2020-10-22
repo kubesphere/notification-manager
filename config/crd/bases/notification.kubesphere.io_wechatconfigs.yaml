@@ -64,7 +64,6 @@ spec:
           - wechatApiAgentId
           - wechatApiCorpId
           - wechatApiSecret
-          - wechatApiUrl
           type: object
         status:
           description: WechatConfigStatus defines the observed state of WechatConfig

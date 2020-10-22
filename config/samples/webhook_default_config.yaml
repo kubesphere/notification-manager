@@ -6,9 +6,3 @@ metadata:
     type: default
 spec:
   url: xxx
-  urlSecret:
-    key: webhook-url
-    name: webhook-url-secret
-  httpConfigSelector:
-    matchLabels:
-      type: default

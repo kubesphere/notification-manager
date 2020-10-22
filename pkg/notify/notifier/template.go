@@ -2,6 +2,7 @@ package notifier
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/prometheus/alertmanager/notify"
 	"github.com/prometheus/alertmanager/template"
@@ -9,6 +10,8 @@ import (
 	"github.com/prometheus/common/model"
 	"net/url"
 	"reflect"
+	"regexp"
+	"strings"
 	"sync"
 )
 
@@ -49,7 +52,13 @@ func NewTemplate(paths []string) (*Template, error) {
 	return notifierTemplate, nil
 }
 
-func (t *Template) TemlText(ctx context.Context, name string, l log.Logger, data template.Data) (string, error) {
+func (t *Template) TemlText(name string, l log.Logger, data template.Data) (string, error) {
+
+	name = t.transform(name)
+
+	ctx := context.Background()
+	ctx = notify.WithGroupLabels(ctx, KvToLabelSet(data.GroupLabels))
+	ctx = notify.WithReceiverName(ctx, data.Receiver)
 
 	var as []*types.Alert
 	for _, a := range data.Alerts {
@@ -72,5 +81,17 @@ func (t *Template) TemlText(ctx context.Context, name string, l log.Logger, data
 		return "", e
 	}
 
-	return text(name), nil
+	return strings.TrimRight(text(name), "\n"), nil
+}
+
+func (t *Template) transform(name string) string {
+
+	n := strings.ReplaceAll(name, " ", "")
+
+	b, _ := regexp.MatchString("{{template\"(.*?)\".}}", n)
+	if b {
+		return name
+	}
+
+	return fmt.Sprintf("{{ template \"%s\" . }}", name)
 }

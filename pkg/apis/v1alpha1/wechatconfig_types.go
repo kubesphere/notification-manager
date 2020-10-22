@@ -24,7 +24,7 @@ import (
 // WechatConfigSpec defines the desired state of WechatConfig
 type WechatConfigSpec struct {
 	// The WeChat API URL.
-	WechatApiUrl string `json:"wechatApiUrl"`
+	WechatApiUrl string `json:"wechatApiUrl,omitempty"`
 	// The corp id for authentication.
 	WechatApiCorpId string `json:"wechatApiCorpId"`
 	// The id of the application which sending message.

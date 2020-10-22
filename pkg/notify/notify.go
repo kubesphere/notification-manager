@@ -2,17 +2,17 @@ package notify
 
 import (
 	"github.com/go-kit/kit/log"
-	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
+	"github.com/kubesphere/notification-manager/pkg/notify/notifier/dingtalk"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/email"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/slack"
+	"github.com/kubesphere/notification-manager/pkg/notify/notifier/webhook"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/wechat"
 	"github.com/prometheus/alertmanager/template"
-	"reflect"
 )
 
-type Factory func(logger log.Logger, val interface{}, opts *nmv1alpha1.Options) notifier.Notifier
+type Factory func(logger log.Logger, receivers []config.Receiver, notifierCfg *config.Config) notifier.Notifier
 
 var (
 	factories map[string]Factory
@@ -22,6 +22,8 @@ func init() {
 	Register("Email", email.NewEmailNotifier)
 	Register("Wechat", wechat.NewWechatNotifier)
 	Register("Slack", slack.NewSlackNotifier)
+	Register("Webhook", webhook.NewWebhookNotifier)
+	Register("DingTalk", dingtalk.NewDingTalkNotifier)
 }
 
 func Register(name string, factory Factory) {
@@ -37,37 +39,17 @@ type Notification struct {
 	Data      template.Data
 }
 
-func NewNotification(logger log.Logger, receivers []*config.Receiver, opts *nmv1alpha1.Options, data template.Data) *Notification {
-
-	m := make(map[string][]interface{})
-	for _, receiver := range receivers {
-		t := reflect.TypeOf(*receiver)
-		v := reflect.ValueOf(*receiver)
-		for i := 0; i < v.NumField(); i++ {
-			// Dose the field can be export?
-			if v.Field(i).CanInterface() {
-				key := t.Field(i).Name
-				val := v.Field(i).Interface()
-				if reflect.ValueOf(val).IsNil() {
-					continue
-				}
-
-				l, ok := m[key]
-				if !ok {
-					l = []interface{}{}
-				}
-
-				l = append(l, val)
-				m[key] = l
-			}
-		}
-	}
+func NewNotification(logger log.Logger, receivers []config.Receiver, notifierCfg *config.Config, data template.Data) *Notification {
 
 	n := &Notification{Data: data}
-	for k, v := range m {
-		factory := factories[k]
-		if factory != nil && v != nil {
-			n.Notifiers = append(n.Notifiers, factory(logger, v, opts))
+
+	if receivers == nil || len(receivers) == 0 {
+		return n
+	}
+
+	for _, f := range factories {
+		if f != nil {
+			n.Notifiers = append(n.Notifiers, f(logger, receivers, notifierCfg))
 		}
 	}
 

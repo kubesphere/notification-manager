@@ -43,6 +43,7 @@ func New(logger log.Logger, notifierCfg *config.Config, o *Options) *Webhook {
 	// h.router.Use(middleware.Logger)
 	h.router.Use(middleware.Recoverer)
 	h.router.Use(middleware.Timeout(2 * webhookTimeout))
+	h.router.Get("/receivers", h.handler.GetReceivers)
 	h.router.Post("/api/v2/alerts", h.handler.CreateNotificationfromAlerts)
 	h.router.Get("/metrics", h.handler.ServeMetrics)
 	h.router.Get("/-/reload", h.handler.ServeReload)

@@ -54,3 +54,6 @@ Parameter | Description | Default
 `notificationmanager.receivers` | The receivers configure of notification-manager | {}
 `notificationmanager.defaultConfigSelector` | The default config selector of notification-manager | {}
 `notificationmanager.notificationManagerNamespaces` | The namespace which will be watched by notification-manager | []
+`notificationmanager.volumes` | List of volumes that can be mounted by containers belonging to the pod | []
+`notificationmanager.volumeMounts` | Pod volumes to mount into the container's filesystem | []
+
