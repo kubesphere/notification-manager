@@ -115,17 +115,15 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 func (n *Notifier) Notify(data template.Data) []error {
 	var errs []error
 	send := func(c *config.DingTalk) error {
-		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
-		defer cancel()
 
 		if c.DingTalkConfig.Conversation != nil {
-			if es := n.sendToConversation(ctx, c, data); es != nil {
+			if es := n.sendToConversation(c, data); es != nil {
 				errs = append(errs, es...)
 			}
 		}
 
 		if c.DingTalkConfig.ChatBot != nil {
-			if err := n.sendToWebhook(ctx, c, data); err != nil {
+			if err := n.sendToWebhook(c, data); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -140,7 +138,7 @@ func (n *Notifier) Notify(data template.Data) []error {
 	return errs
 }
 
-func (n *Notifier) sendToWebhook(ctx context.Context, d *config.DingTalk, data template.Data) error {
+func (n *Notifier) sendToWebhook(d *config.DingTalk, data template.Data) error {
 
 	bot := d.DingTalkConfig.ChatBot
 
@@ -205,7 +203,7 @@ func (n *Notifier) sendToWebhook(ctx context.Context, d *config.DingTalk, data t
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		body, err := notifier.DoHttpRequest(ctx, nil, request)
+		body, err := notifier.DoHttpRequest(context.Background(), nil, request)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: do http error", "error", err)
 			return err
@@ -241,10 +239,10 @@ func (n *Notifier) sendToWebhook(ctx context.Context, d *config.DingTalk, data t
 	return nil
 }
 
-func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, data template.Data) []error {
+func (n *Notifier) sendToConversation(d *config.DingTalk, data template.Data) []error {
 
 	send := func(alert template.Data) error {
-		token, err := n.getToken(ctx, d)
+		token, err := n.getToken(d)
 		if err != nil {
 			return err
 		}
@@ -290,7 +288,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		body, err := notifier.DoHttpRequest(ctx, nil, request)
+		body, err := notifier.DoHttpRequest(context.Background(), nil, request)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: do http error", "error", err)
 			return err
@@ -328,7 +326,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 	return errs
 }
 
-func (n *Notifier) getToken(ctx context.Context, d *config.DingTalk) (string, error) {
+func (n *Notifier) getToken(d *config.DingTalk) (string, error) {
 
 	u, err := notifier.UrlWithPath(URL, "gettoken")
 	if err != nil {
@@ -364,7 +362,7 @@ func (n *Notifier) getToken(ctx context.Context, d *config.DingTalk) (string, er
 	}
 	request.Header.Set("Content-Type", "application/json")
 
-	body, err := notifier.DoHttpRequest(ctx, nil, request)
+	body, err := notifier.DoHttpRequest(context.Background(), nil, request)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: do http error", "error", err)
 		return "", err

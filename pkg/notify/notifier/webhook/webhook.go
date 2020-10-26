@@ -97,15 +97,15 @@ func (n *Notifier) Notify(data template.Data) []error {
 		value = msg
 	}
 
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(value); err != nil {
-		_ = level.Error(n.logger).Log("msg", "WebhookNotifier: encode message error", "error", err.Error())
-		return append(errs, err)
-	}
-
 	send := func(w *config.Webhook) error {
 		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
 		defer cancel()
+
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(value); err != nil {
+			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: encode message error", "error", err.Error())
+			return err
+		}
 
 		request, err := http.NewRequest(http.MethodPost, w.WebhookConfig.URL, &buf)
 		if err != nil {
@@ -185,8 +185,8 @@ func (n *Notifier) getTransport(w *config.Webhook) (http.RoundTripper, error) {
 
 			// If a CA cert is provided then let's read it in so we can validate the
 			// scrape target's certificate properly.
-			if c.TLSConfig.CA != nil {
-				if ca, err := n.notifierCfg.GetSecretData(w.GetNamespace(), c.TLSConfig.CA); err != nil {
+			if c.TLSConfig.RootCA != nil {
+				if ca, err := n.notifierCfg.GetSecretData(w.GetNamespace(), c.TLSConfig.RootCA); err != nil {
 					return nil, err
 				} else {
 					caCertPool := x509.NewCertPool()
@@ -202,26 +202,28 @@ func (n *Notifier) getTransport(w *config.Webhook) (http.RoundTripper, error) {
 			}
 
 			// If a client cert & key is provided then configure TLS config accordingly.
-			if c.TLSConfig.Cert != nil && c.TLSConfig.Key == nil {
-				return nil, fmt.Errorf("client cert file specified without client key file")
-			} else if c.TLSConfig.Cert == nil && c.TLSConfig.Key != nil {
-				return nil, fmt.Errorf("client key file specified without client cert file")
-			} else if c.TLSConfig.Cert != nil && c.TLSConfig.Key != nil {
-				key, err := n.notifierCfg.GetSecretData(w.GetNamespace(), c.TLSConfig.Key)
-				if err != nil {
-					return nil, err
-				}
+			if c.TLSConfig.ClientCertificate != nil {
+				if c.TLSConfig.Cert != nil && c.TLSConfig.Key == nil {
+					return nil, fmt.Errorf("client cert file specified without client key file")
+				} else if c.TLSConfig.Cert == nil && c.TLSConfig.Key != nil {
+					return nil, fmt.Errorf("client key file specified without client cert file")
+				} else if c.TLSConfig.Cert != nil && c.TLSConfig.Key != nil {
+					key, err := n.notifierCfg.GetSecretData(w.GetNamespace(), c.TLSConfig.Key)
+					if err != nil {
+						return nil, err
+					}
 
-				cert, err := n.notifierCfg.GetSecretData(w.GetNamespace(), c.TLSConfig.Cert)
-				if err != nil {
-					return nil, err
-				}
+					cert, err := n.notifierCfg.GetSecretData(w.GetNamespace(), c.TLSConfig.Cert)
+					if err != nil {
+						return nil, err
+					}
 
-				tlsCert, err := tls.X509KeyPair([]byte(cert), []byte(key))
-				if err != nil {
-					return nil, err
+					tlsCert, err := tls.X509KeyPair([]byte(cert), []byte(key))
+					if err != nil {
+						return nil, err
+					}
+					tlsConfig.Certificates = []tls.Certificate{tlsCert}
 				}
-				tlsConfig.Certificates = []tls.Certificate{tlsCert}
 			}
 
 			transport.TLSClientConfig = tlsConfig

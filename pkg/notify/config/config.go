@@ -404,7 +404,7 @@ func (c *Config) sync(p *param) {
 				// Update Config of the receiver with the same tenantID
 				if _, exist := c.receivers[p.tenantID]; exist {
 					for k := range c.receivers[p.tenantID] {
-						if strings.HasPrefix(k, p.opType) && c.receivers[p.tenantID][k].UseDefault() {
+						if strings.HasPrefix(k, p.opType) {
 							_ = c.receivers[p.tenantID][k].SetConfig(config)
 							c.receivers[p.tenantID][k].SetUseDefault(false)
 						}

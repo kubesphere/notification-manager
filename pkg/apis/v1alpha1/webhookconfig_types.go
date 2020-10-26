@@ -21,14 +21,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// TLSConfig configures the options for TLS connections.
-type TLSConfig struct {
-	// The service root ca to use for the targets.
-	CA *v1.SecretKeySelector `json:"ca,omitempty"`
+type ClientCertificate struct {
 	// The client cert file for the targets.
 	Cert *v1.SecretKeySelector `json:"cert,omitempty"`
 	// The client key file for the targets.
 	Key *v1.SecretKeySelector `json:"key,omitempty"`
+}
+
+// TLSConfig configures the options for TLS connections.
+type TLSConfig struct {
+	// RootCA defines the root certificate authorities
+	// that clients use when verifying server certificates.
+	RootCA *v1.SecretKeySelector `json:"rootCA,omitempty"`
+	// The certificate of the client.
+	*ClientCertificate `json:"clientCertificate,omitempty"`
 	// Used to verify the hostname for the targets.
 	ServerName string `json:"serverName,omitempty"`
 	// Disable target certificate validation.
