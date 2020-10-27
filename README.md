@@ -446,10 +446,10 @@ EOF
 ```
 
 > - DingTalkReceiver can both send messages to `conversation` and `chatbot`.
-> - If you want to send messages to conversation, the application used to send messages to conversation must have the authority `Enterprise conversation`, and the ip which notification manager used to send messages must be in the white list of the application. Usually, it is the ip of the Kubernetes nodes.
+> - If you want to send messages to conversation, the application used to send messages to conversation must have the authority `Enterprise conversation`, and the IP which notification manager used to send messages must be in the white list of the application. Usually, it is the IP of Kubernetes nodes, you can simply add all Kubernetes nodes to the white list.
 > - The `appkey` is the key of the application, the `appsecret` is the secret of the application.
-> - The `chatid` is the id of the conversation, it only be obtained from the response of [creating conversation](https://ding-doc.dingtalk.com/document#/org-dev-guide/create-chat).
-> - The `webhook` is the url of chatbot, the `keywords` is the keywords of chatbot, The `secret` is the secret of chatbot, you can get them in the setting page of chatbot.
+> - The `chatid` is the id of the conversation, it can only be obtained from the response of [creating conversation](https://ding-doc.dingtalk.com/document#/org-dev-guide/create-chat).
+> - The `webhook` is the URL of a chatbot, the `keywords` is the keywords of a chatbot, The `secret` is the secret of chatbot, you can get them in the setting page of chatbot.
 
 ### Deploy Notification Manager in any other Kubernetes cluster (Uses `namespace` to distinguish each tenant user):
 Deploy Notification Manager
@@ -822,9 +822,9 @@ EOF
 
 ### Customize template
 
-You can customize the message format by customize template. You need to create a template file include the template that you customized, and mount it to `NotificationManager`. Then you can change the template to the template which you defined.
+You can customize the message format by customizing the template. You need to create a template file include the template that you customized, and mount it to `NotificationManager`. Then you can change the template to the template which you defined.
 
-It can set a global template, or set template for each type of receivers.If the template of receiver does not set, it will use the global template. If the global template does not set too, it will use the default template. The default template is like this.
+It can set a global template, or set a template for each type of receivers. If the template of the receiver does not set, it will use the global template. If the global template does not set too, it will use the default template. The default template looks like below:
 
 ```shell
 cat <<EOF | kubectl apply -f -
