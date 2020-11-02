@@ -43,7 +43,7 @@ type DingTalkReceiver struct {
 
 // +kubebuilder:object:root=true
 
-// WebhookReceiverList contains a list of WebhookReceiver
+// DingTalkReceiverList contains a list of DingTalkReceiver
 type DingTalkReceiverList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

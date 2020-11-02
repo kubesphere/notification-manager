@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
+	json "github.com/json-iterator/go"
 	"github.com/prometheus/alertmanager/notify"
 	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/alertmanager/types"
@@ -52,7 +54,7 @@ func NewTemplate(paths []string) (*Template, error) {
 	return notifierTemplate, nil
 }
 
-func (t *Template) TemlText(name string, l log.Logger, data template.Data) (string, error) {
+func (t *Template) TempleText(name string, data template.Data, l log.Logger) (string, error) {
 
 	name = t.transform(name)
 
@@ -81,7 +83,9 @@ func (t *Template) TemlText(name string, l log.Logger, data template.Data) (stri
 		return "", e
 	}
 
-	return strings.TrimRight(text(name), "\n"), nil
+	s := text(name)
+
+	return strings.TrimRight(s, "\n"), nil
 }
 
 func (t *Template) transform(name string) string {
@@ -94,4 +98,58 @@ func (t *Template) transform(name string) string {
 	}
 
 	return fmt.Sprintf("{{ template \"%s\" . }}", name)
+}
+
+func (t *Template) Split(data template.Data, maxSize int, templateName string, l log.Logger) ([]string, error) {
+	d := template.Data{
+		Receiver:    data.Receiver,
+		GroupLabels: data.GroupLabels,
+	}
+	var messages []string
+	lastMsg := ""
+	for i := 0; i < len(data.Alerts); i++ {
+
+		d.Alerts = append(d.Alerts, data.Alerts[i])
+		msg, err := t.TempleText(templateName, d, l)
+		if err != nil {
+			return nil, err
+		}
+
+		if Len(msg) < maxSize {
+			lastMsg = msg
+			continue
+		}
+
+		// If there is only alert, and the message length is greater than MaxMessageSize, drop this alert.
+		if len(d.Alerts) == 1 {
+			_ = level.Error(l).Log("msg", "alert is too large, drop it")
+			d.Alerts = nil
+			lastMsg = ""
+			continue
+		}
+
+		messages = append(messages, lastMsg)
+
+		d.Alerts = nil
+		i = i - 1
+		lastMsg = ""
+	}
+
+	if len(lastMsg) > 0 {
+		messages = append(messages, lastMsg)
+	}
+
+	return messages, nil
+}
+
+// When a string is serialized, the escape character in the string will occupy two bytes because of `\`.
+func Len(s string) int {
+
+	bs, err := json.Marshal(s)
+	if err != nil {
+		return len(s)
+	}
+
+	// Remove the '"' at the begin and end.
+	return len(string(bs)) - 2
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/json-iterator/go"
+	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/prometheus/alertmanager/template"
@@ -109,6 +110,7 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 				}
 			}
 
+			group := async.NewGroup(ctx)
 			for k, d := range dm {
 				var ns *string = nil
 				if len(k) > 0 {
@@ -116,10 +118,14 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 				}
 				receivers := h.notifierCfg.RcvsFromNs(ns)
 				n := notify.NewNotification(h.logger, receivers, h.notifierCfg, d)
-				errs := n.Notify()
-				if errs != nil && len(errs) > 0 {
-					_ = level.Error(h.logger).Log("msg", "Worker: notification sent error")
-				}
+				group.Add(func(stopCh chan interface{}) {
+					stopCh <- n.Notify(ctx)
+				})
+			}
+
+			errs := group.Wait()
+			if errs != nil && len(errs) > 0 {
+				_ = level.Error(h.logger).Log("msg", "Worker: notification sent error")
 			}
 
 			_ = level.Debug(h.logger).Log("msg", "Worker: notification sent")

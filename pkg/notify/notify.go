@@ -1,7 +1,9 @@
 package notify
 
 import (
+	"context"
 	"github.com/go-kit/kit/log"
+	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/dingtalk"
@@ -56,20 +58,17 @@ func NewNotification(logger log.Logger, receivers []config.Receiver, notifierCfg
 	return n
 }
 
-func (n *Notification) Notify() []error {
+func (n *Notification) Notify(ctx context.Context) []error {
 
-	var errs []error
-	for _, nr := range n.Notifiers {
-
-		if nr == nil {
-			continue
-		}
-
-		err := nr.Notify(n.Data)
-		if err != nil {
-			errs = append(errs, err...)
+	group := async.NewGroup(ctx)
+	for _, notify := range n.Notifiers {
+		if notify != nil {
+			nf := notify
+			group.Add(func(stopCh chan interface{}) {
+				stopCh <- nf.Notify(ctx, n.Data)
+			})
 		}
 	}
 
-	return errs
+	return group.Wait()
 }

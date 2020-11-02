@@ -1,7 +1,10 @@
 package notifier
 
-import "github.com/prometheus/alertmanager/template"
+import (
+	"context"
+	"github.com/prometheus/alertmanager/template"
+)
 
 type Notifier interface {
-	Notify(data template.Data) []error
+	Notify(ctx context.Context, data template.Data) []error
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	json "github.com/json-iterator/go"
+	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/prometheus/alertmanager/template"
@@ -20,20 +21,37 @@ import (
 )
 
 const (
-	URL                = "https://oapi.dingtalk.com/"
-	DefaultSendTimeout = time.Second * 3
-	DefaultTemplate    = `{{ template "nm.default.text" . }}`
+	URL                          = "https://oapi.dingtalk.com/"
+	DefaultSendTimeout           = time.Second * 3
+	DefaultTemplate              = `{{ template "nm.default.text" . }}`
+	ConversationMessageMaxSize   = 5000
+	ChatbotMessageMaxSize        = 19960
+	DefaultExpires               = time.Hour * 2
+	DefaultChatbotThreshold      = 20
+	DefaultChatbotUnitTime       = time.Minute
+	DefaultChatbotWaitTime       = time.Second * 10
+	DefaultConversationThreshold = 25
+	DefaultConversationUnitTime  = time.Second
 )
 
 type Notifier struct {
-	notifierCfg  *config.Config
-	DingTalk     []*config.DingTalk
-	timeout      time.Duration
-	logger       log.Logger
-	template     *notifier.Template
-	templateName string
-	throttle     *Throttle
-	maxWaitTime  time.Duration
+	notifierCfg                *config.Config
+	DingTalk                   []*config.DingTalk
+	timeout                    time.Duration
+	logger                     log.Logger
+	template                   *notifier.Template
+	templateName               string
+	throttle                   *Throttle
+	ats                        *notifier.AccessTokenService
+	tokenExpires               time.Duration
+	conversationMessageMaxSize int
+	chatbotMessageMaxSize      int
+	chatbotThreshold           int
+	chatbotUnitTime            time.Duration
+	chatbotMaxWaitTime         time.Duration
+	conversationThreshold      int
+	conversationUnitTime       time.Duration
+	conversationMaxWaitTime    time.Duration
 }
 
 type dingtalkMessageContent struct {
@@ -68,32 +86,80 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 	}
 
 	n := &Notifier{
-		notifierCfg:  notifierCfg,
-		timeout:      DefaultSendTimeout,
-		logger:       logger,
-		template:     tmpl,
-		templateName: DefaultTemplate,
-		throttle:     GetThrottle(),
+		notifierCfg:                notifierCfg,
+		timeout:                    DefaultSendTimeout,
+		logger:                     logger,
+		template:                   tmpl,
+		templateName:               DefaultTemplate,
+		throttle:                   GetThrottle(),
+		ats:                        notifier.GetAccessTokenService(),
+		tokenExpires:               DefaultExpires,
+		conversationMessageMaxSize: ConversationMessageMaxSize,
+		chatbotMessageMaxSize:      ChatbotMessageMaxSize,
+		chatbotThreshold:           DefaultChatbotThreshold,
+		chatbotUnitTime:            DefaultChatbotUnitTime,
+		chatbotMaxWaitTime:         DefaultChatbotWaitTime,
+		conversationThreshold:      DefaultConversationThreshold,
+		conversationUnitTime:       DefaultConversationUnitTime,
+		conversationMaxWaitTime:    DefaultConversationUnitTime,
 	}
 
 	if opts != nil && opts.DingTalk != nil {
 
-		if opts.DingTalk.NotificationTimeout != nil {
-			n.timeout = time.Second * time.Duration(*opts.DingTalk.NotificationTimeout)
+		d := opts.DingTalk
+
+		if d.NotificationTimeout != nil {
+			n.timeout = time.Second * time.Duration(*d.NotificationTimeout)
 		}
 
-		if len(opts.DingTalk.Template) > 0 {
-			n.templateName = opts.DingTalk.Template
+		if len(d.Template) > 0 {
+			n.templateName = d.Template
 		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
 			n.templateName = opts.Global.Template
 		}
 
-		if opts.DingTalk.MaxWaitTime != nil {
-			n.maxWaitTime = time.Second * time.Duration(*opts.DingTalk.MaxWaitTime)
+		if d.TokenExpires != 0 {
+			n.tokenExpires = d.TokenExpires
+		}
+
+		if d.ConversationMessageMaxSize > 0 {
+			n.conversationMessageMaxSize = d.ConversationMessageMaxSize
+		}
+
+		if d.ChatbotMessageMaxSize > 0 {
+			n.chatbotMessageMaxSize = d.ChatbotMessageMaxSize
+		}
+
+		if d.ChatBotThrottle != nil {
+			t := d.ChatBotThrottle
+			if t.Threshold > 0 {
+				n.chatbotThreshold = t.Threshold
+			}
+
+			if t.UnitTime != 0 {
+				n.chatbotUnitTime = t.UnitTime
+			}
+
+			if t.MaxWaitTime != 0 {
+				n.chatbotMaxWaitTime = t.MaxWaitTime
+			}
+		}
+
+		if d.ConversationThrottle != nil {
+			t := d.ConversationThrottle
+			if t.Threshold > 0 {
+				n.conversationThreshold = t.Threshold
+			}
+
+			if t.UnitTime != 0 {
+				n.conversationUnitTime = t.UnitTime
+			}
+
+			if t.MaxWaitTime != 0 {
+				n.conversationMaxWaitTime = t.MaxWaitTime
+			}
 		}
 	}
-
-	n.throttle.SetMaxWaitTime(n.maxWaitTime)
 
 	for _, r := range receivers {
 		receiver, ok := r.(*config.DingTalk)
@@ -112,63 +178,50 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 	return n
 }
 
-func (n *Notifier) Notify(data template.Data) []error {
-	var errs []error
-	send := func(c *config.DingTalk) error {
+func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-		if c.DingTalkConfig.Conversation != nil {
-			if es := n.sendToConversation(c, data); es != nil {
-				errs = append(errs, es...)
-			}
+	group := async.NewGroup(ctx)
+	for _, dingtalk := range n.DingTalk {
+		d := dingtalk
+
+		if d.DingTalkConfig.ChatBot != nil {
+			group.Add(func(stopCh chan interface{}) {
+				stopCh <- n.sendToChatBot(ctx, d, data)
+			})
 		}
 
-		if c.DingTalkConfig.ChatBot != nil {
-			if err := n.sendToWebhook(c, data); err != nil {
-				errs = append(errs, err)
-			}
+		if d.DingTalkConfig.Conversation != nil {
+			group.Add(func(stopCh chan interface{}) {
+				stopCh <- n.sendToConversation(ctx, d, data)
+			})
 		}
-
-		return nil
 	}
 
-	for _, s := range n.DingTalk {
-		_ = send(s)
-	}
-
-	return errs
+	return group.Wait()
 }
 
-func (n *Notifier) sendToWebhook(d *config.DingTalk, data template.Data) error {
+func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data template.Data) []error {
 
 	bot := d.DingTalkConfig.ChatBot
 
 	webhook, err := n.notifierCfg.GetSecretData(d.GetNamespace(), bot.Webhook)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get webhook secret error", "error", err.Error())
-		return err
+		return []error{err}
 	}
 
-	send := func() error {
-		msg, err := n.template.TemlText(n.templateName, n.logger, data)
-		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: generate message error", "error", err.Error())
-			return err
-		}
+	send := func(msg string) error {
 
-		if bot.Keywords != nil && len(bot.Keywords) > 0 {
-			kw := "[Keywords] "
-			for _, k := range bot.Keywords {
-				kw = fmt.Sprintf("%s%s, ", kw, k)
-			}
-
-			msg = fmt.Sprintf("%s\n\n%s: ", msg, strings.TrimSuffix(kw, ", "))
-		}
+		start := time.Now()
+		defer func() {
+			_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot", "used", time.Since(start).String())
+		}()
 
 		dm := dingtalkMessage{
+			Type: "text",
 			Text: dingtalkMessageContent{
 				Content: msg,
 			},
-			Type: "text",
 		}
 
 		var buf bytes.Buffer
@@ -216,12 +269,15 @@ func (n *Notifier) sendToWebhook(d *config.DingTalk, data template.Data) error {
 		}
 
 		if res.Code != 0 {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to webhook error", "name", bot.Webhook.Name, "key", bot.Webhook.Key, "errcode", res.Code, "errmsg", res.Message)
+			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "name", bot.Webhook.Name, "key", bot.Webhook.Key, "errcode", res.Code, "errmsg", res.Message)
+			if res.Code == 460101 {
+				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "context", len(msg), "msg", request.ContentLength, "chatbotMessageMaxSize", n.chatbotMessageMaxSize)
+			}
 			return err
 		}
 
 		if res.Status != 0 {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to webhook error", "name", bot.Webhook.Name, "key", bot.Webhook.Key, "status", res.Status, "punish", res.Punish)
+			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "name", bot.Webhook.Name, "key", bot.Webhook.Key, "status", res.Status, "punish", res.Punish)
 			return err
 		}
 
@@ -230,26 +286,63 @@ func (n *Notifier) sendToWebhook(d *config.DingTalk, data template.Data) error {
 		return nil
 	}
 
-	allow, err := n.throttle.Allow(webhook, send)
-	if !allow {
-		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "name", bot.Webhook.Name, "key", bot.Webhook.Key, "error", err.Error())
-		return err
-	}
-
-	return nil
-}
-
-func (n *Notifier) sendToConversation(d *config.DingTalk, data template.Data) []error {
-
-	send := func(alert template.Data) error {
-		token, err := n.getToken(d)
-		if err != nil {
-			return err
+	keywords := ""
+	if bot.Keywords != nil && len(bot.Keywords) > 0 {
+		keywords = "\n\n[Keywords] "
+		for _, k := range bot.Keywords {
+			keywords = fmt.Sprintf("%s%s, ", keywords, k)
 		}
 
-		msg, err := n.template.TemlText(n.templateName, n.logger, alert)
+		keywords = strings.TrimSuffix(keywords, ", ")
+	}
+
+	messages, err := n.template.Split(data, n.chatbotMessageMaxSize-len(keywords), n.templateName, n.logger)
+	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: split message error", "error", err.Error())
+		return []error{err}
+	}
+
+	group := async.NewGroup(ctx)
+	for _, m := range messages {
+		msg := fmt.Sprintf("%s%s", m, keywords)
+		group.Add(func(stopCh chan interface{}) {
+			n.throttle.TryAdd(webhook, n.chatbotThreshold, n.chatbotUnitTime, n.chatbotMaxWaitTime)
+			if n.throttle.Allow(webhook, n.logger) {
+				stopCh <- send(msg)
+			} else {
+				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: message to chatbot dropped because of flow control", "name", bot.Webhook.Name, "key", bot.Webhook.Key)
+				stopCh <- fmt.Errorf("")
+			}
+		})
+	}
+
+	return group.Wait()
+}
+
+func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, data template.Data) []error {
+
+	appkey, err := n.notifierCfg.GetSecretData(d.GetNamespace(), d.DingTalkConfig.Conversation.AppKey)
+	if err != nil {
+		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appkey error", "error", err)
+		return []error{err}
+	}
+
+	appsecret, err := n.notifierCfg.GetSecretData(d.GetNamespace(), d.DingTalkConfig.Conversation.AppSecret)
+	if err != nil {
+		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appsecret error", "error", err)
+		return []error{err}
+	}
+
+	send := func(msg string) error {
+
+		start := time.Now()
+		defer func() {
+			_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: send message to conversation", "used", time.Since(start).String())
+		}()
+
+		token, err := n.getToken(ctx, appkey, appsecret)
 		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: generate message error", "error", err.Error())
+			_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get token error", "error", err)
 			return err
 		}
 
@@ -305,81 +398,76 @@ func (n *Notifier) sendToConversation(d *config.DingTalk, data template.Data) []
 			return err
 		}
 
-		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: send message", "to", d.DingTalkConfig.Conversation.ChatID)
+		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: send message to conversation", "conversation", d.DingTalkConfig.Conversation.ChatID)
 
 		return nil
 	}
 
-	var errs []error
-	for _, alert := range data.Alerts {
-		d := template.Data{
-			Alerts: template.Alerts{
-				alert,
-			},
-			Receiver:    data.Receiver,
-			GroupLabels: data.GroupLabels,
-		}
-		if e := send(d); e != nil {
-			errs = append(errs, e)
-		}
+	messages, err := n.template.Split(data, n.conversationMessageMaxSize, n.templateName, n.logger)
+	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: split message error", "error", err.Error())
+		return nil
 	}
-	return errs
+
+	group := async.NewGroup(ctx)
+	for _, m := range messages {
+		msg := m
+		group.Add(func(stopCh chan interface{}) {
+			n.throttle.TryAdd(appkey, n.conversationThreshold, n.conversationUnitTime, n.conversationMaxWaitTime)
+			if n.throttle.Allow(appkey, n.logger) {
+				stopCh <- send(msg)
+			} else {
+				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: message to conversation dropped because of flow control", "conversation", d.DingTalkConfig.Conversation.ChatID)
+				stopCh <- fmt.Errorf("")
+			}
+		})
+	}
+
+	return group.Wait()
 }
 
-func (n *Notifier) getToken(d *config.DingTalk) (string, error) {
+func (n *Notifier) getToken(ctx context.Context, appkey, appsecret string) (string, error) {
 
-	u, err := notifier.UrlWithPath(URL, "gettoken")
-	if err != nil {
-		return "", err
+	get := func(ctx context.Context) (string, time.Duration, error) {
+		u, err := notifier.UrlWithPath(URL, "gettoken")
+		if err != nil {
+			return "", 0, err
+		}
+
+		p := make(map[string]string)
+		p["appkey"] = appkey
+		p["appsecret"] = appsecret
+
+		u, err = notifier.UrlWithParameters(u, p)
+		if err != nil {
+			return "", 0, err
+		}
+
+		request, err := http.NewRequest(http.MethodGet, u, nil)
+		if err != nil {
+			return "", 0, err
+		}
+		request.Header.Set("Content-Type", "application/json")
+
+		body, err := notifier.DoHttpRequest(context.Background(), nil, request)
+		if err != nil {
+			return "", 0, err
+		}
+
+		res := &response{}
+		if err := json.Unmarshal(body, res); err != nil {
+			return "", 0, err
+		}
+
+		if res.Code != 0 {
+			return "", 0, fmt.Errorf("errcode %d, errmsg %s", res.Code, res.Message)
+		}
+
+		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get token", "key", appkey+" | "+appsecret)
+		return res.Token, n.tokenExpires, nil
 	}
 
-	appkey, err := n.notifierCfg.GetSecretData(d.GetNamespace(), d.DingTalkConfig.Conversation.AppKey)
-	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get appkey error", "error", err)
-		return "", err
-	}
-
-	appsecret, err := n.notifierCfg.GetSecretData(d.GetNamespace(), d.DingTalkConfig.Conversation.AppSecret)
-	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get appsecret error", "error", err)
-		return "", err
-	}
-
-	p := make(map[string]string)
-	p["appkey"] = appkey
-	p["appsecret"] = appsecret
-
-	u, err = notifier.UrlWithParameters(u, p)
-	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: set parameter error", "error", err)
-		return "", err
-	}
-
-	request, err := http.NewRequest(http.MethodGet, u, nil)
-	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: create http request error", "error", err)
-		return "", err
-	}
-	request.Header.Set("Content-Type", "application/json")
-
-	body, err := notifier.DoHttpRequest(context.Background(), nil, request)
-	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: do http error", "error", err)
-		return "", err
-	}
-
-	res := &response{}
-	if err := json.Unmarshal(body, res); err != nil {
-		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: decode response body error", "error", err)
-		return "", err
-	}
-
-	if res.Code != 0 {
-		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get token error", "errcode", res.Code, "errmsg", res.Message)
-		return "", fmt.Errorf("errcode %d, errmsg %s", res.Code, res.Message)
-	}
-
-	return res.Token, nil
+	return n.ats.GetToken(ctx, appkey+" | "+appsecret, get)
 }
 
 func calcSign(secret string) (string, string) {

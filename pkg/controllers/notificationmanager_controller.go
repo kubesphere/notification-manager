@@ -59,7 +59,7 @@ type NotificationManagerReconciler struct {
 
 // Reconcile reads that state of NotificationManager objects and makes changes based on the state read
 // and what is in the NotificationManagerSpec
-// +kubebuilder:rbac:groups=notification.kubesphere.io,resources=notificationmanagers;receivers;emailconfigs;emailreceivers;webhookconfigs;webhookreceivers;wechatconfigs;wechatreceivers;slackconfigs;slackreceivers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=notification.kubesphere.io,resources=notificationmanagers;receivers;dingtalkconfigs;dingtalkreceivers;emailconfigs;emailreceivers;webhookconfigs;webhookreceivers;wechatconfigs;wechatreceivers;slackconfigs;slackreceivers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=notification.kubesphere.io,resources=notificationmanagers/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -207,6 +207,10 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 
 		if nm.Spec.VolumeMounts != nil {
 			newC.VolumeMounts = append(newC.VolumeMounts, nm.Spec.VolumeMounts...)
+		}
+
+		if nm.Spec.Args != nil {
+			newC.Args = append(newC.Args, nm.Spec.Args...)
 		}
 
 		if len(nm.Spec.NotificationManagerNamespaces) > 0 {
