@@ -1,6 +1,8 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.5
   name: notificationmanagers.notification.kubesphere.io
 spec:
   group: notification.kubesphere.io
@@ -740,13 +742,13 @@ spec:
                                 time is more than this time, it will return a error,
                                 else it will wait for the flow restriction lifted,
                                 and send the message. Nil means do not wait, the maximum
-                                value is `UnitTime`.
+                                value is `Unit`.
                               format: int64
                               type: integer
                             threshold:
-                              description: The maximum calls in `UnitTime`.
+                              description: The maximum calls in `Unit`.
                               type: integer
-                            unitTime:
+                            unit:
                               description: A Duration represents the elapsed time
                                 between two instants as an int64 nanosecond count.
                                 The representation limits the largest representable
@@ -771,13 +773,13 @@ spec:
                                 time is more than this time, it will return a error,
                                 else it will wait for the flow restriction lifted,
                                 and send the message. Nil means do not wait, the maximum
-                                value is `UnitTime`.
+                                value is `Unit`.
                               format: int64
                               type: integer
                             threshold:
-                              description: The maximum calls in `UnitTime`.
+                              description: The maximum calls in `Unit`.
                               type: integer
-                            unitTime:
+                            unit:
                               description: A Duration represents the elapsed time
                                 between two instants as an int64 nanosecond count.
                                 The representation limits the largest representable

@@ -28,10 +28,10 @@ const (
 	ChatbotMessageMaxSize        = 19960
 	DefaultExpires               = time.Hour * 2
 	DefaultChatbotThreshold      = 20
-	DefaultChatbotUnitTime       = time.Minute
+	DefaultChatbotUnit           = time.Minute
 	DefaultChatbotWaitTime       = time.Second * 10
 	DefaultConversationThreshold = 25
-	DefaultConversationUnitTime  = time.Second
+	DefaultConversationUnit      = time.Second
 )
 
 type Notifier struct {
@@ -47,10 +47,10 @@ type Notifier struct {
 	conversationMessageMaxSize int
 	chatbotMessageMaxSize      int
 	chatbotThreshold           int
-	chatbotUnitTime            time.Duration
+	chatbotUnit                time.Duration
 	chatbotMaxWaitTime         time.Duration
 	conversationThreshold      int
-	conversationUnitTime       time.Duration
+	conversationUnit           time.Duration
 	conversationMaxWaitTime    time.Duration
 }
 
@@ -97,11 +97,11 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 		conversationMessageMaxSize: ConversationMessageMaxSize,
 		chatbotMessageMaxSize:      ChatbotMessageMaxSize,
 		chatbotThreshold:           DefaultChatbotThreshold,
-		chatbotUnitTime:            DefaultChatbotUnitTime,
+		chatbotUnit:                DefaultChatbotUnit,
 		chatbotMaxWaitTime:         DefaultChatbotWaitTime,
 		conversationThreshold:      DefaultConversationThreshold,
-		conversationUnitTime:       DefaultConversationUnitTime,
-		conversationMaxWaitTime:    DefaultConversationUnitTime,
+		conversationUnit:           DefaultConversationUnit,
+		conversationMaxWaitTime:    DefaultConversationUnit,
 	}
 
 	if opts != nil && opts.DingTalk != nil {
@@ -136,8 +136,8 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 				n.chatbotThreshold = t.Threshold
 			}
 
-			if t.UnitTime != 0 {
-				n.chatbotUnitTime = t.UnitTime
+			if t.Unit != 0 {
+				n.chatbotUnit = t.Unit
 			}
 
 			if t.MaxWaitTime != 0 {
@@ -151,8 +151,8 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 				n.conversationThreshold = t.Threshold
 			}
 
-			if t.UnitTime != 0 {
-				n.conversationUnitTime = t.UnitTime
+			if t.Unit != 0 {
+				n.conversationUnit = t.Unit
 			}
 
 			if t.MaxWaitTime != 0 {
@@ -270,9 +270,6 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 
 		if res.Code != 0 {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "name", bot.Webhook.Name, "key", bot.Webhook.Key, "errcode", res.Code, "errmsg", res.Message)
-			if res.Code == 460101 {
-				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "context", len(msg), "msg", request.ContentLength, "chatbotMessageMaxSize", n.chatbotMessageMaxSize)
-			}
 			return err
 		}
 
@@ -306,7 +303,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 	for _, m := range messages {
 		msg := fmt.Sprintf("%s%s", m, keywords)
 		group.Add(func(stopCh chan interface{}) {
-			n.throttle.TryAdd(webhook, n.chatbotThreshold, n.chatbotUnitTime, n.chatbotMaxWaitTime)
+			n.throttle.TryAdd(webhook, n.chatbotThreshold, n.chatbotUnit, n.chatbotMaxWaitTime)
 			if n.throttle.Allow(webhook, n.logger) {
 				stopCh <- send(msg)
 			} else {
@@ -413,7 +410,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 	for _, m := range messages {
 		msg := m
 		group.Add(func(stopCh chan interface{}) {
-			n.throttle.TryAdd(appkey, n.conversationThreshold, n.conversationUnitTime, n.conversationMaxWaitTime)
+			n.throttle.TryAdd(appkey, n.conversationThreshold, n.conversationUnit, n.conversationMaxWaitTime)
 			if n.throttle.Allow(appkey, n.logger) {
 				stopCh <- send(msg)
 			} else {

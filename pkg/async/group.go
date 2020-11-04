@@ -15,8 +15,7 @@ type Group struct {
 
 func NewGroup(ctx context.Context) *Group {
 	return &Group{
-		stopCh: make(chan interface{}),
-		ctx:    ctx,
+		ctx: ctx,
 	}
 }
 
@@ -31,6 +30,8 @@ func (g *Group) Wait() []error {
 	if g.workers == nil || len(g.workers) == 0 {
 		return nil
 	}
+
+	g.stopCh = make(chan interface{}, len(g.workers))
 
 	for _, worker := range g.workers {
 		go worker(g.stopCh)

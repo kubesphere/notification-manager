@@ -233,6 +233,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 				deploy.Spec.Template.Spec.Containers[i].Command = newC.Command
 				deploy.Spec.Template.Spec.Containers[i].Env = newC.Env
 				deploy.Spec.Template.Spec.Containers[i].VolumeMounts = newC.VolumeMounts
+				deploy.Spec.Template.Spec.Containers[i].Args = newC.Args
 				break
 			}
 		}

@@ -59,7 +59,7 @@ type NotificationManagerSpec struct {
 	// Arguments to the entrypoint.
 	// The docker image's CMD is used if this is not provided.
 	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
-	// cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax
+	// cannot be resolved, the reference in the input string will remain unchanged. The $(VAR_NAME) syntax
 	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
 	// regardless of whether the variable exists or not.
 	// Cannot be updated.
@@ -132,12 +132,12 @@ type WebhookOptions struct {
 
 // The config of flow control.
 type Throttle struct {
-	// The maximum calls in `UnitTime`.
+	// The maximum calls in `Unit`.
 	Threshold int           `json:"threshold,omitempty"`
-	UnitTime  time.Duration `json:"unitTime,omitempty"`
+	Unit      time.Duration `json:"unit,omitempty"`
 	// The maximum tolerable waiting time when the calls trigger flow control, if the actual waiting time is more than this time, it will
 	// return a error, else it will wait for the flow restriction lifted, and send the message.
-	// Nil means do not wait, the maximum value is `UnitTime`.
+	// Nil means do not wait, the maximum value is `Unit`.
 	MaxWaitTime time.Duration `json:"maxWaitTime,omitempty"`
 }
 
