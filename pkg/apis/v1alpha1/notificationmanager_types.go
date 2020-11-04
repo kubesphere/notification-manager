@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
 // NotificationManagerSpec defines the desired state of NotificationManager
@@ -55,6 +56,15 @@ type NotificationManagerSpec struct {
 	// Pod volumes to mount into the container's filesystem.
 	// Cannot be updated.
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
+	// Arguments to the entrypoint.
+	// The docker image's CMD is used if this is not provided.
+	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+	// cannot be resolved, the reference in the input string will remain unchanged. The $(VAR_NAME) syntax
+	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
+	// regardless of whether the variable exists or not.
+	// Cannot be updated.
+	// +optional
+	Args []string `json:"args,omitempty"`
 }
 
 type ReceiversSpec struct {
@@ -98,6 +108,10 @@ type WechatOptions struct {
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
 	// The name of the template to generate wechat message.
 	Template string `json:"template,omitempty"`
+	// The maximum message size that can be sent in a request.
+	MessageMaxSize int `json:"messageMaxSize,omitempty"`
+	// The time of token expired.
+	TokenExpires time.Duration `json:"tokenExpires,omitempty"`
 }
 
 type SlackOptions struct {
@@ -116,17 +130,33 @@ type WebhookOptions struct {
 	Template string `json:"template,omitempty"`
 }
 
+// The config of flow control.
+type Throttle struct {
+	// The maximum calls in `Unit`.
+	Threshold int           `json:"threshold,omitempty"`
+	Unit      time.Duration `json:"unit,omitempty"`
+	// The maximum tolerable waiting time when the calls trigger flow control, if the actual waiting time is more than this time, it will
+	// return a error, else it will wait for the flow restriction lifted, and send the message.
+	// Nil means do not wait, the maximum value is `Unit`.
+	MaxWaitTime time.Duration `json:"maxWaitTime,omitempty"`
+}
+
 type DingTalkOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
-	// A DingTalk ChatBot only can send 20 message per minute, if it reached the threshold, it will wait for a few second.
-	// This value used to set the maximum tolerable waiting time, if the actual waiting time is more than this time, it will
-	// return a error, else it will wait for the flow restriction lifted, and send the message.
-	// Nil means do not wait, the maximum value is 60.
-	MaxWaitTime *int32 `json:"maxWaitTime,omitempty"`
 	// The name of the template to generate DingTalk message.
 	// If the global template is not set, it will use default.
 	Template string `json:"template,omitempty"`
+	// The time of token expired.
+	TokenExpires time.Duration `json:"tokenExpires,omitempty"`
+	// The maximum message size that can be sent to conversation in a request.
+	ConversationMessageMaxSize int `json:"conversationMessageMaxSize,omitempty"`
+	// The maximum message size that can be sent to chatbot in a request.
+	ChatbotMessageMaxSize int `json:"chatbotMessageMaxSize,omitempty"`
+	// The flow control fo chatbot.
+	ChatBotThrottle *Throttle `json:"chatBotThrottle,omitempty"`
+	// The flow control fo conversation.
+	ConversationThrottle *Throttle `json:"conversationThrottle,omitempty"`
 }
 
 type Options struct {

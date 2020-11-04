@@ -607,6 +607,17 @@ spec:
                       type: array
                   type: object
               type: object
+            args:
+              description: 'Arguments to the entrypoint. The docker image''s CMD is
+                used if this is not provided. Variable references $(VAR_NAME) are
+                expanded using the container''s environment. If a variable cannot
+                be resolved, the reference in the input string will be unchanged.
+                The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME).
+                Escaped references will never be expanded, regardless of whether the
+                variable exists or not. Cannot be updated.'
+              items:
+                type: string
+              type: array
             defaultConfigSelector:
               description: Default Email/Wechat/Slack/Webhook Config to be selected
               properties:
@@ -725,16 +736,60 @@ spec:
                   properties:
                     dingtalk:
                       properties:
-                        maxWaitTime:
-                          description: A DingTalk ChatBot only can send 20 message
-                            per minute, if it reached the threshold, it will wait
-                            for a few second. This value used to set the maximum tolerable
-                            waiting time, if the actual waiting time is more than
-                            this time, it will return a error, else it will wait for
-                            the flow restriction lifted, and send the message. Nil
-                            means do not wait, the maximum value is 60.
-                          format: int32
+                        chatBotThrottle:
+                          description: The flow control fo chatbot.
+                          properties:
+                            maxWaitTime:
+                              description: The maximum tolerable waiting time when
+                                the calls trigger flow control, if the actual waiting
+                                time is more than this time, it will return a error,
+                                else it will wait for the flow restriction lifted,
+                                and send the message. Nil means do not wait, the maximum
+                                value is `Unit`.
+                              format: int64
+                              type: integer
+                            threshold:
+                              description: The maximum calls in `Unit`.
+                              type: integer
+                            unit:
+                              description: A Duration represents the elapsed time
+                                between two instants as an int64 nanosecond count.
+                                The representation limits the largest representable
+                                duration to approximately 290 years.
+                              format: int64
+                              type: integer
+                          type: object
+                        chatbotMessageMaxSize:
+                          description: The maximum message size that can be sent to
+                            chatbot in a request.
                           type: integer
+                        conversationMessageMaxSize:
+                          description: The maximum message size that can be sent to
+                            conversation in a request.
+                          type: integer
+                        conversationThrottle:
+                          description: The flow control fo conversation.
+                          properties:
+                            maxWaitTime:
+                              description: The maximum tolerable waiting time when
+                                the calls trigger flow control, if the actual waiting
+                                time is more than this time, it will return a error,
+                                else it will wait for the flow restriction lifted,
+                                and send the message. Nil means do not wait, the maximum
+                                value is `Unit`.
+                              format: int64
+                              type: integer
+                            threshold:
+                              description: The maximum calls in `Unit`.
+                              type: integer
+                            unit:
+                              description: A Duration represents the elapsed time
+                                between two instants as an int64 nanosecond count.
+                                The representation limits the largest representable
+                                duration to approximately 290 years.
+                              format: int64
+                              type: integer
+                          type: object
                         notificationTimeout:
                           description: Notification Sending Timeout
                           format: int32
@@ -744,6 +799,10 @@ spec:
                             message. If the global template is not set, it will use
                             default.
                           type: string
+                        tokenExpires:
+                          description: The time of token expired.
+                          format: int64
+                          type: integer
                       type: object
                     email:
                       properties:
@@ -805,6 +864,10 @@ spec:
                       type: object
                     wechat:
                       properties:
+                        messageMaxSize:
+                          description: The maximum message size that can be sent in
+                            a request.
+                          type: integer
                         notificationTimeout:
                           description: Notification Sending Timeout
                           format: int32
@@ -813,6 +876,10 @@ spec:
                           description: The name of the template to generate wechat
                             message.
                           type: string
+                        tokenExpires:
+                          description: The time of token expired.
+                          format: int64
+                          type: integer
                       type: object
                   type: object
                 tenantKey:

@@ -1,73 +1,88 @@
 package dingtalk
 
 import (
-	"fmt"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"sync"
 	"time"
-)
-
-const (
-	DefaultQPS = 20
 )
 
 var throttle *Throttle
 
 type Throttle struct {
-	qps          int
-	maxWaitTime  time.Duration
 	rateLimiters map[string]*rateLimiter
-	mu           sync.Mutex
+	mutex        sync.Mutex
 }
 
 type rateLimiter struct {
-	url   string
-	queue []time.Time
-	mu    sync.Mutex
+	key         string
+	threshold   int
+	unitTime    time.Duration
+	maxWaitTime time.Duration
+	queue       []time.Time
+	mutex       sync.Mutex
+}
+
+func init() {
+	throttle = &Throttle{
+		rateLimiters: make(map[string]*rateLimiter),
+	}
 }
 
 func GetThrottle() *Throttle {
-	if throttle == nil {
-		throttle = &Throttle{
-			qps:          DefaultQPS,
-			rateLimiters: make(map[string]*rateLimiter),
-		}
-	}
-
 	return throttle
 }
 
-func (t *Throttle) GetQPS() int {
-	return t.qps
-}
+// Add, if exist, update
+func (t *Throttle) Add(key string, threshold int, unitTime time.Duration, maxWaitTime time.Duration) {
 
-func (t *Throttle) SetQPS(qps int) {
-	t.qps = qps
-}
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 
-func (t *Throttle) GetMaxWaitTime() time.Duration {
-	return t.maxWaitTime
-}
-
-func (t *Throttle) SetMaxWaitTime(wait time.Duration) {
-	t.maxWaitTime = wait
-}
-
-func (t *Throttle) Add(url string) {
-
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	_, ok := t.rateLimiters[url]
+	r, ok := t.rateLimiters[key]
 	if !ok {
-		t.rateLimiters[url] = &rateLimiter{
-			url: url,
+		t.rateLimiters[key] = &rateLimiter{
+			key:         key,
+			threshold:   threshold,
+			unitTime:    unitTime,
+			maxWaitTime: maxWaitTime,
+		}
+
+		return
+	}
+
+	t.updateRateLimiter(r, threshold, unitTime, maxWaitTime)
+}
+
+func (t *Throttle) updateRateLimiter(r *rateLimiter, threshold int, unitTime time.Duration, maxWaitTime time.Duration) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	r.threshold = threshold
+	r.unitTime = unitTime
+	r.maxWaitTime = maxWaitTime
+}
+
+// Add, if exist, do nothing
+func (t *Throttle) TryAdd(key string, threshold int, unitTime time.Duration, maxWaitTime time.Duration) {
+
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	_, ok := t.rateLimiters[key]
+	if !ok {
+		t.rateLimiters[key] = &rateLimiter{
+			key:         key,
+			threshold:   threshold,
+			unitTime:    unitTime,
+			maxWaitTime: maxWaitTime,
 		}
 	}
 }
 
 func (t *Throttle) Get(url string) *rateLimiter {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 
 	r, ok := t.rateLimiters[url]
 	if !ok {
@@ -77,47 +92,52 @@ func (t *Throttle) Get(url string) *rateLimiter {
 	return r
 }
 
-// This function calculates whether the webhook corresponding to the URL reaches the flow limit,
-// if not, execute `send` to send the message, otherwise wait for the flow limit to be lifted, and send message.
-// The max waiting time is set by `maxWaitTime`, if the actual waiting time is more than `maxWaitTime`, it will not wait.
+// This function calculates whether the api calls reaches the flow limit,
+// if not, return true, otherwise wait for the flow limit to be lifted, and return true.
+// The max waiting time is set by `maxWaitTime`, if the actual waiting time is more than `maxWaitTime`, it will not wait, and return false.
 //
-// QPS defines the allowed message send to webhook per minute sent.
-// The queue stores the time of the last (qps - 1) message sent.
+// The `threshold` defines the allowed calls per `unitTime`.
+// The queue stores the time of the last (threshold - 1) call.
 //
-// The logic of flow control is that the time for sending any consecutive qps‘s times messages cannot be greater than 1 minute.
+// The logic of flow control is that the time of any `threshold` consecutive calls cannot be greater than `unitTime`.
 //
-// The queue stores the message sent time for the most recent qps-1 times,
-// determine whether the flow limit is reached by comparing the current time and the first time in queue.
-func (t *Throttle) Allow(url string, send func() error) (bool, error) {
+func (t *Throttle) Allow(key string, logger log.Logger) bool {
 
-	r := t.Get(url)
+	r := t.Get(key)
 	if r == nil {
-		t.Add(url)
-		r = t.Get(url)
+		_ = level.Error(logger).Log("msg", "Throttle: key is not exist", "key", key)
+		return false
 	}
 
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 
-	if len(r.queue) < t.qps {
+	l := len(r.queue)
+	if l < r.threshold {
 		r.queue = append(r.queue, time.Now())
-		return true, send()
+		return true
 	}
+
+	// If the threshold has changed, truncate it.
+	r.queue = r.queue[l-r.threshold:]
 
 	now := time.Now()
-	if now.Sub(r.queue[0]) >= time.Minute {
+	if now.Sub(r.queue[0]) >= r.unitTime {
 		r.queue = r.queue[1:]
 		r.queue = append(r.queue, now)
-		return true, send()
+		return true
 	} else {
-		wait := time.Minute - now.Sub(r.queue[0])
-		if wait <= t.maxWaitTime {
+		wait := r.unitTime - now.Sub(r.queue[0])
+		if wait <= r.maxWaitTime {
+			_ = level.Debug(logger).Log("msg", "Throttle: wait start", "key", key, "time", wait.String())
 			time.Sleep(wait)
+			_ = level.Debug(logger).Log("msg", "Throttle: wait end", "key", key, "time", wait.String())
 			r.queue = r.queue[1:]
-			r.queue = append(r.queue, now)
-			return true, send()
+			r.queue = append(r.queue, time.Now())
+			return true
 		} else {
-			return false, fmt.Errorf("send to webhook %s failed because of rate limite, wait %d second, max wait %d second", url, wait, t.maxWaitTime)
+			_ = level.Error(logger).Log("msg", "Throttle: drop", "key", key, "time", wait.String(), "max wait time", r.maxWaitTime)
+			return false
 		}
 	}
 }

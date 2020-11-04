@@ -41,6 +41,8 @@ rules:
 - apiGroups:
   - notification.kubesphere.io
   resources:
+  - dingtalkconfigs
+  - dingtalkreceivers
   - emailconfigs
   - emailreceivers
   - notificationmanagers

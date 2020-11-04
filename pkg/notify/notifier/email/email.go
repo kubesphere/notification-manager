@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/kubesphere/notification-manager/pkg/async"
 	nmconfig "github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/prometheus/alertmanager/config"
@@ -112,7 +113,7 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 
 			e, ok := n.email[key]
 			if !ok {
-				e := nmconfig.NewEmail(nil)
+				e = nmconfig.NewEmail(nil)
 				_ = e.SetConfig(c)
 				e.SetNamespace(receiver.GetNamespace())
 			}
@@ -136,7 +137,7 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 	return n
 }
 
-func (n *Notifier) Notify(data template.Data) []error {
+func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 	var as []*types.Alert
 	for _, a := range data.Alerts {
@@ -151,13 +152,17 @@ func (n *Notifier) Notify(data template.Data) []error {
 		})
 	}
 
-	var errs []error
-	sendEmail := func(e *nmconfig.Email, to string) {
+	sendEmail := func(e *nmconfig.Email, to string) error {
+
+		start := time.Now()
+		defer func() {
+			_ = level.Debug(n.logger).Log("msg", "EmailNotifier: send message", "used", time.Since(start).String())
+		}()
+
 		emailConfig, err := n.getEmailConfig(e)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "EmailNotifier: get email config error", "error", err.Error())
-			errs = append(errs, err)
-			return
+			return err
 		}
 		emailConfig.To = to
 		emailConfig.HTML = n.templateName
@@ -172,11 +177,13 @@ func (n *Notifier) Notify(data template.Data) []error {
 		_, err = sender.Notify(ctx, as...)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "EmailNotifier: notify error", "from", emailConfig.From, "to", emailConfig.To, "error", err.Error())
-			errs = append(errs, err)
+			return err
 		}
 		_ = level.Debug(n.logger).Log("msg", "EmailNotifier: send message", "from", emailConfig.From, "to", emailConfig.To)
+		return nil
 	}
 
+	group := async.NewGroup(ctx)
 	for _, e := range n.email {
 		if n.delivery == Bulk {
 			size := 0
@@ -199,16 +206,21 @@ func (n *Notifier) Notify(data template.Data) []error {
 					to += fmt.Sprintf("%s,", t)
 				}
 				to = strings.TrimSuffix(to, ",")
-				sendEmail(e, to)
+				group.Add(func(stopCh chan interface{}) {
+					stopCh <- sendEmail(e, to)
+				})
 			}
 		} else {
-			for _, to := range e.To {
-				sendEmail(e, to)
+			for _, t := range e.To {
+				to := t
+				group.Add(func(stopCh chan interface{}) {
+					stopCh <- sendEmail(e, to)
+				})
 			}
 		}
 	}
 
-	return errs
+	return group.Wait()
 }
 
 func (n *Notifier) clone(ec *nmconfig.EmailConfig) *nmconfig.EmailConfig {

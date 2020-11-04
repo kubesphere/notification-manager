@@ -7,6 +7,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	json "github.com/json-iterator/go"
+	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/prometheus/alertmanager/template"
@@ -91,18 +92,20 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 	return n
 }
 
-func (n *Notifier) Notify(data template.Data) []error {
+func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	var errs []error
-	msg, err := n.template.TemlText(n.templateName, n.logger, data)
+	msg, err := n.template.TempleText(n.templateName, data, n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "SlackNotifier: generate message error", "error", err.Error())
-		return append(errs, err)
+		return []error{err}
 	}
 
 	send := func(c *config.Slack) error {
-		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
-		defer cancel()
+
+		start := time.Now()
+		defer func() {
+			_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "used", time.Since(start).String())
+		}()
 
 		sr := &slackRequest{
 			Channel: c.Channel,
@@ -146,17 +149,18 @@ func (n *Notifier) Notify(data template.Data) []error {
 			return fmt.Errorf("%s", slResp.Error)
 		}
 
-		_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "to", c.Channel)
+		_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "channel", c.Channel)
 
 		return nil
 	}
 
-	for _, s := range n.slack {
-		err := send(s)
-		if err != nil {
-			errs = append(errs, err)
-		}
+	group := async.NewGroup(ctx)
+	for _, slack := range n.slack {
+		s := slack
+		group.Add(func(stopCh chan interface{}) {
+			stopCh <- send(s)
+		})
 	}
 
-	return errs
+	return group.Wait()
 }
