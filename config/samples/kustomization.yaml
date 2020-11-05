@@ -14,6 +14,7 @@ resources:
   - dingtalk_default_secret.yaml
   - dingtalk_default_config.yaml
   - dingtalk_global_receiver.yaml
+  - template.yaml
 
 namespace: kubesphere-monitoring-system
 

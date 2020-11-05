@@ -896,6 +896,67 @@ To receive Alertmanager alerts, add webhook config like below to the `receivers`
        - "url": "http://notification-manager-svc.kubesphere-monitoring-system.svc:19093/api/v2/alerts"
 ```
 
+### Update to v0.6.0
+
+If there is already Notification Manager v0.1.x in the cluster, you can update it to v0.6.0 easily by following the steps below.
+
+- Update the CRD.
+
+```
+kubectl apply -f https://github.com/kubesphere/notification-manager/blob/release-0.6/config/bundle.yaml
+```
+
+- Change the notification-manager-operator image to `kubesphere/notification-manager-operator:v0.6.0`.
+
+```
+kubectl edit deployments.apps -n kubesphere-monitoring-system notification-manager-operator
+```
+
+- Create the template configmap.
+
+```
+kubectl apply -f https://github.com/kubesphere/notification-manager/blob/release-0.6/config/samples/template.yaml
+```
+
+- Edit the notification manager.
+
+```
+kubectl edit notificationmanagers.notification.kubesphere.io -n kubesphere-monitoring-system notification-manager 
+```
+
+Add the following.
+
+```
+spec:
+  image: kubesphere/notification-manager:v0.6.0
+  options:
+    global:
+      templateFile:
+        - /etc/notification-manager/template
+  volumeMounts:
+    - mountPath: /etc/notification-manager/
+      name: noification-manager-template
+  volumes:
+    - configMap:
+        defaultMode: 420
+        name: noification-manager-template
+      name: noification-manager-template
+```
+
+> After v0.6.0, notification manager use the new default template. If you want use the default template of v0.1.x, you can edit the notification manager as below.
+
+```
+spec:
+  options:
+    email:
+      template: email.default.html
+      subjectTemplate: email.default.subject
+    slack:
+      template: wechat.default.message
+    wechat:
+      template: wechat.default.message
+``` 
+
 ## Development
 
 ```

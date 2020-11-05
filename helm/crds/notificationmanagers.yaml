@@ -608,7 +608,7 @@ spec:
               description: 'Arguments to the entrypoint. The docker image''s CMD is
                 used if this is not provided. Variable references $(VAR_NAME) are
                 expanded using the container''s environment. If a variable cannot
-                be resolved, the reference in the input string will be unchanged.
+                be resolved, the reference in the input string will remain unchanged.
                 The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME).
                 Escaped references will never be expanded, regardless of whether the
                 variable exists or not. Cannot be updated.'
@@ -660,7 +660,7 @@ spec:
               type: object
             image:
               description: Docker Image used to start Notification Manager container,
-                for example kubesphere/notification-manager:v0.1.0
+                for example kubesphere/notification-manager:v0.6.0
               type: string
             imagePullPolicy:
               description: Image pull policy. One of Always, Never, IfNotPresent.
