@@ -34,7 +34,7 @@ operator:
 notificationmanager:
   image:
     tag: v0.6.0
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
   replicas: 1
   resources:
     limits:
