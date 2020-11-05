@@ -62,7 +62,7 @@ A receiver could be configured without xxxConfigSelector, in which case Notifica
 Deploy CRDs and the Notification Manager Operator:
 
 ```shell
-kubectl apply -f config/bundle.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubesphere/notification-manager/release-0.6/config/bundle.yaml
 ```
 
 ### Deploy Notification Manager in KubeSphere (Uses `workspace` to distinguish each tenant user):
@@ -84,7 +84,7 @@ spec:
     requests:
       cpu: 100m
       memory: 20Mi
-  image: kubesphere/notification-manager:latest
+  image: kubesphere/notification-manager:v0.6.0
   imagePullPolicy: IfNotPresent
   serviceAccountName: notification-manager-sa
   portName: webhook
@@ -469,7 +469,7 @@ spec:
     requests:
       cpu: 100m
       memory: 20Mi
-  image: kubesphere/notification-manager:latest
+  image: kubesphere/notification-manager:v0.6.0
   imagePullPolicy: IfNotPresent
   serviceAccountName: notification-manager-sa
   portName: webhook

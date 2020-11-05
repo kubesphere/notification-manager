@@ -21,8 +21,8 @@ spec:
         - /notification-manager-operator
         args:
         - --enable-leader-election
-        image: controller:v0.1.0
-        imagePullPolicy: IfNotPresent
+        image: controller:latest
+        imagePullPolicy: Always
         name: notification-manager-operator
         resources:
           limits:
