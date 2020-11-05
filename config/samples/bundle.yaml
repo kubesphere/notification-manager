@@ -112,7 +112,7 @@ kind: ConfigMap
 metadata:
   labels:
     app: notification-manager
-  name: template
+  name: noification-manager-template
   namespace: kubesphere-monitoring-system
 ---
 apiVersion: v1

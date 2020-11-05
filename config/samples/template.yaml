@@ -110,5 +110,5 @@ data:
     {{ end }}
 kind: ConfigMap
 metadata:
-  name: template
+  name: noification-manager-template
   namespace: kubesphere-monitoring-system
