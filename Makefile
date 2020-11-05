@@ -59,6 +59,7 @@ manifests: controller-gen
 	cd config/manager && kustomize edit set image controller=${IMG} && cd ../../
 	kustomize build config/default | sed -e '/creationTimestamp/d' > config/bundle.yaml
 	kustomize build config/samples | sed -e '/creationTimestamp/d' > config/samples/bundle.yaml
+	kustomize build config/update | sed -e '/creationTimestamp/d' > config/update/bundle.yaml
 
 # Run go fmt against code
 fmt:

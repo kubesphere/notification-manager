@@ -84,7 +84,7 @@ spec:
     requests:
       cpu: 100m
       memory: 20Mi
-  image: kubesphere/notification-manager:latest
+  image: kubesphere/notification-manager:v0.6.0
   imagePullPolicy: IfNotPresent
   serviceAccountName: notification-manager-sa
   portName: webhook
@@ -469,7 +469,7 @@ spec:
     requests:
       cpu: 100m
       memory: 20Mi
-  image: kubesphere/notification-manager:latest
+  image: kubesphere/notification-manager:v0.6.0
   imagePullPolicy: IfNotPresent
   serviceAccountName: notification-manager-sa
   portName: webhook
@@ -900,10 +900,10 @@ To receive Alertmanager alerts, add webhook config like below to the `receivers`
 
 If there is already Notification Manager v0.1.x in the cluster, you can update it to v0.6.0 easily by following the steps below.
 
-- Update the CRD.
+- Update the CRD and rbac.
 
 ```
-kubectl apply -f https://github.com/kubesphere/notification-manager/blob/release-0.6/config/bundle.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubesphere/notification-manager/release-0.6/config/update/bundle.yaml
 ```
 
 - Change the notification-manager-operator image to `kubesphere/notification-manager-operator:v0.6.0`.
@@ -915,7 +915,7 @@ kubectl edit deployments.apps -n kubesphere-monitoring-system notification-manag
 - Create the template configmap.
 
 ```
-kubectl apply -f https://github.com/kubesphere/notification-manager/blob/release-0.6/config/samples/template.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubesphere/notification-manager/release-0.6/config/samples/template.yaml
 ```
 
 - Edit the notification manager.
