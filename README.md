@@ -33,6 +33,8 @@ Notification Manager uses the following CRDs to define the desired alerts/notifi
 - SlackReceiver: Define the slack channel to send notifications to and the SlackConfig selector.
 - WebhookConfig: Define the webhook Url, HttpConfig.
 - WebhookReceiver: Define the WebhookConfig selector.
+- DingTalkConfig: Define the dingtalk configs like AppKey, AppSecret, ChatID, chatbot Webhook etc.
+- DingTalkReceiver: Define the DingTalkConfig selector.
 
 The relationship between receivers and configs can be demostrated as below:
 
