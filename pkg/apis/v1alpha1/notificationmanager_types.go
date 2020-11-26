@@ -87,6 +87,8 @@ type GlobalOptions struct {
 	// The name of the template to generate message.
 	// If the receiver dose not setup template, it will use this.
 	Template string `json:"template,omitempty"`
+	// The name of cluster which the notification manager be in.
+	Cluster string `json:"cluster,omitempty"`
 }
 
 type EmailOptions struct {

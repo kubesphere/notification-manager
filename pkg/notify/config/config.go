@@ -475,9 +475,7 @@ func (c *Config) nmChange(p *param) {
 		c.defaultConfigSelector = p.defaultConfigSelector
 		c.tenantReceiverSelector = p.tenantReceiverSelector
 		c.globalReceiverSelector = p.globalReceiverSelector
-		if p.ReceiverOpts != nil {
-			c.ReceiverOpts = p.ReceiverOpts
-		}
+		c.ReceiverOpts = p.ReceiverOpts
 		c.nmNamespaces = p.nmNamespaces
 		c.nmAdd = true
 	} else if p.op == opDel {
@@ -612,13 +610,13 @@ func (c *Config) updateReloadtimestamp() {
 		var objs []runtime.Object
 		receivers, err := getObjects(f.newReceiverObjectListFunc())
 		if err != nil {
-			_ = level.Error(c.logger).Log("msg", "Failed to list %s receiver", key, "err", err)
+			_ = level.Error(c.logger).Log("msg", "Failed to list receiver", "type", key, "err", err)
 		}
 		objs = append(objs, receivers...)
 
 		configs, err := getObjects(f.newConfigObjectListFunc())
 		if err != nil {
-			_ = level.Error(c.logger).Log("msg", "Failed to list %s config", key, "err", err)
+			_ = level.Error(c.logger).Log("msg", "Failed to list config", "type", key, "err", err)
 		}
 		objs = append(objs, configs...)
 
@@ -635,7 +633,7 @@ func (c *Config) updateReloadtimestamp() {
 
 			err = c.client.Update(c.ctx, obj)
 			if err != nil {
-				_ = level.Error(c.logger).Log("msg", "update %s error", key, "err", err)
+				_ = level.Error(c.logger).Log("msg", "update error", "type", key, "name", accessor.GetName(), "namespace", accessor.GetNamespace(), "err", err)
 				continue
 			}
 		}

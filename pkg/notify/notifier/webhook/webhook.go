@@ -116,26 +116,28 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		if w.WebhookConfig.HttpConfig.BearerToken != nil {
-			bearer, err := n.notifierCfg.GetSecretData(w.GetNamespace(), w.WebhookConfig.HttpConfig.BearerToken)
-			if err != nil {
-				_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get bearer token error", "error", err.Error())
-				return err
-			}
-
-			request.Header.Set("Authorization", bearer)
-		} else if w.WebhookConfig.HttpConfig.BasicAuth != nil {
-			pass := ""
-			if w.WebhookConfig.HttpConfig.BasicAuth.Password != nil {
-				p, err := n.notifierCfg.GetSecretData(w.GetNamespace(), w.WebhookConfig.HttpConfig.BasicAuth.Password)
+		if w.WebhookConfig.HttpConfig != nil {
+			if w.WebhookConfig.HttpConfig.BearerToken != nil {
+				bearer, err := n.notifierCfg.GetSecretData(w.GetNamespace(), w.WebhookConfig.HttpConfig.BearerToken)
 				if err != nil {
-					_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get password error", "error", err.Error())
+					_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get bearer token error", "error", err.Error())
 					return err
 				}
 
-				pass = p
+				request.Header.Set("Authorization", bearer)
+			} else if w.WebhookConfig.HttpConfig.BasicAuth != nil {
+				pass := ""
+				if w.WebhookConfig.HttpConfig.BasicAuth.Password != nil {
+					p, err := n.notifierCfg.GetSecretData(w.GetNamespace(), w.WebhookConfig.HttpConfig.BasicAuth.Password)
+					if err != nil {
+						_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get password error", "error", err.Error())
+						return err
+					}
+
+					pass = p
+				}
+				request.SetBasicAuth(w.WebhookConfig.HttpConfig.BasicAuth.Username, pass)
 			}
-			request.SetBasicAuth(w.WebhookConfig.HttpConfig.BasicAuth.Username, pass)
 		}
 
 		transport, err := n.getTransport(w)
