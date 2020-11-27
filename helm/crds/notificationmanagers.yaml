@@ -826,8 +826,8 @@ spec:
                     global:
                       properties:
                         cluster:
-                          description: The name of cluster which the notification
-                            manager be in.
+                          description: The name of the cluster in which the notification
+                            manager is deployed.
                           type: string
                         template:
                           description: The name of the template to generate message.
