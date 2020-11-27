@@ -74,6 +74,17 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 		go func() {
 			defer close(wkrCh)
 
+			cluster := "default"
+			if h.notifierCfg != nil && h.notifierCfg.ReceiverOpts != nil && h.notifierCfg.ReceiverOpts.Global != nil {
+				if h.notifierCfg.ReceiverOpts.Global.Cluster != "" {
+					cluster = h.notifierCfg.ReceiverOpts.Global.Cluster
+				}
+			}
+
+			for _, alert := range data.Alerts {
+				alert.Labels["cluster"] = cluster
+			}
+
 			dm := make(map[string]template.Data)
 			ns, ok := wkload.CommonLabels["namespace"]
 			if ok {
