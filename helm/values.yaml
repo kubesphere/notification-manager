@@ -9,10 +9,10 @@ operator:
       resources:
         limits:
           cpu: 50m
-          memory: 30Mi
+          memory: 50Mi
         requests:
-          cpu: 50m
-          memory: 30Mi
+          cpu: 5m
+          memory: 10Mi
     operator:
       image:
         repo: kubesphere/notification-manager-operator
@@ -21,10 +21,10 @@ operator:
       resources:
         limits:
           cpu: 50m
-          memory: 30Mi
+          memory: 50Mi
         requests:
-          cpu: 50m
-          memory: 30Mi
+          cpu: 5m
+          memory: 20Mi
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -39,9 +39,9 @@ notificationmanager:
   resources:
     limits:
       cpu: 500m
-      memory: 1Gi
+      memory: 500Mi
     requests:
-      cpu: 100m
+      cpu: 5m
       memory: 20Mi
   nodeSelector: {}
   tolerations: []
