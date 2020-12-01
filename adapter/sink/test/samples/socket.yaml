@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: socket-server
+  namespace: kubesphere-monitoring-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: socket-server
+  template:
+    metadata:
+      labels:
+        name: socket-server
+    spec:
+      containers:
+        - name: socket-server
+          image: kubespheredev/socket-server:latest
+          command:
+            - socket-server
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /etc/localtime
+              name: host-time
+      volumes:
+        - hostPath:
+            path: /etc/localtime
+            type: ""
+          name: host-time
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: socket-server
+  namespace: kubesphere-monitoring-system
+spec:
+  selector:
+    name: socket-server
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

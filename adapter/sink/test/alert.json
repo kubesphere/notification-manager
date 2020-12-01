@@ -1,0 +1,191 @@
+{
+  "receiver": "Default",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "CPUThrottlingHigh",
+        "container": "calico-kube-controllers",
+        "namespace": "kube-system",
+        "pod": "calico-kube-controllers-67f5689d7-sqg89",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "30.21% throttling of CPU in namespace kube-system for container calico-kube-controllers in pod calico-kube-controllers-67f5689d7-sqg89.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh"
+      },
+      "startsAt": "2020-03-21T05:45:44.782098546Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-0:9090/graph?g0.expr=sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_throttled_periods_total%7Bcontainer%21%3D%22%22%7D%5B5m%5D%29%29+%2F+sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_periods_total%5B5m%5D%29%29+%3E+%2825+%2F+100%29\u0026g0.tab=1",
+      "fingerprint": "83fb3d34d52108b0"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "CPUThrottlingHigh",
+        "container": "csi-qingcloud",
+        "namespace": "kube-system",
+        "pod": "csi-qingcloud-node-79kkf",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "39.64% throttling of CPU in namespace kube-system for container csi-qingcloud in pod csi-qingcloud-node-79kkf.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh"
+      },
+      "startsAt": "2020-02-26T07:05:14.782098546Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-0:9090/graph?g0.expr=sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_throttled_periods_total%7Bcontainer%21%3D%22%22%7D%5B5m%5D%29%29+%2F+sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_periods_total%5B5m%5D%29%29+%3E+%2825+%2F+100%29\u0026g0.tab=1",
+      "fingerprint": "84d1dea123d5625e"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "CPUThrottlingHigh",
+        "container": "csi-qingcloud",
+        "namespace": "kube-system",
+        "pod": "csi-qingcloud-node-7x9xj",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "41.86% throttling of CPU in namespace kube-system for container csi-qingcloud in pod csi-qingcloud-node-7x9xj.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh"
+      },
+      "startsAt": "2020-04-17T01:27:44.782098546Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-1:9090/graph?g0.expr=sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_throttled_periods_total%7Bcontainer%21%3D%22%22%7D%5B5m%5D%29%29+%2F+sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_periods_total%5B5m%5D%29%29+%3E+%2825+%2F+100%29\u0026g0.tab=1",
+      "fingerprint": "6ce3db5eb4926886"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "CPUThrottlingHigh",
+        "container": "csi-qingcloud",
+        "namespace": "kube-system",
+        "pod": "csi-qingcloud-node-fflql",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "37.5% throttling of CPU in namespace kube-system for container csi-qingcloud in pod csi-qingcloud-node-fflql.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh"
+      },
+      "startsAt": "2020-02-26T07:04:44.782098546Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-0:9090/graph?g0.expr=sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_throttled_periods_total%7Bcontainer%21%3D%22%22%7D%5B5m%5D%29%29+%2F+sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_periods_total%5B5m%5D%29%29+%3E+%2825+%2F+100%29\u0026g0.tab=1",
+      "fingerprint": "7c7ffa680c387617"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "CPUThrottlingHigh",
+        "container": "csi-qingcloud",
+        "namespace": "kube-system",
+        "pod": "csi-qingcloud-node-gcjt2",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "30.51% throttling of CPU in namespace kube-system for container csi-qingcloud in pod csi-qingcloud-node-gcjt2.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh"
+      },
+      "startsAt": "2020-04-17T00:53:14.782098546Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-0:9090/graph?g0.expr=sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_throttled_periods_total%7Bcontainer%21%3D%22%22%7D%5B5m%5D%29%29+%2F+sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_periods_total%5B5m%5D%29%29+%3E+%2825+%2F+100%29\u0026g0.tab=1",
+      "fingerprint": "70f57e4d878a83b0"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "CPUThrottlingHigh",
+        "container": "csi-qingcloud",
+        "namespace": "kube-system",
+        "pod": "csi-qingcloud-node-l5zwr",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "32.08% throttling of CPU in namespace kube-system for container csi-qingcloud in pod csi-qingcloud-node-l5zwr.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh"
+      },
+      "startsAt": "2020-04-15T21:14:14.782098546Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-1:9090/graph?g0.expr=sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_throttled_periods_total%7Bcontainer%21%3D%22%22%7D%5B5m%5D%29%29+%2F+sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_periods_total%5B5m%5D%29%29+%3E+%2825+%2F+100%29\u0026g0.tab=1",
+      "fingerprint": "a390724364453510"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "CPUThrottlingHigh",
+        "container": "csi-qingcloud",
+        "namespace": "kube-system",
+        "pod": "csi-qingcloud-node-zxmj4",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "32.65% throttling of CPU in namespace kube-system for container csi-qingcloud in pod csi-qingcloud-node-zxmj4.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh"
+      },
+      "startsAt": "2020-04-16T22:48:44.782098546Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-1:9090/graph?g0.expr=sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_throttled_periods_total%7Bcontainer%21%3D%22%22%7D%5B5m%5D%29%29+%2F+sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_periods_total%5B5m%5D%29%29+%3E+%2825+%2F+100%29\u0026g0.tab=1",
+      "fingerprint": "325cf83012fa4441"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "CPUThrottlingHigh",
+        "container": "csi-resizer",
+        "namespace": "kube-system",
+        "pod": "csi-qingcloud-controller-787679c7dd-lhg9p",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "28.18% throttling of CPU in namespace kube-system for container csi-resizer in pod csi-qingcloud-controller-787679c7dd-lhg9p.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh"
+      },
+      "startsAt": "2020-04-16T19:55:14.782098546Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-1:9090/graph?g0.expr=sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_throttled_periods_total%7Bcontainer%21%3D%22%22%7D%5B5m%5D%29%29+%2F+sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_periods_total%5B5m%5D%29%29+%3E+%2825+%2F+100%29\u0026g0.tab=1",
+      "fingerprint": "b75868ccf5391023"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "CPUThrottlingHigh",
+        "container": "csi-snapshotter",
+        "namespace": "kube-system",
+        "pod": "csi-qingcloud-controller-787679c7dd-lhg9p",
+        "prometheus": "kubesphere-monitoring-system/k8s",
+        "severity": "warning"
+      },
+      "annotations": {
+        "message": "27.98% throttling of CPU in namespace kube-system for container csi-snapshotter in pod csi-qingcloud-controller-787679c7dd-lhg9p.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh"
+      },
+      "startsAt": "2020-04-16T23:12:14.782098546Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus-k8s-1:9090/graph?g0.expr=sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_throttled_periods_total%7Bcontainer%21%3D%22%22%7D%5B5m%5D%29%29+%2F+sum+by%28container%2C+pod%2C+namespace%29+%28increase%28container_cpu_cfs_periods_total%5B5m%5D%29%29+%3E+%2825+%2F+100%29\u0026g0.tab=1",
+      "fingerprint": "8d30069b6577cb0e"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "CPUThrottlingHigh",
+    "namespace": "kube-system"
+  },
+  "commonLabels": {
+    "alertname": "CPUThrottlingHigh",
+    "namespace": "kube-system",
+    "prometheus": "kubesphere-monitoring-system/k8s",
+    "severity": "warning"
+  },
+  "commonAnnotations": {
+    "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh"
+  },
+  "externalURL": "http://alertmanager-main-1:9093"
+}
