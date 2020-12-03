@@ -3,16 +3,20 @@ module github.com/kubesphere/notification-manager
 go 1.13
 
 require (
-	github.com/ghodss/yaml v1.0.0
+	github.com/emicklei/go-restful v2.9.5+incompatible
 	github.com/go-chi/chi v4.0.3+incompatible
 	github.com/go-kit/kit v0.9.0
 	github.com/go-logr/logr v0.1.0
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/json-iterator/go v1.1.8
 	github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
 	github.com/prometheus/alertmanager v0.20.0
 	github.com/prometheus/common v0.7.0
+	github.com/spf13/cobra v0.0.5
+	github.com/spf13/pflag v1.0.5
+	golang.org/x/text v0.3.2
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
