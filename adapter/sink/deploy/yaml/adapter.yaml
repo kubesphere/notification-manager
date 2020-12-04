@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: notification-adapter
-          image: kubespheredev/notification-adapter:latest
+          image: kubesphere/notification-adapter:v0.1.0
           command:
             - notification-adapter
             - --ip=socket-server.kubesphere-monitoring-system
