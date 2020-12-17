@@ -33,6 +33,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -296,8 +297,22 @@ func getMessage(alert *Alert) string {
 		return ""
 	}
 
-	return fmt.Sprintf("%s#%d#%s#%s#%s#%s#%d\n",
-		alert.Labels["cluster"],
+	cluster := alert.Labels["cluster"]
+	array := strings.Split(cluster, "_")
+	department := ""
+	if array != nil {
+		if len(array) > 0 {
+			cluster = array[0]
+		}
+
+		if len(array) > 1 {
+			department = array[1]
+		}
+	}
+
+	return fmt.Sprintf("%s#%s#%d#%s#%s#%s#%s#%d\n",
+		cluster,
+		department,
 		model.LabelsToSignature(alert.Labels),
 		alert.Labels["alertname"],
 		alert.Labels["namespace"],
