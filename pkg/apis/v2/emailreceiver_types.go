@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +26,8 @@ type EmailReceiverSpec struct {
 	To []string `json:"to"`
 	// EmailConfig to be selected for this receiver
 	EmailConfigSelector *metav1.LabelSelector `json:"emailConfigSelector,omitempty"`
+	// Selector to filter notifications.
+	NotificationSelector *metav1.LabelSelector `json:"notificationSelector,omitempty"`
 }
 
 // EmailReceiverStatus defines the observed state of EmailReceiver
@@ -33,6 +35,7 @@ type EmailReceiverStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=er
 
 // EmailReceiver is the Schema for the emailreceivers API
 type EmailReceiver struct {

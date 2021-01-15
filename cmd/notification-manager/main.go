@@ -47,11 +47,6 @@ var (
 		"Notification worker queue capacity",
 	).Default("1000").Int()
 
-	nmns = kingpin.Flag(
-		"notification-manager-namespaces",
-		"notification manager namespaces",
-	).Default("").String()
-
 	logLevels = []string{
 		logLevelDebug,
 		logLevelInfo,
@@ -104,12 +99,14 @@ func Main() int {
 
 	// Setup notification manager config
 	var err error
-	if cfg, err = config.New(ctxHttp, logger, *nmns); err != nil {
+	if cfg, err = config.New(ctxHttp, logger); err != nil {
 		_ = level.Error(logger).Log("msg", "Failed to create notification manager config")
+		return -1
 	}
 	// Sync notification manager config
 	if err := cfg.Run(); err != nil {
 		_ = level.Error(logger).Log("msg", "Failed to create sync notification manager config")
+		return -1
 	}
 
 	// Setup webhook to receive alert/notification msg

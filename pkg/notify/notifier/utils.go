@@ -4,18 +4,22 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
+	json "github.com/json-iterator/go"
 	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/common/model"
 	"io"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"net/http"
 	"net/url"
 )
 
 func Md5key(val interface{}) (string, error) {
 
-	bs, err := jsoniter.Marshal(val)
+	bs, err := json.Marshal(val)
 	if err != nil {
 		return "", err
 	}
@@ -32,11 +36,6 @@ func KvToLabelSet(obj template.KV) model.LabelSet {
 	}
 
 	return ls
-}
-
-func JsonOut(v interface{}) {
-	bs, _ := jsoniter.Marshal(v)
-	fmt.Println(string(bs))
 }
 
 func UrlWithPath(u, path string) (string, error) {
@@ -96,4 +95,39 @@ func DoHttpRequest(ctx context.Context, client *http.Client, request *http.Reque
 	}
 
 	return body, nil
+}
+
+// Filter the notifications with label selector,if the selector is not correct, return all of the notifications.
+func Filter(data template.Data, selector *v1.LabelSelector, logger log.Logger) template.Data {
+
+	if selector == nil {
+		return data
+	}
+
+	labelSelector, err := v1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		_ = level.Error(logger).Log("msg", "filter notification error", "error", err)
+		return data
+	}
+
+	if labelSelector.Empty() {
+		return data
+	}
+
+	newData := template.Data{
+		Receiver:          data.Receiver,
+		Status:            data.Status,
+		GroupLabels:       data.GroupLabels,
+		CommonLabels:      data.CommonLabels,
+		CommonAnnotations: data.CommonAnnotations,
+		ExternalURL:       data.ExternalURL,
+	}
+
+	for _, alert := range data.Alerts {
+		if labelSelector.Matches(labels.Set(alert.Labels)) {
+			newData.Alerts = append(newData.Alerts, alert)
+		}
+	}
+
+	return newData
 }

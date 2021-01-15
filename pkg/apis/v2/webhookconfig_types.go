@@ -14,37 +14,36 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ClientCertificate struct {
 	// The client cert file for the targets.
-	Cert *v1.SecretKeySelector `json:"cert,omitempty"`
+	Cert *SecretKeySelector `json:"cert,omitempty"`
 	// The client key file for the targets.
-	Key *v1.SecretKeySelector `json:"key,omitempty"`
+	Key *SecretKeySelector `json:"key,omitempty"`
 }
 
 // TLSConfig configures the options for TLS connections.
 type TLSConfig struct {
 	// RootCA defines the root certificate authorities
 	// that clients use when verifying server certificates.
-	RootCA *v1.SecretKeySelector `json:"rootCA,omitempty"`
+	RootCA *SecretKeySelector `json:"rootCA,omitempty"`
 	// The certificate of the client.
 	*ClientCertificate `json:"clientCertificate,omitempty"`
 	// Used to verify the hostname for the targets.
 	ServerName string `json:"serverName,omitempty"`
 	// Disable target certificate validation.
-	InsecureSkipVerify bool `json:"insecureSkipVerify"`
+	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
 }
 
 // BasicAuth contains basic HTTP authentication credentials.
 type BasicAuth struct {
-	Username string                `json:"username"`
-	Password *v1.SecretKeySelector `json:"password,omitempty"`
+	Username string             `json:"username"`
+	Password *SecretKeySelector `json:"password,omitempty"`
 }
 
 // HTTPClientConfig configures an HTTP client.
@@ -52,7 +51,7 @@ type HTTPClientConfig struct {
 	// The HTTP basic authentication credentials for the targets.
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
 	// The bearer token for the targets.
-	BearerToken *v1.SecretKeySelector `json:"bearerToken,omitempty"`
+	BearerToken *SecretKeySelector `json:"bearerToken,omitempty"`
 	// HTTP proxy server to use to connect to the targets.
 	ProxyURL string `json:"proxyUrl,omitempty"`
 	// TLSConfig to use to connect to the targets.
@@ -130,6 +129,7 @@ type WebhookConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=wc
 
 // WebhookConfig is the Schema for the webhookconfigs API
 type WebhookConfig struct {

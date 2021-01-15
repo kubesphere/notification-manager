@@ -26,7 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	notificationv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2"
 	"github.com/kubesphere/notification-manager/pkg/controllers"
 	// +kubebuilder:scaffold:imports
 )
@@ -39,7 +39,7 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
-	_ = notificationv1alpha1.AddToScheme(scheme)
+	_ = v2.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -54,6 +54,12 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
+	namespace := os.Getenv("NAMESPACE")
+	if len(namespace) == 0 {
+		setupLog.Error(nil, "namespace is empty")
+		os.Exit(1)
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
@@ -67,9 +73,10 @@ func main() {
 	}
 
 	if err = (&controllers.NotificationManagerReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("NotificationManager"),
-		Scheme: mgr.GetScheme(),
+		Client:    mgr.GetClient(),
+		Namespace: namespace,
+		Log:       ctrl.Log.WithName("controllers").WithName("NotificationManager"),
+		Scheme:    mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NotificationManager")
 		os.Exit(1)

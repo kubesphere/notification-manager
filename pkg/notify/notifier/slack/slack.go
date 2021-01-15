@@ -94,18 +94,23 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	msg, err := n.template.TempleText(n.templateName, data, n.logger)
-	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "SlackNotifier: generate message error", "error", err.Error())
-		return []error{err}
-	}
-
 	send := func(c *config.Slack) error {
 
 		start := time.Now()
 		defer func() {
 			_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "used", time.Since(start).String())
 		}()
+
+		newData := notifier.Filter(data, c.Selector, n.logger)
+		if len(newData.Alerts) == 0 {
+			return nil
+		}
+
+		msg, err := n.template.TempleText(n.templateName, newData, n.logger)
+		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "SlackNotifier: generate message error", "error", err.Error())
+			return err
+		}
 
 		sr := &slackRequest{
 			Channel: c.Channel,
@@ -124,7 +129,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		token, err := n.notifierCfg.GetSecretData(c.GetNamespace(), c.SlackConfig.Token)
+		token, err := n.notifierCfg.GetSecretData(c.SlackConfig.Token)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "SlackNotifier: get token secret", "error", err.Error())
 			return err

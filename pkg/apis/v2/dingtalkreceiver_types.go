@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,6 +24,8 @@ import (
 type DingTalkReceiverSpec struct {
 	// WebhookConfig to be selected for this receiver
 	DingTalkConfigSelector *metav1.LabelSelector `json:"dingTalkConfigSelector,omitempty"`
+	// Selector to filter notifications.
+	NotificationSelector *metav1.LabelSelector `json:"notificationSelector,omitempty"`
 }
 
 // DingTalkReceiverStatus defines the observed state of DingTalkReceiver
@@ -31,6 +33,7 @@ type DingTalkReceiverStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=dr
 
 // DingTalkReceiver is the Schema for the dingtalkreceivers API
 type DingTalkReceiver struct {

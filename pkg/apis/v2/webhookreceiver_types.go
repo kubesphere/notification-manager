@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,6 +24,8 @@ import (
 type WebhookReceiverSpec struct {
 	// WebhookConfig to be selected for this receiver
 	WebhookConfigSelector *metav1.LabelSelector `json:"webhookConfigSelector,omitempty"`
+	// Selector to filter notifications.
+	NotificationSelector *metav1.LabelSelector `json:"notificationSelector,omitempty"`
 }
 
 // WebhookReceiverStatus defines the observed state of WebhookReceiver
@@ -31,6 +33,7 @@ type WebhookReceiverStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=wr
 
 // WebhookReceiver is the Schema for the webhookreceivers API
 type WebhookReceiver struct {

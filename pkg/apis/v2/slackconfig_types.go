@@ -14,17 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // SlackConfigSpec defines the desired state of SlackConfig
 type SlackConfigSpec struct {
 	// The token of user or bot.
-	SlackTokenSecret *v1.SecretKeySelector `json:"slackTokenSecret,omitempty"`
+	SlackTokenSecret *SecretKeySelector `json:"slackTokenSecret,omitempty"`
 }
 
 // SlackConfigStatus defines the observed state of SlackConfig
@@ -32,6 +31,7 @@ type SlackConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=sc
 
 // SlackConfig is the Schema for the slackconfigs API
 type SlackConfig struct {

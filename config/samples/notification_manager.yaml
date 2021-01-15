@@ -1,4 +1,4 @@
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: NotificationManager
 metadata:
   name: notification-manager
@@ -28,6 +28,7 @@ spec:
         type: tenant
     options:
       global:
+        templateFile:
         - /etc/notification-manager/template
       email:
         notificationTimeout: 5
@@ -40,11 +41,11 @@ spec:
         notificationTimeout: 5
       dingtalk:
         notificationTimeout: 5
-      volumeMounts:
-        - mountPath: /etc/notification-manager/
-          name: noification-manager-template
-      volumes:
-        - configMap:
-            defaultMode: 420
-            name: noification-manager-template
-          name: noification-manager-template
+  volumeMounts:
+    - mountPath: /etc/notification-manager/
+      name: noification-manager-template
+  volumes:
+    - configMap:
+        defaultMode: 420
+        name: noification-manager-template
+      name: noification-manager-template

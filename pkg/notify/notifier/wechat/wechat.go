@@ -247,14 +247,19 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		return err
 	}
 
-	messages, err := n.template.Split(data, MessageMaxSize, n.templateName, n.logger)
-	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "WechatNotifier: split message error", "error", err.Error())
-		return nil
-	}
-
 	group := async.NewGroup(ctx)
 	for _, w := range n.wechat {
+
+		newData := notifier.Filter(data, w.Selector, n.logger)
+		if len(newData.Alerts) == 0 {
+			continue
+		}
+
+		messages, err := n.template.Split(newData, MessageMaxSize, n.templateName, n.logger)
+		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "WechatNotifier: split message error", "error", err.Error())
+			return nil
+		}
 
 		us, ps, ts := 0, 0, 0
 		toUser := strings.Split(w.ToUser, "|")
@@ -292,7 +297,7 @@ func (n *Notifier) getToken(ctx context.Context, w *config.Wechat) (string, erro
 			return "", 0, err
 		}
 
-		apiSecret, err := n.notifierCfg.GetSecretData(w.GetNamespace(), w.WechatConfig.APISecret)
+		apiSecret, err := n.notifierCfg.GetSecretData(w.WechatConfig.APISecret)
 		if err != nil {
 			return "", 0, err
 		}

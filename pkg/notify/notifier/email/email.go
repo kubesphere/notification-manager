@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/alertmanager/notify/email"
 	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/alertmanager/types"
+	commoncfg "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	"math"
 	"strings"
@@ -115,7 +116,6 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 			if !ok {
 				e = nmconfig.NewEmail(nil)
 				_ = e.SetConfig(c)
-				e.SetNamespace(receiver.GetNamespace())
 			}
 
 			e.To = append(e.To, receiver.To...)
@@ -129,7 +129,6 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 
 			e := nmconfig.NewEmail(receiver.To)
 			_ = e.SetConfig(n.clone(receiver.EmailConfig))
-			e.SetNamespace(receiver.GetNamespace())
 			n.email[key] = e
 		}
 	}
@@ -139,25 +138,29 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	var as []*types.Alert
-	for _, a := range data.Alerts {
-		as = append(as, &types.Alert{
-			Alert: model.Alert{
-				Labels:       notifier.KvToLabelSet(a.Labels),
-				Annotations:  notifier.KvToLabelSet(a.Annotations),
-				StartsAt:     a.StartsAt,
-				EndsAt:       a.EndsAt,
-				GeneratorURL: a.GeneratorURL,
-			},
-		})
-	}
-
 	sendEmail := func(e *nmconfig.Email, to string) error {
 
 		start := time.Now()
 		defer func() {
 			_ = level.Debug(n.logger).Log("msg", "EmailNotifier: send message", "used", time.Since(start).String())
 		}()
+
+		var as []*types.Alert
+		newData := notifier.Filter(data, e.Selector, n.logger)
+		if len(newData.Alerts) == 0 {
+			return nil
+		}
+		for _, a := range newData.Alerts {
+			as = append(as, &types.Alert{
+				Alert: model.Alert{
+					Labels:       notifier.KvToLabelSet(a.Labels),
+					Annotations:  notifier.KvToLabelSet(a.Annotations),
+					StartsAt:     a.StartsAt,
+					EndsAt:       a.EndsAt,
+					GeneratorURL: a.GeneratorURL,
+				},
+			})
+		}
 
 		emailConfig, err := n.getEmailConfig(e)
 		if err != nil {
@@ -259,7 +262,7 @@ func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error
 	}
 
 	if e.EmailConfig.AuthPassword != nil {
-		pass, err := n.notifierCfg.GetSecretData(e.GetNamespace(), e.EmailConfig.AuthPassword)
+		pass, err := n.notifierCfg.GetSecretData(e.EmailConfig.AuthPassword)
 		if err != nil {
 			return nil, err
 		}
@@ -268,12 +271,55 @@ func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error
 	}
 
 	if e.EmailConfig.AuthSecret != nil {
-		secret, err := n.notifierCfg.GetSecretData(e.GetNamespace(), e.EmailConfig.AuthSecret)
+		secret, err := n.notifierCfg.GetSecretData(e.EmailConfig.AuthSecret)
 		if err != nil {
 			return nil, err
 		}
 
 		ec.AuthSecret = config.Secret(secret)
+	}
+
+	if e.EmailConfig.TLS != nil {
+		tlsConfig := commoncfg.TLSConfig{
+			InsecureSkipVerify: e.EmailConfig.TLS.InsecureSkipVerify,
+			ServerName:         e.EmailConfig.TLS.ServerName,
+		}
+
+		// If a CA cert is provided then let's read it in so we can validate the
+		// scrape target's certificate properly.
+		if e.EmailConfig.TLS.RootCA != nil {
+			if ca, err := n.notifierCfg.GetSecretData(e.EmailConfig.TLS.RootCA); err != nil {
+				return nil, err
+			} else {
+				tlsConfig.CAFile = ca
+			}
+		}
+
+		// If a client cert & key is provided then configure TLS config accordingly.
+		if e.EmailConfig.TLS.ClientCertificate != nil {
+			if e.EmailConfig.TLS.Cert != nil && e.EmailConfig.TLS.Key == nil {
+				return nil, fmt.Errorf("client cert file specified without client key file")
+			} else if e.EmailConfig.TLS.Cert == nil && e.EmailConfig.TLS.Key != nil {
+				return nil, fmt.Errorf("client key file specified without client cert file")
+			} else if e.EmailConfig.TLS.Cert != nil && e.EmailConfig.TLS.Key != nil {
+				key, err := n.notifierCfg.GetSecretData(e.EmailConfig.TLS.Key)
+				if err != nil {
+					return nil, err
+				}
+
+				cert, err := n.notifierCfg.GetSecretData(e.EmailConfig.TLS.Cert)
+				if err != nil {
+					return nil, err
+				}
+
+				tlsConfig.KeyFile = key
+				tlsConfig.CertFile = cert
+			}
+		}
+
+		ec.TLSConfig = tlsConfig
+		requireTLS := true
+		ec.RequireTLS = &requireTLS
 	}
 
 	return ec, nil

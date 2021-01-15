@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,9 +24,10 @@ import (
 type WechatReceiverSpec struct {
 	// WechatConfig to be selected for this receiver
 	WechatConfigSelector *metav1.LabelSelector `json:"wechatConfigSelector,omitempty"`
+	// Selector to filter notifications.
+	NotificationSelector *metav1.LabelSelector `json:"notificationSelector,omitempty"`
 	// +optional
-	ToUser string `json:"toUser,omitempty"`
-
+	ToUser  string `json:"toUser,omitempty"`
 	ToParty string `json:"toParty,omitempty"`
 	ToTag   string `json:"toTag,omitempty"`
 }
@@ -36,6 +37,7 @@ type WechatReceiverStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=wcr
 
 // WechatReceiver is the Schema for the wechatreceivers API
 type WechatReceiver struct {
