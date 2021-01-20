@@ -24,8 +24,8 @@ import (
 type DingTalkReceiverSpec struct {
 	// WebhookConfig to be selected for this receiver
 	DingTalkConfigSelector *metav1.LabelSelector `json:"dingTalkConfigSelector,omitempty"`
-	// Selector to filter notifications.
-	NotificationSelector *metav1.LabelSelector `json:"notificationSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 }
 
 // DingTalkReceiverStatus defines the observed state of DingTalkReceiver

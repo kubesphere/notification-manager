@@ -24,8 +24,8 @@ import (
 type WechatReceiverSpec struct {
 	// WechatConfig to be selected for this receiver
 	WechatConfigSelector *metav1.LabelSelector `json:"wechatConfigSelector,omitempty"`
-	// Selector to filter notifications.
-	NotificationSelector *metav1.LabelSelector `json:"notificationSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	// +optional
 	ToUser  string `json:"toUser,omitempty"`
 	ToParty string `json:"toParty,omitempty"`

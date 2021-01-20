@@ -38,8 +38,8 @@ spec:
           spec:
             description: WechatReceiverSpec defines the desired state of WechatReceiver
             properties:
-              notificationSelector:
-                description: Selector to filter notifications.
+              alertSelector:
+                description: Selector to filter alerts.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.

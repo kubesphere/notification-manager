@@ -38,11 +38,8 @@ spec:
           spec:
             description: SlackReceiverSpec defines the desired state of SlackReceiver
             properties:
-              channel:
-                description: The channel or user to send notifications to.
-                type: string
-              notificationSelector:
-                description: Selector to filter notifications.
+              alertSelector:
+                description: Selector to filter alerts.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -85,6 +82,9 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+              channel:
+                description: The channel or user to send notifications to.
+                type: string
               slackConfigSelector:
                 description: SlackConfig to be selected for this receiver
                 properties:

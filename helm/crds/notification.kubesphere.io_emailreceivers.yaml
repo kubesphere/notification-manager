@@ -38,8 +38,8 @@ spec:
           spec:
             description: EmailReceiverSpec defines the desired state of EmailReceiver
             properties:
-              emailConfigSelector:
-                description: EmailConfig to be selected for this receiver
+              alertSelector:
+                description: Selector to filter alerts.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -82,8 +82,8 @@ spec:
                       are ANDed.
                     type: object
                 type: object
-              notificationSelector:
-                description: Selector to filter notifications.
+              emailConfigSelector:
+                description: EmailConfig to be selected for this receiver
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.

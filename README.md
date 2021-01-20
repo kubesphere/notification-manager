@@ -440,7 +440,7 @@ EOF
 
 ### Deploy Notification Manager in any other Kubernetes cluster (Uses `namespace` to distinguish each tenant user):
 
-It is similar Deploying nm on k8s is similar to deploying Notification Manager on Kubernetes and Kubesphere, the difference is that:
+Deploying Notification Manager in Kubernetes is similar to deploying it in KubeSphere, the differences are:
 
 First of all, change the `tenantKey` to `namespace` like this.
 
@@ -498,8 +498,8 @@ EOF
 
 ### Notification filter
 
-A receiver can filter the alerts by set a label selector, only the alerts that matched the label selector will send to the receiver.
-Here is a sample, this receiver only receives the alerts from auditing.
+A receiver can filter alerts by setting a label selector, only alerts that match the label selector will be sent to this receiver.
+Here is a sample, this receiver will only receive alerts from auditing.
 
 ```
 apiVersion: notification.kubesphere.io/v2

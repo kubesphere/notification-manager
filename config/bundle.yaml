@@ -178,8 +178,8 @@ spec:
           spec:
             description: DingTalkReceiverSpec defines the desired state of DingTalkReceiver
             properties:
-              dingTalkConfigSelector:
-                description: WebhookConfig to be selected for this receiver
+              alertSelector:
+                description: Selector to filter alerts.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -222,8 +222,8 @@ spec:
                       are ANDed.
                     type: object
                 type: object
-              notificationSelector:
-                description: Selector to filter notifications.
+              dingTalkConfigSelector:
+                description: WebhookConfig to be selected for this receiver
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -498,8 +498,8 @@ spec:
           spec:
             description: EmailReceiverSpec defines the desired state of EmailReceiver
             properties:
-              emailConfigSelector:
-                description: EmailConfig to be selected for this receiver
+              alertSelector:
+                description: Selector to filter alerts.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -542,8 +542,8 @@ spec:
                       are ANDed.
                     type: object
                 type: object
-              notificationSelector:
-                description: Selector to filter notifications.
+              emailConfigSelector:
+                description: EmailConfig to be selected for this receiver
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -3013,11 +3013,8 @@ spec:
           spec:
             description: SlackReceiverSpec defines the desired state of SlackReceiver
             properties:
-              channel:
-                description: The channel or user to send notifications to.
-                type: string
-              notificationSelector:
-                description: Selector to filter notifications.
+              alertSelector:
+                description: Selector to filter alerts.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -3060,6 +3057,9 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+              channel:
+                description: The channel or user to send notifications to.
+                type: string
               slackConfigSelector:
                 description: SlackConfig to be selected for this receiver
                 properties:
@@ -3370,8 +3370,8 @@ spec:
           spec:
             description: WebhookReceiverSpec defines the desired state of WebhookReceiver
             properties:
-              notificationSelector:
-                description: Selector to filter notifications.
+              alertSelector:
+                description: Selector to filter alerts.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -3590,8 +3590,8 @@ spec:
           spec:
             description: WechatReceiverSpec defines the desired state of WechatReceiver
             properties:
-              notificationSelector:
-                description: Selector to filter notifications.
+              alertSelector:
+                description: Selector to filter alerts.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.

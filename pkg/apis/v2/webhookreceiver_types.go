@@ -24,8 +24,8 @@ import (
 type WebhookReceiverSpec struct {
 	// WebhookConfig to be selected for this receiver
 	WebhookConfigSelector *metav1.LabelSelector `json:"webhookConfigSelector,omitempty"`
-	// Selector to filter notifications.
-	NotificationSelector *metav1.LabelSelector `json:"notificationSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 }
 
 // WebhookReceiverStatus defines the observed state of WebhookReceiver

@@ -322,8 +322,8 @@ func (in *DingTalkReceiverSpec) DeepCopyInto(out *DingTalkReceiverSpec) {
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.NotificationSelector != nil {
-		in, out := &in.NotificationSelector, &out.NotificationSelector
+	if in.AlertSelector != nil {
+		in, out := &in.AlertSelector, &out.AlertSelector
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
@@ -571,8 +571,8 @@ func (in *EmailReceiverSpec) DeepCopyInto(out *EmailReceiverSpec) {
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.NotificationSelector != nil {
-		in, out := &in.NotificationSelector, &out.NotificationSelector
+	if in.AlertSelector != nil {
+		in, out := &in.AlertSelector, &out.AlertSelector
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
@@ -1122,8 +1122,8 @@ func (in *SlackReceiverSpec) DeepCopyInto(out *SlackReceiverSpec) {
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.NotificationSelector != nil {
-		in, out := &in.NotificationSelector, &out.NotificationSelector
+	if in.AlertSelector != nil {
+		in, out := &in.AlertSelector, &out.AlertSelector
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
@@ -1385,8 +1385,8 @@ func (in *WebhookReceiverSpec) DeepCopyInto(out *WebhookReceiverSpec) {
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.NotificationSelector != nil {
-		in, out := &in.NotificationSelector, &out.NotificationSelector
+	if in.AlertSelector != nil {
+		in, out := &in.AlertSelector, &out.AlertSelector
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
@@ -1598,8 +1598,8 @@ func (in *WechatReceiverSpec) DeepCopyInto(out *WechatReceiverSpec) {
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.NotificationSelector != nil {
-		in, out := &in.NotificationSelector, &out.NotificationSelector
+	if in.AlertSelector != nil {
+		in, out := &in.AlertSelector, &out.AlertSelector
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}

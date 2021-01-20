@@ -24,8 +24,8 @@ import (
 type SlackReceiverSpec struct {
 	// SlackConfig to be selected for this receiver
 	SlackConfigSelector *metav1.LabelSelector `json:"slackConfigSelector,omitempty"`
-	// Selector to filter notifications.
-	NotificationSelector *metav1.LabelSelector `json:"notificationSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	// The channel or user to send notifications to.
 	Channel string `json:"channel"`
 }

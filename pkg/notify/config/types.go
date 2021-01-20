@@ -140,7 +140,7 @@ func (d *DingTalk) GenerateReceiver(c *Config, obj interface{}) {
 		return
 	}
 
-	d.Selector = dr.Spec.NotificationSelector
+	d.Selector = dr.Spec.AlertSelector
 
 	dcList := v2.DingTalkConfigList{}
 	dcSel, _ := metav1.LabelSelectorAsSelector(dr.Spec.DingTalkConfigSelector)
@@ -258,7 +258,7 @@ func (e *Email) GenerateReceiver(c *Config, obj interface{}) {
 	}
 
 	e.To = er.Spec.To
-	e.Selector = er.Spec.NotificationSelector
+	e.Selector = er.Spec.AlertSelector
 
 	ecList := v2.EmailConfigList{}
 	ecSel, _ := metav1.LabelSelectorAsSelector(er.Spec.EmailConfigSelector)
@@ -350,7 +350,7 @@ func (s *Slack) GenerateReceiver(c *Config, obj interface{}) {
 	}
 
 	s.Channel = sr.Spec.Channel
-	s.Selector = sr.Spec.NotificationSelector
+	s.Selector = sr.Spec.AlertSelector
 
 	for _, sc := range scList.Items {
 		s.GenerateConfig(c, &sc)
@@ -445,7 +445,7 @@ func (w *Webhook) GenerateReceiver(c *Config, obj interface{}) {
 		return
 	}
 
-	w.Selector = wr.Spec.NotificationSelector
+	w.Selector = wr.Spec.AlertSelector
 
 	wcList := v2.WebhookConfigList{}
 	wcSel, _ := metav1.LabelSelectorAsSelector(wr.Spec.WebhookConfigSelector)
@@ -542,7 +542,7 @@ func (w *Wechat) GenerateReceiver(c *Config, obj interface{}) {
 	w.ToUser = wr.Spec.ToUser
 	w.ToParty = wr.Spec.ToParty
 	w.ToTag = wr.Spec.ToTag
-	w.Selector = wr.Spec.NotificationSelector
+	w.Selector = wr.Spec.AlertSelector
 
 	for _, wc := range wcList.Items {
 		w.GenerateConfig(c, &wc)

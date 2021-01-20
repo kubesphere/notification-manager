@@ -26,8 +26,8 @@ type EmailReceiverSpec struct {
 	To []string `json:"to"`
 	// EmailConfig to be selected for this receiver
 	EmailConfigSelector *metav1.LabelSelector `json:"emailConfigSelector,omitempty"`
-	// Selector to filter notifications.
-	NotificationSelector *metav1.LabelSelector `json:"notificationSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 }
 
 // EmailReceiverStatus defines the observed state of EmailReceiver
