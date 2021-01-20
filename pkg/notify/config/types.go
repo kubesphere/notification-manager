@@ -4,8 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
-	"k8s.io/api/core/v1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,9 +34,6 @@ type Receiver interface {
 	SetUseDefault(b bool)
 	GetConfig() interface{}
 	SetConfig(c interface{}) error
-	GetTenantID() string
-	SetTenantID(id string)
-	SetNamespace(ns string)
 	GenerateConfig(c *Config, obj interface{})
 	GenerateReceiver(c *Config, obj interface{})
 }
@@ -45,8 +41,6 @@ type Receiver interface {
 type common struct {
 	// True means receiver use the default config.
 	useDefault bool
-	tenantID   string
-	namespace  string
 }
 
 func (c *common) UseDefault() bool {
@@ -57,24 +51,9 @@ func (c *common) SetUseDefault(b bool) {
 	c.useDefault = b
 }
 
-func (c *common) GetTenantID() string {
-	return c.tenantID
-}
-
-func (c *common) SetTenantID(id string) {
-	c.tenantID = id
-}
-
-func (c *common) GetNamespace() string {
-	return c.namespace
-}
-
-func (c *common) SetNamespace(ns string) {
-	c.namespace = ns
-}
-
 type DingTalk struct {
 	DingTalkConfig *DingTalkConfig
+	Selector       *metav1.LabelSelector
 	*common
 }
 
@@ -85,15 +64,15 @@ type DingTalkConfig struct {
 
 // Configuration of ChatBot
 type DingTalkChatBot struct {
-	Webhook  *v1.SecretKeySelector
+	Webhook  *v2.SecretKeySelector
 	Keywords []string
-	Secret   *v1.SecretKeySelector
+	Secret   *v2.SecretKeySelector
 }
 
 // Configuration of conversation
 type DingTalkConversation struct {
-	AppKey    *v1.SecretKeySelector
-	AppSecret *v1.SecretKeySelector
+	AppKey    *v2.SecretKeySelector
+	AppSecret *v2.SecretKeySelector
 	ChatID    string
 }
 
@@ -125,7 +104,7 @@ func (d *DingTalk) SetConfig(obj interface{}) error {
 
 func (d *DingTalk) GenerateConfig(c *Config, obj interface{}) {
 
-	dc, ok := obj.(*v1alpha1.DingTalkConfig)
+	dc, ok := obj.(*v2.DingTalkConfig)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate dingtalk config error, wrong config type")
 		return
@@ -155,13 +134,15 @@ func (d *DingTalk) GenerateConfig(c *Config, obj interface{}) {
 
 func (d *DingTalk) GenerateReceiver(c *Config, obj interface{}) {
 
-	dr, ok := obj.(*v1alpha1.DingTalkReceiver)
+	dr, ok := obj.(*v2.DingTalkReceiver)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate dingtalk receiver error, wrong receiver type")
 		return
 	}
 
-	dcList := v1alpha1.DingTalkConfigList{}
+	d.Selector = dr.Spec.AlertSelector
+
+	dcList := v2.DingTalkConfigList{}
 	dcSel, _ := metav1.LabelSelectorAsSelector(dr.Spec.DingTalkConfigSelector)
 	if err := c.cache.List(c.ctx, &dcList, client.MatchingLabelsSelector{Selector: dcSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list DingTalkConfig", "err", err)
@@ -169,11 +150,6 @@ func (d *DingTalk) GenerateReceiver(c *Config, obj interface{}) {
 	}
 
 	for _, dc := range dcList.Items {
-		if len(c.nmNamespaces) > 0 && !sliceIn(c.nmNamespaces, dc.Namespace) {
-			_ = level.Warn(c.logger).Log("msg", "don't need to be watched", "name", dc.Name, "namespace", dc.Namespace)
-			continue
-		}
-
 		d.GenerateConfig(c, &dc)
 		if d.DingTalkConfig != nil {
 			break
@@ -185,18 +161,20 @@ func (d *DingTalk) GenerateReceiver(c *Config, obj interface{}) {
 type Email struct {
 	To          []string
 	EmailConfig *EmailConfig
+	Selector    *metav1.LabelSelector
 	*common
 }
 
 type EmailConfig struct {
 	From         string
-	SmartHost    v1alpha1.HostPort
+	SmartHost    v2.HostPort
 	Hello        string
 	AuthUsername string
 	AuthIdentify string
-	AuthPassword *v1.SecretKeySelector
-	AuthSecret   *v1.SecretKeySelector
+	AuthPassword *v2.SecretKeySelector
+	AuthSecret   *v2.SecretKeySelector
 	RequireTLS   bool
+	TLS          *v2.TLSConfig
 }
 
 func NewEmailReceiver() Receiver {
@@ -234,7 +212,7 @@ func (e *Email) SetConfig(obj interface{}) error {
 
 func (e *Email) GenerateConfig(c *Config, obj interface{}) {
 
-	ec, ok := obj.(*v1alpha1.EmailConfig)
+	ec, ok := obj.(*v2.EmailConfig)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate email config error, wrong config type")
 		return
@@ -259,6 +237,10 @@ func (e *Email) GenerateConfig(c *Config, obj interface{}) {
 		emailConfig.RequireTLS = *ec.Spec.RequireTLS
 	}
 
+	if ec.Spec.TLS != nil {
+		emailConfig.TLS = ec.Spec.TLS
+	}
+
 	if ec.Spec.AuthUsername != nil {
 		emailConfig.AuthUsername = *ec.Spec.AuthUsername
 	}
@@ -269,15 +251,16 @@ func (e *Email) GenerateConfig(c *Config, obj interface{}) {
 
 func (e *Email) GenerateReceiver(c *Config, obj interface{}) {
 
-	er, ok := obj.(*v1alpha1.EmailReceiver)
+	er, ok := obj.(*v2.EmailReceiver)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate email receiver error, wrong receiver type")
 		return
 	}
 
 	e.To = er.Spec.To
+	e.Selector = er.Spec.AlertSelector
 
-	ecList := v1alpha1.EmailConfigList{}
+	ecList := v2.EmailConfigList{}
 	ecSel, _ := metav1.LabelSelectorAsSelector(er.Spec.EmailConfigSelector)
 	if err := c.cache.List(c.ctx, &ecList, client.MatchingLabelsSelector{Selector: ecSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list EmailConfig", "err", err)
@@ -285,12 +268,6 @@ func (e *Email) GenerateReceiver(c *Config, obj interface{}) {
 	}
 
 	for _, ec := range ecList.Items {
-
-		if len(c.nmNamespaces) > 0 && !sliceIn(c.nmNamespaces, ec.Namespace) {
-			_ = level.Warn(c.logger).Log("msg", "don't need to be watched", "name", ec.Name, "namespace", ec.Namespace)
-			continue
-		}
-
 		e.GenerateConfig(c, &ec)
 		if e.EmailConfig != nil {
 			break
@@ -302,12 +279,13 @@ type Slack struct {
 	// The channel or user to send notifications to.
 	Channel     string
 	SlackConfig *SlackConfig
+	Selector    *metav1.LabelSelector
 	*common
 }
 
 type SlackConfig struct {
 	// The token of user or bot.
-	Token *v1.SecretKeySelector
+	Token *v2.SecretKeySelector
 }
 
 func NewSlackReceiver() Receiver {
@@ -338,14 +316,14 @@ func (s *Slack) SetConfig(obj interface{}) error {
 
 func (s *Slack) GenerateConfig(c *Config, obj interface{}) {
 
-	sc, ok := obj.(*v1alpha1.SlackConfig)
+	sc, ok := obj.(*v2.SlackConfig)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate slack config error, wrong config type")
 		return
 	}
 
 	if sc.Spec.SlackTokenSecret == nil {
-		_ = level.Error(c.logger).Log("msg", "ignore slack config because of empty token", "name", sc.Name, "namespace", sc.Namespace)
+		_ = level.Error(c.logger).Log("msg", "ignore slack config because of empty token", "name", sc.Name)
 		return
 	}
 
@@ -358,13 +336,13 @@ func (s *Slack) GenerateConfig(c *Config, obj interface{}) {
 
 func (s *Slack) GenerateReceiver(c *Config, obj interface{}) {
 
-	sr, ok := obj.(*v1alpha1.SlackReceiver)
+	sr, ok := obj.(*v2.SlackReceiver)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate slack receiver error, wrong receiver type")
 		return
 	}
 
-	scList := v1alpha1.SlackConfigList{}
+	scList := v2.SlackConfigList{}
 	scSel, _ := metav1.LabelSelectorAsSelector(sr.Spec.SlackConfigSelector)
 	if err := c.cache.List(c.ctx, &scList, client.MatchingLabelsSelector{Selector: scSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list SlackConfig", "err", err)
@@ -372,13 +350,9 @@ func (s *Slack) GenerateReceiver(c *Config, obj interface{}) {
 	}
 
 	s.Channel = sr.Spec.Channel
+	s.Selector = sr.Spec.AlertSelector
 
 	for _, sc := range scList.Items {
-		if len(c.nmNamespaces) > 0 && !sliceIn(c.nmNamespaces, sc.Namespace) {
-			_ = level.Warn(c.logger).Log("msg", "don't need to be watched", "name", sc.Name, "namespace", sc.Namespace)
-			continue
-		}
-
 		s.GenerateConfig(c, &sc)
 		if s.SlackConfig != nil {
 			break
@@ -390,13 +364,14 @@ func (s *Slack) GenerateReceiver(c *Config, obj interface{}) {
 
 type Webhook struct {
 	WebhookConfig *WebhookConfig
+	Selector      *metav1.LabelSelector
 	*common
 }
 
 type WebhookConfig struct {
 	// `url` gives the location of the webhook, in standard URL form.
 	URL        string
-	HttpConfig *v1alpha1.HTTPClientConfig
+	HttpConfig *v2.HTTPClientConfig
 }
 
 func NewWebhookReceiver() Receiver {
@@ -427,7 +402,7 @@ func (w *Webhook) SetConfig(obj interface{}) error {
 
 func (w *Webhook) GenerateConfig(c *Config, obj interface{}) {
 
-	wc, ok := obj.(*v1alpha1.WebhookConfig)
+	wc, ok := obj.(*v2.WebhookConfig)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate webhook config error, wrong config type")
 		return
@@ -455,7 +430,7 @@ func (w *Webhook) GenerateConfig(c *Config, obj interface{}) {
 			webhookConfig.URL = fmt.Sprintf("%s%s", webhookConfig.URL, *service.Path)
 		}
 	} else {
-		_ = level.Error(c.logger).Log("msg", "ignore webhook config because of empty config", "name", wc.Name, "namespace", wc.Namespace)
+		_ = level.Error(c.logger).Log("msg", "ignore webhook config because of empty config", "name", wc.Name)
 		return
 	}
 
@@ -464,13 +439,15 @@ func (w *Webhook) GenerateConfig(c *Config, obj interface{}) {
 
 func (w *Webhook) GenerateReceiver(c *Config, obj interface{}) {
 
-	wr, ok := obj.(*v1alpha1.WebhookReceiver)
+	wr, ok := obj.(*v2.WebhookReceiver)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate webhook receiver error, wrong receiver type")
 		return
 	}
 
-	wcList := v1alpha1.WebhookConfigList{}
+	w.Selector = wr.Spec.AlertSelector
+
+	wcList := v2.WebhookConfigList{}
 	wcSel, _ := metav1.LabelSelectorAsSelector(wr.Spec.WebhookConfigSelector)
 	if err := c.cache.List(c.ctx, &wcList, client.MatchingLabelsSelector{Selector: wcSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list WebhookConfig", "err", err)
@@ -478,12 +455,6 @@ func (w *Webhook) GenerateReceiver(c *Config, obj interface{}) {
 	}
 
 	for _, wc := range wcList.Items {
-
-		if len(c.nmNamespaces) > 0 && !sliceIn(c.nmNamespaces, wc.Namespace) {
-			_ = level.Warn(c.logger).Log("msg", "don't need to be watched", "name", wc.Name, "namespace", wc.Namespace)
-			continue
-		}
-
 		w.GenerateConfig(c, &wc)
 		if w.WebhookConfig != nil {
 			break
@@ -496,11 +467,12 @@ type Wechat struct {
 	ToParty      string
 	ToTag        string
 	WechatConfig *WechatConfig
+	Selector     *metav1.LabelSelector
 	*common
 }
 
 type WechatConfig struct {
-	APISecret *v1.SecretKeySelector
+	APISecret *v2.SecretKeySelector
 	CorpID    string
 	APIURL    string
 	AgentID   string
@@ -533,14 +505,14 @@ func (w *Wechat) SetConfig(obj interface{}) error {
 }
 
 func (w *Wechat) GenerateConfig(c *Config, obj interface{}) {
-	wc, ok := obj.(*v1alpha1.WechatConfig)
+	wc, ok := obj.(*v2.WechatConfig)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate wechat config error, wrong config type")
 		return
 	}
 
 	if wc.Spec.WechatApiSecret == nil {
-		_ = level.Error(c.logger).Log("msg", "ignore wechat config because of empty api secret", "name", wc.Name, "namespace", wc.Namespace)
+		_ = level.Error(c.logger).Log("msg", "ignore wechat config because of empty api secret", "name", wc.Name)
 		return
 	}
 
@@ -554,13 +526,13 @@ func (w *Wechat) GenerateConfig(c *Config, obj interface{}) {
 
 func (w *Wechat) GenerateReceiver(c *Config, obj interface{}) {
 
-	wr, ok := obj.(*v1alpha1.WechatReceiver)
+	wr, ok := obj.(*v2.WechatReceiver)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate wechat receiver error, wrong receiver type")
 		return
 	}
 
-	wcList := v1alpha1.WechatConfigList{}
+	wcList := v2.WechatConfigList{}
 	wcSel, _ := metav1.LabelSelectorAsSelector(wr.Spec.WechatConfigSelector)
 	if err := c.cache.List(c.ctx, &wcList, client.MatchingLabelsSelector{Selector: wcSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list WechatConfig", "err", err)
@@ -570,14 +542,9 @@ func (w *Wechat) GenerateReceiver(c *Config, obj interface{}) {
 	w.ToUser = wr.Spec.ToUser
 	w.ToParty = wr.Spec.ToParty
 	w.ToTag = wr.Spec.ToTag
+	w.Selector = wr.Spec.AlertSelector
 
 	for _, wc := range wcList.Items {
-
-		if len(c.nmNamespaces) > 0 && !sliceIn(c.nmNamespaces, wc.Namespace) {
-			_ = level.Warn(c.logger).Log("msg", "don't need to be watched", "name", wc.Name, "namespace", wc.Namespace)
-			continue
-		}
-
 		w.GenerateConfig(c, &wc)
 		if w.WechatConfig != nil {
 			break
@@ -588,9 +555,7 @@ func (w *Wechat) GenerateReceiver(c *Config, obj interface{}) {
 func (w *Wechat) Clone() *Wechat {
 
 	return &Wechat{
-		common: &common{
-			namespace: w.namespace,
-		},
+		common: &common{},
 		WechatConfig: &WechatConfig{
 			APISecret: w.WechatConfig.APISecret,
 			CorpID:    w.WechatConfig.CorpID,
@@ -601,14 +566,4 @@ func (w *Wechat) Clone() *Wechat {
 		ToParty: w.ToParty,
 		ToTag:   w.ToTag,
 	}
-}
-
-func sliceIn(src []string, elem string) bool {
-	for _, s := range src {
-		if s == elem {
-			return true
-		}
-	}
-
-	return false
 }

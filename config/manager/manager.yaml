@@ -34,6 +34,12 @@ spec:
         volumeMounts:
           - mountPath: /etc/localtime
             name: host-time
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
       volumes:
         - hostPath:
             path: /etc/localtime

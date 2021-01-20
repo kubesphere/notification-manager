@@ -14,13 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 )
+
+// SecretKeySelector selects a key of a Secret.
+type SecretKeySelector struct {
+	// The namespace of the secret, default is the pod's namespace.
+	// +optional
+	Namespace string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
+	// Name of the secret.
+	// +optional
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	// The key of the secret to select from.  Must be a valid secret key.
+	Key string `json:"key" protobuf:"bytes,2,opt,name=key"`
+}
 
 // NotificationManagerSpec defines the desired state of NotificationManager
 type NotificationManagerSpec struct {
@@ -49,8 +61,6 @@ type NotificationManagerSpec struct {
 	DefaultConfigSelector *metav1.LabelSelector `json:"defaultConfigSelector,omitempty"`
 	// Receivers to send notifications to
 	Receivers *ReceiversSpec `json:"receivers"`
-	// Notification manager namespaces, default is all namespaces.
-	NotificationManagerNamespaces []string `json:"notificationManagerNamespaces,omitempty"`
 	// List of volumes that can be mounted by containers belonging to the pod.
 	Volumes []v1.Volume `json:"volumes,omitempty"`
 	// Pod volumes to mount into the container's filesystem.
@@ -175,6 +185,7 @@ type NotificationManagerStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=nm
 
 // NotificationManager is the Schema for the notificationmanagers API
 type NotificationManager struct {

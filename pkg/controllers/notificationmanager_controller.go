@@ -18,14 +18,11 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-	"strings"
-
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/go-logr/logr"
-	nmv1alpha1 "github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -43,7 +40,7 @@ const (
 
 var (
 	ownerKey               = ".metadata.controller"
-	apiGVStr               = nmv1alpha1.GroupVersion.String()
+	apiGVStr               = v2.GroupVersion.String()
 	log                    logr.Logger
 	minReplicas            int32 = 1
 	defaultImage                 = "kubesphere/notification-manager:v0.1.0"
@@ -53,8 +50,9 @@ var (
 // NotificationManagerReconciler reconciles a NotificationManager object
 type NotificationManagerReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Namespace string
+	Log       logr.Logger
+	Scheme    *runtime.Scheme
 }
 
 // Reconcile reads that state of NotificationManager objects and makes changes based on the state read
@@ -70,7 +68,7 @@ func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 	ctx := context.Background()
 	log = r.Log.WithValues("NotificationManager Operator", req.NamespacedName)
 
-	var nm nmv1alpha1.NotificationManager
+	var nm v2.NotificationManager
 	if err := r.Get(ctx, req.NamespacedName, &nm); err != nil {
 		log.Error(err, "Unable to get NotificationManager", "Req", req.NamespacedName.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -89,7 +87,7 @@ func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 	result = controllerutil.OperationResultNone
 	deploy := &appsv1.Deployment{}
 	deploy.ObjectMeta.Name = nm.Name + "-deployment"
-	deploy.ObjectMeta.Namespace = nm.Namespace
+	deploy.ObjectMeta.Namespace = r.Namespace
 	if result, err = controllerutil.CreateOrUpdate(ctx, r.Client, deploy, r.mutateDeployment(deploy, &nm)); err != nil {
 		log.Error(err, "Failed to CreateOrUpdate deployment", "result", result)
 		return ctrl.Result{}, err
@@ -99,7 +97,7 @@ func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 	return ctrl.Result{}, nil
 }
 
-func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context, nm *nmv1alpha1.NotificationManager) error {
+func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context, nm *v2.NotificationManager) error {
 	nm = nm.DeepCopy()
 	if nm.Spec.PortName == "" {
 		nm.Spec.PortName = defaultPortName
@@ -108,7 +106,7 @@ func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context,
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nm.Name + "-svc",
-			Namespace: nm.Namespace,
+			Namespace: r.Namespace,
 			Labels:    *r.makeCommonLabels(nm),
 		},
 		Spec: corev1.ServiceSpec{
@@ -136,7 +134,7 @@ func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context,
 	return nil
 }
 
-func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployment, nm *nmv1alpha1.NotificationManager) controllerutil.MutateFn {
+func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployment, nm *v2.NotificationManager) controllerutil.MutateFn {
 	return func() error {
 		nm = nm.DeepCopy()
 
@@ -213,16 +211,6 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 			newC.Args = append(newC.Args, nm.Spec.Args...)
 		}
 
-		if len(nm.Spec.NotificationManagerNamespaces) > 0 {
-			mns := ""
-			for _, ns := range nm.Spec.NotificationManagerNamespaces {
-				mns = fmt.Sprintf("%s:%s", mns, ns)
-			}
-			mns = strings.TrimPrefix(mns, ":")
-			newC.Command = append(newC.Command, "/notification-manager")
-			newC.Command = append(newC.Command, fmt.Sprintf("--notification-manager-namespaces=%s", mns))
-		}
-
 		// Make sure existing Containers match expected Containers
 		for i, c := range deploy.Spec.Template.Spec.Containers {
 			if c.Name == newC.Name {
@@ -260,7 +248,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 	}
 }
 
-func (r *NotificationManagerReconciler) makeCommonLabels(nm *nmv1alpha1.NotificationManager) *map[string]string {
+func (r *NotificationManagerReconciler) makeCommonLabels(nm *v2.NotificationManager) *map[string]string {
 	return &map[string]string{"app": notificationManager, notificationManager: nm.Name}
 }
 
@@ -298,7 +286,7 @@ func (r *NotificationManagerReconciler) SetupWithManager(mgr ctrl.Manager) error
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&nmv1alpha1.NotificationManager{}).
+		For(&v2.NotificationManager{}).
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }

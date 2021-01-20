@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/apis/v1alpha1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2"
 	"k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -40,6 +40,7 @@ const (
 	opDel               = "delete"
 	opGet               = "get"
 	tenantKeyNamespace  = "namespace"
+	nsEnvironment       = "NAMESPACE"
 )
 
 var (
@@ -62,12 +63,13 @@ type Config struct {
 	// Label selector to filter valid tenant Receiver CR
 	tenantReceiverSelector *metav1.LabelSelector
 	resourceFactory        map[string]factory
-	// Receiver config for each tenant user, in form of map[tenantID]map[type/namespace/name]Receiver
+	// Receiver config for each tenant user, in form of map[tenantID]map[type/name]Receiver
 	receivers    map[string]map[string]Receiver
-	ReceiverOpts *v1alpha1.Options
+	ReceiverOpts *v2.Options
 	// Channel to receive receiver create/update/delete operations and then update receivers
-	ch           chan *param
-	nmNamespaces []string
+	ch chan *param
+	// The pod's namespace
+	namespace string
 	// Dose the notification manager crd add.
 	nmAdd bool
 }
@@ -76,7 +78,6 @@ type param struct {
 	op                     string
 	tenantID               string
 	opType                 string
-	namespace              string
 	name                   string
 	tenantKey              string
 	defaultConfigSelector  *metav1.LabelSelector
@@ -85,14 +86,13 @@ type param struct {
 	obj                    interface{}
 	receiver               Receiver
 	isConfig               bool
-	ReceiverOpts           *v1alpha1.Options
-	nmNamespaces           []string
+	ReceiverOpts           *v2.Options
 	done                   chan interface{}
 }
 
-func New(ctx context.Context, logger log.Logger, namespaces string) (*Config, error) {
+func New(ctx context.Context, logger log.Logger) (*Config, error) {
 	scheme := runtime.NewScheme()
-	_ = v1alpha1.AddToScheme(scheme)
+	_ = v2.AddToScheme(scheme)
 	_ = v1.AddToScheme(scheme)
 	_ = rbacv1.AddToScheme(scheme)
 
@@ -102,28 +102,10 @@ func New(ctx context.Context, logger log.Logger, namespaces string) (*Config, er
 		return nil, err
 	}
 
-	var informerCache cache.Cache
-	var nmNamespaces []string
-	if len(namespaces) > 0 {
-		ns := os.Getenv("NAMESPACE")
-		if len(ns) == 0 {
-			return nil, fmt.Errorf("namespace unknown")
-		}
+	informerCache, err := cache.New(cfg, cache.Options{
+		Scheme: scheme,
+	})
 
-		// Notification manager namespaces must include the namespace notification manager in.
-		nmNamespaces = strings.Split(namespaces, ":")
-		if !sliceIn(nmNamespaces, ns) {
-			nmNamespaces = append(nmNamespaces, ns)
-		}
-		ncf := cache.MultiNamespacedCacheBuilder(nmNamespaces)
-		informerCache, err = ncf(cfg, cache.Options{
-			Scheme: scheme,
-		})
-	} else {
-		informerCache, err = cache.New(cfg, cache.Options{
-			Scheme: scheme,
-		})
-	}
 	if err != nil {
 		_ = level.Error(logger).Log("msg", "Failed to create cache", "err", err)
 		return nil, err
@@ -151,69 +133,74 @@ func New(ctx context.Context, logger log.Logger, namespaces string) (*Config, er
 
 	register(dingtalk, NewDingTalkReceiver,
 		func() runtime.Object {
-			return &v1alpha1.DingTalkReceiver{}
+			return &v2.DingTalkReceiver{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.DingTalkReceiverList{}
+			return &v2.DingTalkReceiverList{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.DingTalkConfig{}
+			return &v2.DingTalkConfig{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.DingTalkConfigList{}
+			return &v2.DingTalkConfigList{}
 		})
 	register(email, NewEmailReceiver,
 		func() runtime.Object {
-			return &v1alpha1.EmailReceiver{}
+			return &v2.EmailReceiver{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.EmailReceiverList{}
+			return &v2.EmailReceiverList{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.EmailConfig{}
+			return &v2.EmailConfig{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.EmailConfigList{}
+			return &v2.EmailConfigList{}
 		})
 	register(slack, NewSlackReceiver,
 		func() runtime.Object {
-			return &v1alpha1.SlackReceiver{}
+			return &v2.SlackReceiver{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.SlackReceiverList{}
+			return &v2.SlackReceiverList{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.SlackConfig{}
+			return &v2.SlackConfig{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.SlackConfigList{}
+			return &v2.SlackConfigList{}
 		})
 	register(webhook, NewWebhookReceiver,
 		func() runtime.Object {
-			return &v1alpha1.WebhookReceiver{}
+			return &v2.WebhookReceiver{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.WebhookReceiverList{}
+			return &v2.WebhookReceiverList{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.WebhookConfig{}
+			return &v2.WebhookConfig{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.WebhookConfigList{}
+			return &v2.WebhookConfigList{}
 		})
 	register(wechat, NewWechatReceiver,
 		func() runtime.Object {
-			return &v1alpha1.WechatReceiver{}
+			return &v2.WechatReceiver{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.WechatReceiverList{}
+			return &v2.WechatReceiverList{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.WechatConfig{}
+			return &v2.WechatConfig{}
 		},
 		func() runtime.Object {
-			return &v1alpha1.WechatConfigList{}
+			return &v2.WechatConfigList{}
 		})
+
+	ns := os.Getenv(nsEnvironment)
+	if len(ns) == 0 {
+		return nil, level.Error(logger).Log("msg", "namespace is empty")
+	}
 
 	return &Config{
 		ctx:                    ctx,
@@ -229,7 +216,7 @@ func New(ctx context.Context, logger log.Logger, namespaces string) (*Config, er
 		receivers:              make(map[string]map[string]Receiver),
 		ReceiverOpts:           nil,
 		ch:                     make(chan *param, ChannelCapacity),
-		nmNamespaces:           nmNamespaces,
+		namespace:              ns,
 	}, nil
 }
 
@@ -276,7 +263,7 @@ func (c *Config) Run() error {
 	}()
 
 	// Setup informer for NotificationManager
-	nmInf, err := c.cache.GetInformer(&v1alpha1.NotificationManager{})
+	nmInf, err := c.cache.GetInformer(&v2.NotificationManager{})
 	if err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to get informer for NotificationManager", "err", err)
 		return err
@@ -357,7 +344,7 @@ func (c *Config) onChange(obj interface{}, op, opType string, isConfig bool) {
 func (c *Config) sync(p *param) {
 
 	if p.op == opGet {
-		// Return all receivers of the specified tenant (map[opType/namespace/name]*Receiver)
+		// Return all receivers of the specified tenant (map[opType/name]*Receiver)
 		// via the done channel if exists
 		if v, exist := c.receivers[p.tenantID]; exist {
 			p.done <- v
@@ -420,7 +407,7 @@ func (c *Config) sync(p *param) {
 				}
 			}
 
-			rcvKey := fmt.Sprintf("%s/%s/%s", p.opType, p.namespace, p.name)
+			rcvKey := fmt.Sprintf("%s/%s", p.opType, p.name)
 			if _, exist := c.receivers[p.tenantID]; !exist {
 				c.receivers[p.tenantID] = make(map[string]Receiver)
 			}
@@ -455,7 +442,7 @@ func (c *Config) sync(p *param) {
 			}
 		} else {
 			// Delete the receiver with the same tenantID
-			rcvKey := fmt.Sprintf("%s/%s/%s", p.opType, p.namespace, p.name)
+			rcvKey := fmt.Sprintf("%s/%s", p.opType, p.name)
 			if _, exist := c.receivers[p.tenantID]; exist {
 				delete(c.receivers[p.tenantID], rcvKey)
 				// If the tenant has no receiver, delete it
@@ -476,7 +463,6 @@ func (c *Config) nmChange(p *param) {
 		c.tenantReceiverSelector = p.tenantReceiverSelector
 		c.globalReceiverSelector = p.globalReceiverSelector
 		c.ReceiverOpts = p.ReceiverOpts
-		c.nmNamespaces = p.nmNamespaces
 		c.nmAdd = true
 	} else if p.op == opDel {
 		c.tenantKey = defaultTenantKey
@@ -568,17 +554,15 @@ func (c *Config) RcvsFromNs(namespace *string) []Receiver {
 }
 
 func (c *Config) onNmAdd(obj interface{}) {
-	if nm, ok := obj.(*v1alpha1.NotificationManager); ok {
+	if nm, ok := obj.(*v2.NotificationManager); ok {
 		p := &param{}
 		p.op = opAdd
 		p.name = nm.Name
-		p.namespace = nm.Namespace
 		p.opType = notificationManager
 		p.tenantKey = nm.Spec.Receivers.TenantKey
 		p.defaultConfigSelector = nm.Spec.DefaultConfigSelector
 		p.globalReceiverSelector = nm.Spec.Receivers.GlobalReceiverSelector
 		p.tenantReceiverSelector = nm.Spec.Receivers.TenantReceiverSelector
-		p.nmNamespaces = nm.Spec.NotificationManagerNamespaces
 		if nm.Spec.Receivers.Options != nil {
 			p.ReceiverOpts = nm.Spec.Receivers.Options
 		}
@@ -586,11 +570,11 @@ func (c *Config) onNmAdd(obj interface{}) {
 		c.ch <- p
 		<-p.done
 
-		c.updateReloadtimestamp()
+		c.updateReloadTimestamp()
 	}
 }
 
-func (c *Config) updateReloadtimestamp() {
+func (c *Config) updateReloadTimestamp() {
 
 	getObjects := func(objList runtime.Object) ([]runtime.Object, error) {
 
@@ -633,7 +617,7 @@ func (c *Config) updateReloadtimestamp() {
 
 			err = c.client.Update(c.ctx, obj)
 			if err != nil {
-				_ = level.Error(c.logger).Log("msg", "update error", "type", key, "name", accessor.GetName(), "namespace", accessor.GetNamespace(), "err", err)
+				_ = level.Error(c.logger).Log("msg", "update error", "type", key, "name", accessor.GetName(), "err", err)
 				continue
 			}
 		}
@@ -641,7 +625,7 @@ func (c *Config) updateReloadtimestamp() {
 }
 
 func (c *Config) onNmDel(obj interface{}) {
-	if _, ok := obj.(*v1alpha1.NotificationManager); ok {
+	if _, ok := obj.(*v2.NotificationManager); ok {
 		p := &param{}
 		p.op = opDel
 		p.opType = notificationManager
@@ -670,11 +654,9 @@ func (c *Config) getReceiver(p *param) {
 	}
 
 	p.name = accessor.GetName()
-	p.namespace = accessor.GetNamespace()
-
 	lbs := accessor.GetLabels()
 
-	_ = level.Info(c.logger).Log("msg", "resource change", "op", p.op, "type", p.opType, "name", p.name, "namespace", p.namespace)
+	_ = level.Info(c.logger).Log("msg", "resource change", "op", p.op, "type", p.opType, "name", p.name)
 
 	// If crd's label matches globalSelector such as "type = global",
 	// then this is a global receiver or config, and tenantID should be set to an unique tenantID
@@ -711,7 +693,7 @@ func (c *Config) getReceiver(p *param) {
 	}
 
 	if len(p.tenantID) == 0 {
-		_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "op", p.op, "type", p.opType, "tenantKey", c.tenantKey, "name", p.name, "namespace", p.namespace)
+		_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "op", p.op, "type", p.opType, "tenantKey", c.tenantKey, "name", p.name)
 		return
 	}
 
@@ -719,24 +701,21 @@ func (c *Config) getReceiver(p *param) {
 
 		f, ok := c.resourceFactory[p.opType]
 		if !ok {
-			_ = level.Warn(c.logger).Log("msg", "receiver type error", "op", p.op, "type", p.opType, "tenantKey", c.tenantKey, "name", p.name, "namespace", p.namespace)
+			_ = level.Warn(c.logger).Log("msg", "receiver type error", "op", p.op, "type", p.opType, "tenantKey", c.tenantKey, "name", p.name)
 			return
 		}
 
 		receiver := f.newReceiverFunc()
 		if reflect.ValueOf(receiver).IsNil() {
-			_ = level.Warn(c.logger).Log("msg", "generate receiver error", "op", p.op, "type", p.opType, "tenantKey", c.tenantKey, "name", p.name, "namespace", p.namespace)
+			_ = level.Warn(c.logger).Log("msg", "generate receiver error", "op", p.op, "type", p.opType, "tenantKey", c.tenantKey, "name", p.name)
 			return
 		}
-
-		receiver.SetNamespace(p.namespace)
 
 		if p.isConfig {
 			receiver.GenerateConfig(c, p.obj)
 		} else {
 			receiver.GenerateReceiver(c, p.obj)
 		}
-		receiver.SetTenantID(p.tenantID)
 		p.receiver = receiver
 	}
 }
@@ -765,14 +744,19 @@ func (c *Config) OutputReceiver(tenant, receiver string) interface{} {
 	return m
 }
 
-func (c *Config) GetSecretData(namespace string, selector *v1.SecretKeySelector) (string, error) {
+func (c *Config) GetSecretData(selector *v2.SecretKeySelector) (string, error) {
 
 	if selector == nil {
 		return "", fmt.Errorf("SecretKeySelector is nil")
 	}
 
+	ns := selector.Namespace
+	if len(ns) == 0 {
+		ns = c.namespace
+	}
+
 	secret := v1.Secret{}
-	if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: namespace, Name: selector.Name}, &secret); err != nil {
+	if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: ns, Name: selector.Name}, &secret); err != nil {
 		return "", err
 	}
 

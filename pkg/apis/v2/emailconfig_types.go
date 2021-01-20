@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,11 +33,12 @@ type EmailConfigSpec struct {
 	// The identity for PLAIN authentication.
 	AuthIdentify *string `json:"authIdentify,omitempty"`
 	// The secret contains the SMTP password for LOGIN and PLAIN authentications.
-	AuthPassword *v1.SecretKeySelector `json:"authPassword,omitempty"`
+	AuthPassword *SecretKeySelector `json:"authPassword,omitempty"`
 	// The secret contains the SMTP secret for CRAM-MD5 authentication.
-	AuthSecret *v1.SecretKeySelector `json:"authSecret,omitempty"`
+	AuthSecret *SecretKeySelector `json:"authSecret,omitempty"`
 	// The default SMTP TLS requirement.
-	RequireTLS *bool `json:"requireTLS,omitempty"`
+	RequireTLS *bool      `json:"requireTLS,omitempty"`
+	TLS        *TLSConfig `json:"tls,omitempty"`
 }
 
 type HostPort struct {
@@ -51,6 +51,7 @@ type EmailConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=ec
 
 // EmailConfig is the Schema for the emailconfigs API
 type EmailConfig struct {

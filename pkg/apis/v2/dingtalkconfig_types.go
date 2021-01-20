@@ -14,31 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Configuration of ChatBot
 type DingTalkChatBot struct {
 	// The webhook of ChatBot which the message will send to.
-	Webhook *v1.SecretKeySelector `json:"webhook"`
+	Webhook *SecretKeySelector `json:"webhook"`
 
 	// Custom keywords of ChatBot
 	Keywords []string `json:"keywords,omitempty"`
 
 	// Secret of ChatBot, you can get it after enabled Additional Signature of ChatBot.
-	Secret *v1.SecretKeySelector `json:"secret,omitempty"`
+	Secret *SecretKeySelector `json:"secret,omitempty"`
 }
 
 // Configuration of conversation
 type DingTalkConversation struct {
 	// The key of the application which sending message.
-	AppKey *v1.SecretKeySelector `json:"appkey"`
+	AppKey *SecretKeySelector `json:"appkey"`
 	// The secret of the application which sending message.
-	AppSecret *v1.SecretKeySelector `json:"appsecret"`
+	AppSecret *SecretKeySelector `json:"appsecret"`
 	// The id of the conversation.
 	ChatID string `json:"chatid"`
 }
@@ -58,6 +57,7 @@ type DingTalkConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=dc
 
 // DingTalkConfig is the Schema for the dingtalkconfigs API
 type DingTalkConfig struct {

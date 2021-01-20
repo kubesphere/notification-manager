@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,6 +24,8 @@ import (
 type SlackReceiverSpec struct {
 	// SlackConfig to be selected for this receiver
 	SlackConfigSelector *metav1.LabelSelector `json:"slackConfigSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	// The channel or user to send notifications to.
 	Channel string `json:"channel"`
 }
@@ -33,6 +35,7 @@ type SlackReceiverStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=sr
 
 // SlackReceiver is the Schema for the slackreceivers API
 type SlackReceiver struct {

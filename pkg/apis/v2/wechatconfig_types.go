@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,7 +29,7 @@ type WechatConfigSpec struct {
 	// The id of the application which sending message.
 	WechatApiAgentId string `json:"wechatApiAgentId"`
 	// The API key to use when talking to the WeChat API.
-	WechatApiSecret *v1.SecretKeySelector `json:"wechatApiSecret"`
+	WechatApiSecret *SecretKeySelector `json:"wechatApiSecret"`
 }
 
 // WechatConfigStatus defines the observed state of WechatConfig
@@ -38,6 +37,7 @@ type WechatConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=wcc
 
 // WechatConfig is the Schema for the wechatconfigs API
 type WechatConfig struct {

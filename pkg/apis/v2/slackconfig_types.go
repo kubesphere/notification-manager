@@ -14,44 +14,43 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EmailReceiverSpec defines the desired state of EmailReceiver
-type EmailReceiverSpec struct {
-	// Receivers' email addresses
-	To []string `json:"to"`
-	// EmailConfig to be selected for this receiver
-	EmailConfigSelector *metav1.LabelSelector `json:"emailConfigSelector,omitempty"`
+// SlackConfigSpec defines the desired state of SlackConfig
+type SlackConfigSpec struct {
+	// The token of user or bot.
+	SlackTokenSecret *SecretKeySelector `json:"slackTokenSecret,omitempty"`
 }
 
-// EmailReceiverStatus defines the observed state of EmailReceiver
-type EmailReceiverStatus struct {
+// SlackConfigStatus defines the observed state of SlackConfig
+type SlackConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=sc
 
-// EmailReceiver is the Schema for the emailreceivers API
-type EmailReceiver struct {
+// SlackConfig is the Schema for the slackconfigs API
+type SlackConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   EmailReceiverSpec   `json:"spec,omitempty"`
-	Status EmailReceiverStatus `json:"status,omitempty"`
+	Spec   SlackConfigSpec   `json:"spec,omitempty"`
+	Status SlackConfigStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// EmailReceiverList contains a list of EmailReceiver
-type EmailReceiverList struct {
+// SlackConfigList contains a list of SlackConfig
+type SlackConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []EmailReceiver `json:"items"`
+	Items           []SlackConfig `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&EmailReceiver{}, &EmailReceiverList{})
+	SchemeBuilder.Register(&SlackConfig{}, &SlackConfigList{})
 }

@@ -1,4 +1,4 @@
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: DingTalkConfig
 metadata:
   name: default-dingtalk-config

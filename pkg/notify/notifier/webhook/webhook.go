@@ -86,23 +86,27 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	var value interface{} = data
-	if n.templateName != DefaultTemplate {
-		msg, err := n.template.TempleText(n.templateName, data, n.logger)
-		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: generate message error", "error", err.Error())
-			return []error{err}
-		}
-
-		value = msg
-	}
-
 	send := func(w *config.Webhook) error {
 
 		start := time.Now()
 		defer func() {
 			_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "used", time.Since(start).String())
 		}()
+
+		newData := notifier.Filter(data, w.Selector, n.logger)
+		if len(newData.Alerts) == 0 {
+			return nil
+		}
+		var value interface{} = newData
+		if n.templateName != DefaultTemplate {
+			msg, err := n.template.TempleText(n.templateName, newData, n.logger)
+			if err != nil {
+				_ = level.Error(n.logger).Log("msg", "WebhookNotifier: generate message error", "error", err.Error())
+				return err
+			}
+
+			value = msg
+		}
 
 		var buf bytes.Buffer
 		if err := json.NewEncoder(&buf).Encode(value); err != nil {
@@ -118,7 +122,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 		if w.WebhookConfig.HttpConfig != nil {
 			if w.WebhookConfig.HttpConfig.BearerToken != nil {
-				bearer, err := n.notifierCfg.GetSecretData(w.GetNamespace(), w.WebhookConfig.HttpConfig.BearerToken)
+				bearer, err := n.notifierCfg.GetSecretData(w.WebhookConfig.HttpConfig.BearerToken)
 				if err != nil {
 					_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get bearer token error", "error", err.Error())
 					return err
@@ -128,7 +132,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			} else if w.WebhookConfig.HttpConfig.BasicAuth != nil {
 				pass := ""
 				if w.WebhookConfig.HttpConfig.BasicAuth.Password != nil {
-					p, err := n.notifierCfg.GetSecretData(w.GetNamespace(), w.WebhookConfig.HttpConfig.BasicAuth.Password)
+					p, err := n.notifierCfg.GetSecretData(w.WebhookConfig.HttpConfig.BasicAuth.Password)
 					if err != nil {
 						_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get password error", "error", err.Error())
 						return err
@@ -192,7 +196,7 @@ func (n *Notifier) getTransport(w *config.Webhook) (http.RoundTripper, error) {
 			// If a CA cert is provided then let's read it in so we can validate the
 			// scrape target's certificate properly.
 			if c.TLSConfig.RootCA != nil {
-				if ca, err := n.notifierCfg.GetSecretData(w.GetNamespace(), c.TLSConfig.RootCA); err != nil {
+				if ca, err := n.notifierCfg.GetSecretData(c.TLSConfig.RootCA); err != nil {
 					return nil, err
 				} else {
 					caCertPool := x509.NewCertPool()
@@ -214,12 +218,12 @@ func (n *Notifier) getTransport(w *config.Webhook) (http.RoundTripper, error) {
 				} else if c.TLSConfig.Cert == nil && c.TLSConfig.Key != nil {
 					return nil, fmt.Errorf("client key file specified without client cert file")
 				} else if c.TLSConfig.Cert != nil && c.TLSConfig.Key != nil {
-					key, err := n.notifierCfg.GetSecretData(w.GetNamespace(), c.TLSConfig.Key)
+					key, err := n.notifierCfg.GetSecretData(c.TLSConfig.Key)
 					if err != nil {
 						return nil, err
 					}
 
-					cert, err := n.notifierCfg.GetSecretData(w.GetNamespace(), c.TLSConfig.Cert)
+					cert, err := n.notifierCfg.GetSecretData(c.TLSConfig.Cert)
 					if err != nil {
 						return nil, err
 					}

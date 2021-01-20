@@ -184,15 +184,20 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	for _, dingtalk := range n.DingTalk {
 		d := dingtalk
 
+		newData := notifier.Filter(data, d.Selector, n.logger)
+		if len(newData.Alerts) == 0 {
+			continue
+		}
+
 		if d.DingTalkConfig.ChatBot != nil {
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- n.sendToChatBot(ctx, d, data)
+				stopCh <- n.sendToChatBot(ctx, d, notifier.Filter(newData, d.Selector, n.logger))
 			})
 		}
 
 		if d.DingTalkConfig.Conversation != nil {
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- n.sendToConversation(ctx, d, data)
+				stopCh <- n.sendToConversation(ctx, d, notifier.Filter(newData, d.Selector, n.logger))
 			})
 		}
 	}
@@ -204,7 +209,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 
 	bot := d.DingTalkConfig.ChatBot
 
-	webhook, err := n.notifierCfg.GetSecretData(d.GetNamespace(), bot.Webhook)
+	webhook, err := n.notifierCfg.GetSecretData(bot.Webhook)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get webhook secret error", "error", err.Error())
 		return []error{err}
@@ -230,7 +235,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 			return err
 		}
 
-		secret, err := n.notifierCfg.GetSecretData(d.GetNamespace(), bot.Secret)
+		secret, err := n.notifierCfg.GetSecretData(bot.Secret)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get chatbot secret error", "error", err.Error())
 			return err
@@ -318,13 +323,13 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 
 func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, data template.Data) []error {
 
-	appkey, err := n.notifierCfg.GetSecretData(d.GetNamespace(), d.DingTalkConfig.Conversation.AppKey)
+	appkey, err := n.notifierCfg.GetSecretData(d.DingTalkConfig.Conversation.AppKey)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appkey error", "error", err)
 		return []error{err}
 	}
 
-	appsecret, err := n.notifierCfg.GetSecretData(d.GetNamespace(), d.DingTalkConfig.Conversation.AppSecret)
+	appsecret, err := n.notifierCfg.GetSecretData(d.DingTalkConfig.Conversation.AppSecret)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appsecret error", "error", err)
 		return []error{err}

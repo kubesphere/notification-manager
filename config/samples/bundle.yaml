@@ -140,7 +140,7 @@ metadata:
   namespace: kubesphere-monitoring-system
 type: Opaque
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: DingTalkConfig
 metadata:
   labels:
@@ -167,7 +167,7 @@ spec:
       name: default-dingtalk-secret
     chatid: chat894f9f4d634eb283933af6c7102977b2
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: DingTalkReceiver
 metadata:
   labels:
@@ -176,7 +176,7 @@ metadata:
   name: global-dingtalk-receiver
   namespace: kubesphere-monitoring-system
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: EmailConfig
 metadata:
   labels:
@@ -195,7 +195,7 @@ spec:
     host: imap.xyz.com
     port: "25"
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: EmailConfig
 metadata:
   labels:
@@ -215,7 +215,7 @@ spec:
     host: imap.xyz.com
     port: "25"
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: EmailReceiver
 metadata:
   labels:
@@ -228,7 +228,7 @@ spec:
   - receiver1@xyz.com
   - receiver2@xyz.com
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: EmailReceiver
 metadata:
   labels:
@@ -246,7 +246,7 @@ spec:
   - receiver3@xyz.com
   - receiver4@xyz.com
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: NotificationManager
 metadata:
   labels:
@@ -271,17 +271,10 @@ spec:
         deliveryType: bulk
         notificationTimeout: 5
       global:
-      - /etc/notification-manager/template
+        templateFile:
+        - /etc/notification-manager/template
       slack:
         notificationTimeout: 5
-      volumeMounts:
-      - mountPath: /etc/notification-manager/
-        name: noification-manager-template
-      volumes:
-      - configMap:
-          defaultMode: 420
-          name: noification-manager-template
-        name: noification-manager-template
       webhook:
         notificationTimeout: 5
       wechat:
@@ -299,8 +292,16 @@ spec:
       cpu: 100m
       memory: 20Mi
   serviceAccountName: notification-manager-sa
+  volumeMounts:
+  - mountPath: /etc/notification-manager/
+    name: noification-manager-template
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: noification-manager-template
+    name: noification-manager-template
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: SlackConfig
 metadata:
   labels:
@@ -313,7 +314,7 @@ spec:
     key: token
     name: slack-token-secret
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: SlackReceiver
 metadata:
   labels:
@@ -327,7 +328,7 @@ spec:
     matchLabels:
       type: default
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: WebhookConfig
 metadata:
   labels:
@@ -338,7 +339,7 @@ metadata:
 spec:
   url: xxx
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: WebhookReceiver
 metadata:
   labels:
@@ -351,7 +352,7 @@ spec:
     matchLabels:
       type: default
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: WechatConfig
 metadata:
   labels:
@@ -367,7 +368,7 @@ spec:
     name: wechat-api-secret
   wechatApiUrl: wechat-api-url
 ---
-apiVersion: notification.kubesphere.io/v1alpha1
+apiVersion: notification.kubesphere.io/v2
 kind: WechatReceiver
 metadata:
   labels:
