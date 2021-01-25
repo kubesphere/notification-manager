@@ -107,12 +107,12 @@ func (d *DingTalk) GenerateConfig(c *Config, obj interface{}) {
 
 	dingtalkConfig := &DingTalkConfig{}
 
-	if dc.Spec.AppKey != nil {
-		dingtalkConfig.AppKey = dc.Spec.AppKey
+	if dc.Spec.Conversation.AppKey != nil {
+		dingtalkConfig.AppKey = dc.Spec.Conversation.AppKey
 	}
 
-	if dc.Spec.AppSecret != nil {
-		dingtalkConfig.AppKey = dc.Spec.AppSecret
+	if dc.Spec.Conversation.AppSecret != nil {
+		dingtalkConfig.AppKey = dc.Spec.Conversation.AppSecret
 	}
 
 	d.DingTalkConfig = dingtalkConfig

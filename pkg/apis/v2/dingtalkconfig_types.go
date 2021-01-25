@@ -20,12 +20,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Configuration of conversation
+type DingTalkApplicationConfig struct {
+	// The key of the application with which to send messages.
+	AppKey *SecretKeySelector `json:"appkey,omitempty"`
+	// The key in the secret to be used. Must be a valid secret key.
+	AppSecret *SecretKeySelector `json:"appsecret,omitempty"`
+}
+
 // DingTalkConfigSpec defines the desired state of DingTalkConfig
 type DingTalkConfigSpec struct {
-	// The key of the application which sending message.
-	AppKey *SecretKeySelector `json:"appkey,omitempty"`
-	// The secret of the application which sending message.
-	AppSecret *SecretKeySelector `json:"appsecret,omitempty"`
+	// Only needed when send alerts to the conversation.
+	Conversation *DingTalkApplicationConfig `json:"conversation,omitempty"`
 }
 
 // DingTalkConfigStatus defines the observed state of DingTalkConfig

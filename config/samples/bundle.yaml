@@ -149,12 +149,13 @@ metadata:
   name: default-dingtalk-config
   namespace: kubesphere-monitoring-system
 spec:
-  appkey:
-    key: appkey
-    name: default-dingtalk-secret
-  appsecret:
-    key: appsecret
-    name: default-dingtalk-secret
+  conversation:
+    appkey:
+      key: appkey
+      name: default-dingtalk-secret
+    appsecret:
+      key: appsecret
+      name: default-dingtalk-secret
 ---
 apiVersion: notification.kubesphere.io/v2
 kind: DingTalkReceiver
@@ -166,8 +167,6 @@ metadata:
   namespace: kubesphere-monitoring-system
 spec:
   chatbot:
-    conversation:
-      chatid: chat894f9f4d634eb283933af6c7102977b2
     keywords:
     - kubesphere
     secret:
@@ -176,6 +175,8 @@ spec:
     webhook:
       key: webhook
       name: default-dingtalk-secret
+  conversation:
+    chatid: chat894f9f4d634eb283933af6c7102977b2
 ---
 apiVersion: notification.kubesphere.io/v2
 kind: EmailConfig

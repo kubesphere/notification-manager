@@ -100,7 +100,7 @@ spec:
                             description: Name of the secret.
                             type: string
                           namespace:
-                            description: The namespace of the secret, default is the
+                            description: The namespace of the secret, default to the
                               pod's namespace.
                             type: string
                         required:
@@ -122,7 +122,7 @@ spec:
                         description: Name of the secret.
                         type: string
                       namespace:
-                        description: The namespace of the secret, default is the pod's
+                        description: The namespace of the secret, default to the pod's
                           namespace.
                         type: string
                     required:
@@ -149,7 +149,7 @@ spec:
                                 type: string
                               namespace:
                                 description: The namespace of the secret, default
-                                  is the pod's namespace.
+                                  to the pod's namespace.
                                 type: string
                             required:
                             - key
@@ -166,7 +166,7 @@ spec:
                                 type: string
                               namespace:
                                 description: The namespace of the secret, default
-                                  is the pod's namespace.
+                                  to the pod's namespace.
                                 type: string
                             required:
                             - key
@@ -187,7 +187,7 @@ spec:
                             description: Name of the secret.
                             type: string
                           namespace:
-                            description: The namespace of the secret, default is the
+                            description: The namespace of the secret, default to the
                               pod's namespace.
                             type: string
                         required:

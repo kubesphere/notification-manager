@@ -14,5 +14,5 @@ spec:
     secret:
       key: secret
       name: default-dingtalk-secret
-    conversation:
-      chatid: chat894f9f4d634eb283933af6c7102977b2
+  conversation:
+    chatid: chat894f9f4d634eb283933af6c7102977b2

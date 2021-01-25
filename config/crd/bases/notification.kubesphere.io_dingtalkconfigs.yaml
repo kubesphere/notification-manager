@@ -38,39 +38,44 @@ spec:
           spec:
             description: DingTalkConfigSpec defines the desired state of DingTalkConfig
             properties:
-              appkey:
-                description: The key of the application which sending message.
+              conversation:
+                description: Only needed when send alerts to the conversation.
                 properties:
-                  key:
-                    description: The key of the secret to select from.  Must be a
-                      valid secret key.
-                    type: string
-                  name:
-                    description: Name of the secret.
-                    type: string
-                  namespace:
-                    description: The namespace of the secret, default is the pod's
-                      namespace.
-                    type: string
-                required:
-                - key
-                type: object
-              appsecret:
-                description: The secret of the application which sending message.
-                properties:
-                  key:
-                    description: The key of the secret to select from.  Must be a
-                      valid secret key.
-                    type: string
-                  name:
-                    description: Name of the secret.
-                    type: string
-                  namespace:
-                    description: The namespace of the secret, default is the pod's
-                      namespace.
-                    type: string
-                required:
-                - key
+                  appkey:
+                    description: The key of the application with which to send messages.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: The namespace of the secret, default to the pod's
+                          namespace.
+                        type: string
+                    required:
+                    - key
+                    type: object
+                  appsecret:
+                    description: The key in the secret to be used. Must be a valid
+                      secret key.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: The namespace of the secret, default to the pod's
+                          namespace.
+                        type: string
+                    required:
+                    - key
+                    type: object
                 type: object
             type: object
           status:

@@ -5,9 +5,10 @@ metadata:
   labels:
     type: default
 spec:
-  appkey:
-    key: appkey
-    name: default-dingtalk-secret
-  appsecret:
-    key: appsecret
-    name: default-dingtalk-secret
+  conversation:
+    appkey:
+      key: appkey
+      name: default-dingtalk-secret
+    appsecret:
+      key: appsecret
+      name: default-dingtalk-secret
