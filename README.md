@@ -101,7 +101,7 @@ spec:
       matchLabels:
         type: tenant
     options:
-      global;
+      global:
         templateFile:
         - /etc/notification-manager/template
       email:
