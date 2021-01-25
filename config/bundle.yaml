@@ -35,58 +35,11 @@ spec:
           spec:
             description: DingTalkConfigSpec defines the desired state of DingTalkConfig
             properties:
-              chatbot:
-                description: Be careful, a ChatBot only can send 20 message per minute.
-                properties:
-                  keywords:
-                    description: Custom keywords of ChatBot
-                    items:
-                      type: string
-                    type: array
-                  secret:
-                    description: Secret of ChatBot, you can get it after enabled Additional
-                      Signature of ChatBot.
-                    properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
-                        type: string
-                      name:
-                        description: Name of the secret.
-                        type: string
-                      namespace:
-                        description: The namespace of the secret, default is the pod's
-                          namespace.
-                        type: string
-                    required:
-                    - key
-                    type: object
-                  webhook:
-                    description: The webhook of ChatBot which the message will send
-                      to.
-                    properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
-                        type: string
-                      name:
-                        description: Name of the secret.
-                        type: string
-                      namespace:
-                        description: The namespace of the secret, default is the pod's
-                          namespace.
-                        type: string
-                    required:
-                    - key
-                    type: object
-                required:
-                - webhook
-                type: object
               conversation:
-                description: The conversation which message will send to.
+                description: Only needed when send alerts to the conversation.
                 properties:
                   appkey:
-                    description: The key of the application which sending message.
+                    description: The key of the application with which to send messages.
                     properties:
                       key:
                         description: The key of the secret to select from.  Must be
@@ -96,14 +49,15 @@ spec:
                         description: Name of the secret.
                         type: string
                       namespace:
-                        description: The namespace of the secret, default is the pod's
+                        description: The namespace of the secret, default to the pod's
                           namespace.
                         type: string
                     required:
                     - key
                     type: object
                   appsecret:
-                    description: The secret of the application which sending message.
+                    description: The key in the secret to be used. Must be a valid
+                      secret key.
                     properties:
                       key:
                         description: The key of the secret to select from.  Must be
@@ -113,19 +67,12 @@ spec:
                         description: Name of the secret.
                         type: string
                       namespace:
-                        description: The namespace of the secret, default is the pod's
+                        description: The namespace of the secret, default to the pod's
                           namespace.
                         type: string
                     required:
                     - key
                     type: object
-                  chatid:
-                    description: The id of the conversation.
-                    type: string
-                required:
-                - appkey
-                - appsecret
-                - chatid
                 type: object
             type: object
           status:
@@ -222,8 +169,63 @@ spec:
                       are ANDed.
                     type: object
                 type: object
-              dingTalkConfigSelector:
-                description: WebhookConfig to be selected for this receiver
+              chatbot:
+                description: Be careful, a ChatBot only can send 20 message per minute.
+                properties:
+                  keywords:
+                    description: Custom keywords of ChatBot
+                    items:
+                      type: string
+                    type: array
+                  secret:
+                    description: Secret of ChatBot, you can get it after enabled Additional
+                      Signature of ChatBot.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: The namespace of the secret, default to the pod's
+                          namespace.
+                        type: string
+                    required:
+                    - key
+                    type: object
+                  webhook:
+                    description: The webhook of ChatBot which the message will send
+                      to.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: The namespace of the secret, default to the pod's
+                          namespace.
+                        type: string
+                    required:
+                    - key
+                    type: object
+                required:
+                - webhook
+                type: object
+              conversation:
+                description: The conversation which message will send to.
+                properties:
+                  chatid:
+                    type: string
+                required:
+                - chatid
+                type: object
+              dingtalkConfigSelector:
+                description: DingTalkConfig to be selected for this receiver
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -332,7 +334,7 @@ spec:
                     description: Name of the secret.
                     type: string
                   namespace:
-                    description: The namespace of the secret, default is the pod's
+                    description: The namespace of the secret, default to the pod's
                       namespace.
                     type: string
                 required:
@@ -349,7 +351,7 @@ spec:
                     description: Name of the secret.
                     type: string
                   namespace:
-                    description: The namespace of the secret, default is the pod's
+                    description: The namespace of the secret, default to the pod's
                       namespace.
                     type: string
                 required:
@@ -395,7 +397,7 @@ spec:
                             description: Name of the secret.
                             type: string
                           namespace:
-                            description: The namespace of the secret, default is the
+                            description: The namespace of the secret, default to the
                               pod's namespace.
                             type: string
                         required:
@@ -412,7 +414,7 @@ spec:
                             description: Name of the secret.
                             type: string
                           namespace:
-                            description: The namespace of the secret, default is the
+                            description: The namespace of the secret, default to the
                               pod's namespace.
                             type: string
                         required:
@@ -434,7 +436,7 @@ spec:
                         description: Name of the secret.
                         type: string
                       namespace:
-                        description: The namespace of the secret, default is the pod's
+                        description: The namespace of the secret, default to the pod's
                           namespace.
                         type: string
                     required:
@@ -2956,7 +2958,7 @@ spec:
                     description: Name of the secret.
                     type: string
                   namespace:
-                    description: The namespace of the secret, default is the pod's
+                    description: The namespace of the secret, default to the pod's
                       namespace.
                     type: string
                 required:
@@ -3156,169 +3158,6 @@ spec:
             type: object
           spec:
             description: WebhookConfigSpec defines the desired state of WebhookConfig
-            properties:
-              httpConfig:
-                description: HTTPClientConfig configures an HTTP client.
-                properties:
-                  basicAuth:
-                    description: The HTTP basic authentication credentials for the
-                      targets.
-                    properties:
-                      password:
-                        description: SecretKeySelector selects a key of a Secret.
-                        properties:
-                          key:
-                            description: The key of the secret to select from.  Must
-                              be a valid secret key.
-                            type: string
-                          name:
-                            description: Name of the secret.
-                            type: string
-                          namespace:
-                            description: The namespace of the secret, default is the
-                              pod's namespace.
-                            type: string
-                        required:
-                        - key
-                        type: object
-                      username:
-                        type: string
-                    required:
-                    - username
-                    type: object
-                  bearerToken:
-                    description: The bearer token for the targets.
-                    properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
-                        type: string
-                      name:
-                        description: Name of the secret.
-                        type: string
-                      namespace:
-                        description: The namespace of the secret, default is the pod's
-                          namespace.
-                        type: string
-                    required:
-                    - key
-                    type: object
-                  proxyUrl:
-                    description: HTTP proxy server to use to connect to the targets.
-                    type: string
-                  tlsConfig:
-                    description: TLSConfig to use to connect to the targets.
-                    properties:
-                      clientCertificate:
-                        description: The certificate of the client.
-                        properties:
-                          cert:
-                            description: The client cert file for the targets.
-                            properties:
-                              key:
-                                description: The key of the secret to select from.  Must
-                                  be a valid secret key.
-                                type: string
-                              name:
-                                description: Name of the secret.
-                                type: string
-                              namespace:
-                                description: The namespace of the secret, default
-                                  is the pod's namespace.
-                                type: string
-                            required:
-                            - key
-                            type: object
-                          key:
-                            description: The client key file for the targets.
-                            properties:
-                              key:
-                                description: The key of the secret to select from.  Must
-                                  be a valid secret key.
-                                type: string
-                              name:
-                                description: Name of the secret.
-                                type: string
-                              namespace:
-                                description: The namespace of the secret, default
-                                  is the pod's namespace.
-                                type: string
-                            required:
-                            - key
-                            type: object
-                        type: object
-                      insecureSkipVerify:
-                        description: Disable target certificate validation.
-                        type: boolean
-                      rootCA:
-                        description: RootCA defines the root certificate authorities
-                          that clients use when verifying server certificates.
-                        properties:
-                          key:
-                            description: The key of the secret to select from.  Must
-                              be a valid secret key.
-                            type: string
-                          name:
-                            description: Name of the secret.
-                            type: string
-                          namespace:
-                            description: The namespace of the secret, default is the
-                              pod's namespace.
-                            type: string
-                        required:
-                        - key
-                        type: object
-                      serverName:
-                        description: Used to verify the hostname for the targets.
-                        type: string
-                    type: object
-                type: object
-              service:
-                description: "`service` is a reference to the service for this webhook.
-                  Either `service` or `url` must be specified. \n If the webhook is
-                  running within the cluster, then you should use `service`."
-                properties:
-                  name:
-                    description: '`name` is the name of the service. Required'
-                    type: string
-                  namespace:
-                    description: '`namespace` is the namespace of the service. Required'
-                    type: string
-                  path:
-                    description: '`path` is an optional URL path which will be sent
-                      in any request to this service.'
-                    type: string
-                  port:
-                    description: If specified, the port on the service that hosting
-                      webhook. Default to 443 for backward compatibility. `port` should
-                      be a valid port number (1-65535, inclusive).
-                    format: int32
-                    type: integer
-                  scheme:
-                    description: Http scheme, default is http.
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
-              url:
-                description: "`url` gives the location of the webhook, in standard
-                  URL form (`scheme://host:port/path`). Exactly one of `url` or `service`
-                  must be specified. \n The `host` should not refer to a service running
-                  in the cluster; use the `service` field instead. The host might
-                  be resolved via external DNS in some api servers (e.g., `kube-apiserver`
-                  cannot resolve in-cluster DNS as that would be a layering violation).
-                  `host` may also be an IP address. \n Please note that using `localhost`
-                  or `127.0.0.1` as a `host` is risky unless you take great care to
-                  run this webhook on all hosts which run an apiserver which might
-                  need to make calls to this webhook. Such installs are likely to
-                  be non-portable, i.e., not easy to turn up in a new cluster. \n
-                  A path is optional, and if present may be any string permissible
-                  in a URL. You may use the path to pass an arbitrary string to the
-                  webhook, for example, a cluster identifier. \n Attempting to use
-                  a user or basic auth e.g. \"user:password@\" is not allowed. Fragments
-                  (\"#...\") and query parameters (\"?...\") are not allowed, either."
-                type: string
             type: object
           status:
             description: WebhookConfigStatus defines the observed state of WebhookConfig
@@ -3414,6 +3253,168 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+              httpConfig:
+                description: HTTPClientConfig configures an HTTP client.
+                properties:
+                  basicAuth:
+                    description: The HTTP basic authentication credentials for the
+                      targets.
+                    properties:
+                      password:
+                        description: SecretKeySelector selects a key of a Secret.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: Name of the secret.
+                            type: string
+                          namespace:
+                            description: The namespace of the secret, default to the
+                              pod's namespace.
+                            type: string
+                        required:
+                        - key
+                        type: object
+                      username:
+                        type: string
+                    required:
+                    - username
+                    type: object
+                  bearerToken:
+                    description: The bearer token for the targets.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: The namespace of the secret, default to the pod's
+                          namespace.
+                        type: string
+                    required:
+                    - key
+                    type: object
+                  proxyUrl:
+                    description: HTTP proxy server to use to connect to the targets.
+                    type: string
+                  tlsConfig:
+                    description: TLSConfig to use to connect to the targets.
+                    properties:
+                      clientCertificate:
+                        description: The certificate of the client.
+                        properties:
+                          cert:
+                            description: The client cert file for the targets.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: The namespace of the secret, default
+                                  to the pod's namespace.
+                                type: string
+                            required:
+                            - key
+                            type: object
+                          key:
+                            description: The client key file for the targets.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: The namespace of the secret, default
+                                  to the pod's namespace.
+                                type: string
+                            required:
+                            - key
+                            type: object
+                        type: object
+                      insecureSkipVerify:
+                        description: Disable target certificate validation.
+                        type: boolean
+                      rootCA:
+                        description: RootCA defines the root certificate authorities
+                          that clients use when verifying server certificates.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: Name of the secret.
+                            type: string
+                          namespace:
+                            description: The namespace of the secret, default to the
+                              pod's namespace.
+                            type: string
+                        required:
+                        - key
+                        type: object
+                      serverName:
+                        description: Used to verify the hostname for the targets.
+                        type: string
+                    type: object
+                type: object
+              service:
+                description: "`service` is a reference to the service for this webhook.
+                  Either `service` or `url` must be specified. \n If the webhook is
+                  running within the cluster, then you should use `service`."
+                properties:
+                  name:
+                    description: '`name` is the name of the service. Required'
+                    type: string
+                  namespace:
+                    description: '`namespace` is the namespace of the service. Required'
+                    type: string
+                  path:
+                    description: '`path` is an optional URL path which will be sent
+                      in any request to this service.'
+                    type: string
+                  port:
+                    description: If specified, the port on the service that hosting
+                      webhook. Default to 443 for backward compatibility. `port` should
+                      be a valid port number (1-65535, inclusive).
+                    format: int32
+                    type: integer
+                  scheme:
+                    description: Http scheme, default is http.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              url:
+                description: "`url` gives the location of the webhook, in standard
+                  URL form (`scheme://host:port/path`). Exactly one of `url` or `service`
+                  must be specified. \n The `host` should not refer to a service running
+                  in the cluster; use the `service` field instead. The host might
+                  be resolved via external DNS in some api servers (e.g., `kube-apiserver`
+                  cannot resolve in-cluster DNS as that would be a layering violation).
+                  `host` may also be an IP address. \n Please note that using `localhost`
+                  or `127.0.0.1` as a `host` is risky unless you take great care to
+                  run this webhook on all hosts which run an apiserver which might
+                  need to make calls to this webhook. Such installs are likely to
+                  be non-portable, i.e., not easy to turn up in a new cluster. \n
+                  A path is optional, and if present may be any string permissible
+                  in a URL. You may use the path to pass an arbitrary string to the
+                  webhook, for example, a cluster identifier. \n Attempting to use
+                  a user or basic auth e.g. \"user:password@\" is not allowed. Fragments
+                  (\"#...\") and query parameters (\"?...\") are not allowed, either."
+                type: string
               webhookConfigSelector:
                 description: WebhookConfig to be selected for this receiver
                 properties:
@@ -3526,7 +3527,7 @@ spec:
                     description: Name of the secret.
                     type: string
                   namespace:
-                    description: The namespace of the secret, default is the pod's
+                    description: The namespace of the secret, default to the pod's
                       namespace.
                     type: string
                 required:

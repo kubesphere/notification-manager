@@ -20,12 +20,33 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Configuration of ChatBot
+type DingTalkChatBot struct {
+	// The webhook of ChatBot which the message will send to.
+	Webhook *SecretKeySelector `json:"webhook"`
+
+	// Custom keywords of ChatBot
+	Keywords []string `json:"keywords,omitempty"`
+
+	// Secret of ChatBot, you can get it after enabled Additional Signature of ChatBot.
+	Secret *SecretKeySelector `json:"secret,omitempty"`
+}
+
+// Configuration of conversation
+type DingTalkConversation struct {
+	ChatID string `json:"chatid"`
+}
+
 // DingTalkReceiverSpec defines the desired state of DingTalkReceiver
 type DingTalkReceiverSpec struct {
-	// WebhookConfig to be selected for this receiver
-	DingTalkConfigSelector *metav1.LabelSelector `json:"dingTalkConfigSelector,omitempty"`
+	// DingTalkConfig to be selected for this receiver
+	DingTalkConfigSelector *metav1.LabelSelector `json:"dingtalkConfigSelector,omitempty"`
 	// Selector to filter alerts.
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	// Be careful, a ChatBot only can send 20 message per minute.
+	ChatBot *DingTalkChatBot `json:"chatbot,omitempty"`
+	// The conversation which message will send to.
+	Conversation *DingTalkConversation `json:"conversation,omitempty"`
 }
 
 // DingTalkReceiverStatus defines the observed state of DingTalkReceiver

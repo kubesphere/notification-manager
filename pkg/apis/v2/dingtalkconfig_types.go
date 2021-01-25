@@ -20,36 +20,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Configuration of ChatBot
-type DingTalkChatBot struct {
-	// The webhook of ChatBot which the message will send to.
-	Webhook *SecretKeySelector `json:"webhook"`
-
-	// Custom keywords of ChatBot
-	Keywords []string `json:"keywords,omitempty"`
-
-	// Secret of ChatBot, you can get it after enabled Additional Signature of ChatBot.
-	Secret *SecretKeySelector `json:"secret,omitempty"`
-}
-
 // Configuration of conversation
-type DingTalkConversation struct {
-	// The key of the application which sending message.
-	AppKey *SecretKeySelector `json:"appkey"`
-	// The secret of the application which sending message.
-	AppSecret *SecretKeySelector `json:"appsecret"`
-	// The id of the conversation.
-	ChatID string `json:"chatid"`
+type DingTalkApplicationConfig struct {
+	// The key of the application with which to send messages.
+	AppKey *SecretKeySelector `json:"appkey,omitempty"`
+	// The key in the secret to be used. Must be a valid secret key.
+	AppSecret *SecretKeySelector `json:"appsecret,omitempty"`
 }
 
 // DingTalkConfigSpec defines the desired state of DingTalkConfig
 type DingTalkConfigSpec struct {
-
-	// Be careful, a ChatBot only can send 20 message per minute.
-	ChatBot *DingTalkChatBot `json:"chatbot,omitempty"`
-
-	// The conversation which message will send to.
-	Conversation *DingTalkConversation `json:"conversation,omitempty"`
+	// Only needed when send alerts to the conversation.
+	Conversation *DingTalkApplicationConfig `json:"conversation,omitempty"`
 }
 
 // DingTalkConfigStatus defines the observed state of DingTalkConfig

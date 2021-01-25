@@ -82,8 +82,63 @@ spec:
                       are ANDed.
                     type: object
                 type: object
-              dingTalkConfigSelector:
-                description: WebhookConfig to be selected for this receiver
+              chatbot:
+                description: Be careful, a ChatBot only can send 20 message per minute.
+                properties:
+                  keywords:
+                    description: Custom keywords of ChatBot
+                    items:
+                      type: string
+                    type: array
+                  secret:
+                    description: Secret of ChatBot, you can get it after enabled Additional
+                      Signature of ChatBot.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: The namespace of the secret, default to the pod's
+                          namespace.
+                        type: string
+                    required:
+                    - key
+                    type: object
+                  webhook:
+                    description: The webhook of ChatBot which the message will send
+                      to.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: The namespace of the secret, default to the pod's
+                          namespace.
+                        type: string
+                    required:
+                    - key
+                    type: object
+                required:
+                - webhook
+                type: object
+              conversation:
+                description: The conversation which message will send to.
+                properties:
+                  chatid:
+                    type: string
+                required:
+                - chatid
+                type: object
+              dingtalkConfigSelector:
+                description: DingTalkConfig to be selected for this receiver
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.

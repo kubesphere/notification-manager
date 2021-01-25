@@ -38,58 +38,11 @@ spec:
           spec:
             description: DingTalkConfigSpec defines the desired state of DingTalkConfig
             properties:
-              chatbot:
-                description: Be careful, a ChatBot only can send 20 message per minute.
-                properties:
-                  keywords:
-                    description: Custom keywords of ChatBot
-                    items:
-                      type: string
-                    type: array
-                  secret:
-                    description: Secret of ChatBot, you can get it after enabled Additional
-                      Signature of ChatBot.
-                    properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
-                        type: string
-                      name:
-                        description: Name of the secret.
-                        type: string
-                      namespace:
-                        description: The namespace of the secret, default is the pod's
-                          namespace.
-                        type: string
-                    required:
-                    - key
-                    type: object
-                  webhook:
-                    description: The webhook of ChatBot which the message will send
-                      to.
-                    properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
-                        type: string
-                      name:
-                        description: Name of the secret.
-                        type: string
-                      namespace:
-                        description: The namespace of the secret, default is the pod's
-                          namespace.
-                        type: string
-                    required:
-                    - key
-                    type: object
-                required:
-                - webhook
-                type: object
               conversation:
-                description: The conversation which message will send to.
+                description: Only needed when send alerts to the conversation.
                 properties:
                   appkey:
-                    description: The key of the application which sending message.
+                    description: The key of the application with which to send messages.
                     properties:
                       key:
                         description: The key of the secret to select from.  Must be
@@ -99,14 +52,15 @@ spec:
                         description: Name of the secret.
                         type: string
                       namespace:
-                        description: The namespace of the secret, default is the pod's
+                        description: The namespace of the secret, default to the pod's
                           namespace.
                         type: string
                     required:
                     - key
                     type: object
                   appsecret:
-                    description: The secret of the application which sending message.
+                    description: The key in the secret to be used. Must be a valid
+                      secret key.
                     properties:
                       key:
                         description: The key of the secret to select from.  Must be
@@ -116,19 +70,12 @@ spec:
                         description: Name of the secret.
                         type: string
                       namespace:
-                        description: The namespace of the secret, default is the pod's
+                        description: The namespace of the secret, default to the pod's
                           namespace.
                         type: string
                     required:
                     - key
                     type: object
-                  chatid:
-                    description: The id of the conversation.
-                    type: string
-                required:
-                - appkey
-                - appsecret
-                - chatid
                 type: object
             type: object
           status:

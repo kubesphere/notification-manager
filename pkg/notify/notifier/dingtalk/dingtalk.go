@@ -189,13 +189,13 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			continue
 		}
 
-		if d.DingTalkConfig.ChatBot != nil {
+		if d.ChatBot != nil {
 			group.Add(func(stopCh chan interface{}) {
 				stopCh <- n.sendToChatBot(ctx, d, notifier.Filter(newData, d.Selector, n.logger))
 			})
 		}
 
-		if d.DingTalkConfig.Conversation != nil {
+		if len(d.ChatID) > 0 {
 			group.Add(func(stopCh chan interface{}) {
 				stopCh <- n.sendToConversation(ctx, d, notifier.Filter(newData, d.Selector, n.logger))
 			})
@@ -207,7 +207,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data template.Data) []error {
 
-	bot := d.DingTalkConfig.ChatBot
+	bot := d.ChatBot
 
 	webhook, err := n.notifierCfg.GetSecretData(bot.Webhook)
 	if err != nil {
@@ -323,13 +323,13 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 
 func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, data template.Data) []error {
 
-	appkey, err := n.notifierCfg.GetSecretData(d.DingTalkConfig.Conversation.AppKey)
+	appkey, err := n.notifierCfg.GetSecretData(d.DingTalkConfig.AppKey)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appkey error", "error", err)
 		return []error{err}
 	}
 
-	appsecret, err := n.notifierCfg.GetSecretData(d.DingTalkConfig.Conversation.AppSecret)
+	appsecret, err := n.notifierCfg.GetSecretData(d.DingTalkConfig.AppSecret)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appsecret error", "error", err)
 		return []error{err}
@@ -353,7 +353,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 				Content: msg,
 			},
 			Type: "text",
-			ID:   d.DingTalkConfig.Conversation.ChatID,
+			ID:   d.ChatID,
 		}
 
 		var buf bytes.Buffer
@@ -396,11 +396,11 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 		}
 
 		if res.Code != 0 {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to conversation error", "conversation", d.DingTalkConfig.Conversation.ChatID, "errcode", res.Code, "errmsg", res.Message)
+			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to conversation error", "conversation", d.ChatID, "errcode", res.Code, "errmsg", res.Message)
 			return err
 		}
 
-		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: send message to conversation", "conversation", d.DingTalkConfig.Conversation.ChatID)
+		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: send message to conversation", "conversation", d.ChatID)
 
 		return nil
 	}
@@ -419,7 +419,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 			if n.throttle.Allow(appkey, n.logger) {
 				stopCh <- send(msg)
 			} else {
-				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: message to conversation dropped because of flow control", "conversation", d.DingTalkConfig.Conversation.ChatID)
+				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: message to conversation dropped because of flow control", "conversation", d.ChatID)
 				stopCh <- fmt.Errorf("")
 			}
 		})

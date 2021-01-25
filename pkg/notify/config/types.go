@@ -52,14 +52,16 @@ func (c *common) SetUseDefault(b bool) {
 }
 
 type DingTalk struct {
+	ChatID         string
+	ChatBot        *DingTalkChatBot
 	DingTalkConfig *DingTalkConfig
 	Selector       *metav1.LabelSelector
 	*common
 }
 
 type DingTalkConfig struct {
-	ChatBot      *DingTalkChatBot
-	Conversation *DingTalkConversation
+	AppKey    *v2.SecretKeySelector
+	AppSecret *v2.SecretKeySelector
 }
 
 // Configuration of ChatBot
@@ -67,13 +69,6 @@ type DingTalkChatBot struct {
 	Webhook  *v2.SecretKeySelector
 	Keywords []string
 	Secret   *v2.SecretKeySelector
-}
-
-// Configuration of conversation
-type DingTalkConversation struct {
-	AppKey    *v2.SecretKeySelector
-	AppSecret *v2.SecretKeySelector
-	ChatID    string
 }
 
 func NewDingTalkReceiver() Receiver {
@@ -112,20 +107,12 @@ func (d *DingTalk) GenerateConfig(c *Config, obj interface{}) {
 
 	dingtalkConfig := &DingTalkConfig{}
 
-	if dc.Spec.ChatBot != nil {
-		dingtalkConfig.ChatBot = &DingTalkChatBot{
-			Webhook:  dc.Spec.ChatBot.Webhook,
-			Keywords: dc.Spec.ChatBot.Keywords,
-			Secret:   dc.Spec.ChatBot.Secret,
-		}
+	if dc.Spec.Conversation.AppKey != nil {
+		dingtalkConfig.AppKey = dc.Spec.Conversation.AppKey
 	}
 
-	if dc.Spec.Conversation != nil {
-		dingtalkConfig.Conversation = &DingTalkConversation{
-			ChatID:    dc.Spec.Conversation.ChatID,
-			AppKey:    dc.Spec.Conversation.AppKey,
-			AppSecret: dc.Spec.Conversation.AppSecret,
-		}
+	if dc.Spec.Conversation.AppSecret != nil {
+		dingtalkConfig.AppKey = dc.Spec.Conversation.AppSecret
 	}
 
 	d.DingTalkConfig = dingtalkConfig
@@ -141,6 +128,18 @@ func (d *DingTalk) GenerateReceiver(c *Config, obj interface{}) {
 	}
 
 	d.Selector = dr.Spec.AlertSelector
+
+	if dr.Spec.Conversation != nil {
+		d.ChatID = dr.Spec.Conversation.ChatID
+	}
+
+	if dr.Spec.ChatBot != nil {
+		d.ChatBot = &DingTalkChatBot{
+			Webhook:  dr.Spec.ChatBot.Webhook,
+			Keywords: dr.Spec.ChatBot.Keywords,
+			Secret:   dr.Spec.ChatBot.Secret,
+		}
+	}
 
 	dcList := v2.DingTalkConfigList{}
 	dcSel, _ := metav1.LabelSelectorAsSelector(dr.Spec.DingTalkConfigSelector)
@@ -363,15 +362,15 @@ func (s *Slack) GenerateReceiver(c *Config, obj interface{}) {
 }
 
 type Webhook struct {
+	// `url` gives the location of the webhook, in standard URL form.
+	URL           string
+	HttpConfig    *v2.HTTPClientConfig
 	WebhookConfig *WebhookConfig
 	Selector      *metav1.LabelSelector
 	*common
 }
 
 type WebhookConfig struct {
-	// `url` gives the location of the webhook, in standard URL form.
-	URL        string
-	HttpConfig *v2.HTTPClientConfig
 }
 
 func NewWebhookReceiver() Receiver {
@@ -400,41 +399,9 @@ func (w *Webhook) SetConfig(obj interface{}) error {
 	return nil
 }
 
-func (w *Webhook) GenerateConfig(c *Config, obj interface{}) {
+func (w *Webhook) GenerateConfig(_ *Config, _ interface{}) {
 
-	wc, ok := obj.(*v2.WebhookConfig)
-	if !ok {
-		_ = level.Warn(c.logger).Log("msg", "generate webhook config error, wrong config type")
-		return
-	}
-
-	webhookConfig := &WebhookConfig{
-		HttpConfig: wc.Spec.HTTPConfig,
-	}
-
-	if wc.Spec.URL != nil {
-		webhookConfig.URL = *wc.Spec.URL
-	} else if wc.Spec.Service != nil {
-		service := wc.Spec.Service
-		if service.Scheme == nil || len(*service.Scheme) == 0 {
-			webhookConfig.URL = fmt.Sprintf("http://%s.%s", service.Name, service.Namespace)
-		} else {
-			webhookConfig.URL = fmt.Sprintf("%s://%s.%s", *service.Scheme, service.Name, service.Namespace)
-		}
-
-		if service.Port != nil {
-			webhookConfig.URL = fmt.Sprintf("%s:%d/", webhookConfig.URL, *service.Port)
-		}
-
-		if service.Path != nil {
-			webhookConfig.URL = fmt.Sprintf("%s%s", webhookConfig.URL, *service.Path)
-		}
-	} else {
-		_ = level.Error(c.logger).Log("msg", "ignore webhook config because of empty config", "name", wc.Name)
-		return
-	}
-
-	w.WebhookConfig = webhookConfig
+	w.WebhookConfig = &WebhookConfig{}
 }
 
 func (w *Webhook) GenerateReceiver(c *Config, obj interface{}) {
@@ -446,19 +413,28 @@ func (w *Webhook) GenerateReceiver(c *Config, obj interface{}) {
 	}
 
 	w.Selector = wr.Spec.AlertSelector
+	w.HttpConfig = wr.Spec.HTTPConfig
 
-	wcList := v2.WebhookConfigList{}
-	wcSel, _ := metav1.LabelSelectorAsSelector(wr.Spec.WebhookConfigSelector)
-	if err := c.cache.List(c.ctx, &wcList, client.MatchingLabelsSelector{Selector: wcSel}); client.IgnoreNotFound(err) != nil {
-		_ = level.Error(c.logger).Log("msg", "Unable to list WebhookConfig", "err", err)
-		return
-	}
-
-	for _, wc := range wcList.Items {
-		w.GenerateConfig(c, &wc)
-		if w.WebhookConfig != nil {
-			break
+	if wr.Spec.URL != nil {
+		w.URL = *wr.Spec.URL
+	} else if wr.Spec.Service != nil {
+		service := wr.Spec.Service
+		if service.Scheme == nil || len(*service.Scheme) == 0 {
+			w.URL = fmt.Sprintf("http://%s.%s", service.Name, service.Namespace)
+		} else {
+			w.URL = fmt.Sprintf("%s://%s.%s", *service.Scheme, service.Name, service.Namespace)
 		}
+
+		if service.Port != nil {
+			w.URL = fmt.Sprintf("%s:%d/", w.URL, *service.Port)
+		}
+
+		if service.Path != nil {
+			w.URL = fmt.Sprintf("%s%s", w.URL, *service.Path)
+		}
+	} else {
+		_ = level.Error(c.logger).Log("msg", "ignore webhook config because of empty endpoint", "name", wr.Name)
+		return
 	}
 }
 
