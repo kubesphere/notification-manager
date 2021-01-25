@@ -5,20 +5,9 @@ metadata:
   labels:
     type: default
 spec:
-  chatbot:
-    webhook:
-      key: webhook
-      name: default-dingtalk-secret
-    keywords:
-      - kubesphere
-    secret:
-      key: secret
-      name: default-dingtalk-secret
-  conversation:
-    appkey:
-      key: appkey
-      name: default-dingtalk-secret
-    appsecret:
-      key: appsecret
-      name: default-dingtalk-secret
-    chatid: chat894f9f4d634eb283933af6c7102977b2
+  appkey:
+    key: appkey
+    name: default-dingtalk-secret
+  appsecret:
+    key: appsecret
+    name: default-dingtalk-secret

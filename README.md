@@ -101,7 +101,7 @@ spec:
       matchLabels:
         type: tenant
     options:
-      global;
+      global:
         templateFile:
         - /etc/notification-manager/template
       email:
@@ -342,6 +342,15 @@ metadata:
   labels:
     app: notification-manager
     type: default
+
+---
+apiVersion: notification.kubesphere.io/v2
+kind: WebhookReceiver
+metadata:
+  name: global-webhook-receiver
+  labels:
+    app: notification-manager
+    type: global
 spec:
   url: http://127.0.0.1:8080/
   httpConfig: 
@@ -360,15 +369,6 @@ spec:
           key: key
           name: default-webhook-secret
       insecureSkipVerify: false
-
----
-apiVersion: notification.kubesphere.io/v2
-kind: WebhookReceiver
-metadata:
-  name: global-webhook-receiver
-  labels:
-    app: notification-manager
-    type: global
 EOF
 ```
 
@@ -403,23 +403,12 @@ metadata:
     app: notification-manager
     type: default
 spec:
-  conversation:
-    appkey: 
-      key: appkey
-      name: default-dingtalk-secret
-    appsecret:
-      key: appsecret
-      name: default-dingtalk-secret
-    chatid: chat894f9f4d634eb283933af6c7102977b2
-  chatbot:
-    webhook:
-      key: webhook
-      name: test-user-dingtalk-secret
-    keywords: 
-    - kubesphere
-    secret:
-      key: secret
-      name: test-user-dingtalk-secret
+  appkey: 
+    key: appkey
+    name: default-dingtalk-secret
+  appsecret:
+    key: appsecret
+    name: default-dingtalk-secret
 
 ---
 apiVersion: notification.kubesphere.io/v2
@@ -429,6 +418,18 @@ metadata:
   labels:
     app: notification-manager
     type: global
+spec:
+  conversation:
+    chatid: chat894f9f4d634eb283933af6c7102977b2
+  chatbot:
+    webhook:
+      key: webhook
+      name: default-dingtalk-secret
+    keywords: 
+    - kubesphere
+    secret:
+      key: secret
+      name: default-dingtalk-secret
 EOF
 ```
 

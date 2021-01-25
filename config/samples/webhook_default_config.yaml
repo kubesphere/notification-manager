@@ -4,5 +4,3 @@ metadata:
   name: default-webhook-config
   labels:
     type: default
-spec:
-  url: xxx

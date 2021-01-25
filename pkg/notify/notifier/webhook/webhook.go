@@ -114,25 +114,25 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return err
 		}
 
-		request, err := http.NewRequest(http.MethodPost, w.WebhookConfig.URL, &buf)
+		request, err := http.NewRequest(http.MethodPost, w.URL, &buf)
 		if err != nil {
 			return err
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		if w.WebhookConfig.HttpConfig != nil {
-			if w.WebhookConfig.HttpConfig.BearerToken != nil {
-				bearer, err := n.notifierCfg.GetSecretData(w.WebhookConfig.HttpConfig.BearerToken)
+		if w.HttpConfig != nil {
+			if w.HttpConfig.BearerToken != nil {
+				bearer, err := n.notifierCfg.GetSecretData(w.HttpConfig.BearerToken)
 				if err != nil {
 					_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get bearer token error", "error", err.Error())
 					return err
 				}
 
 				request.Header.Set("Authorization", bearer)
-			} else if w.WebhookConfig.HttpConfig.BasicAuth != nil {
+			} else if w.HttpConfig.BasicAuth != nil {
 				pass := ""
-				if w.WebhookConfig.HttpConfig.BasicAuth.Password != nil {
-					p, err := n.notifierCfg.GetSecretData(w.WebhookConfig.HttpConfig.BasicAuth.Password)
+				if w.HttpConfig.BasicAuth.Password != nil {
+					p, err := n.notifierCfg.GetSecretData(w.HttpConfig.BasicAuth.Password)
 					if err != nil {
 						_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get password error", "error", err.Error())
 						return err
@@ -140,7 +140,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 					pass = p
 				}
-				request.SetBasicAuth(w.WebhookConfig.HttpConfig.BasicAuth.Username, pass)
+				request.SetBasicAuth(w.HttpConfig.BasicAuth.Username, pass)
 			}
 		}
 
@@ -161,7 +161,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return err
 		}
 
-		_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "to", w.WebhookConfig.URL)
+		_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "to", w.URL)
 
 		return nil
 	}
@@ -184,11 +184,11 @@ func (n *Notifier) getTransport(w *config.Webhook) (http.RoundTripper, error) {
 		DisableCompression: true,
 		DialContext: conntrack.NewDialContextFunc(
 			conntrack.DialWithTracing(),
-			conntrack.DialWithName(w.WebhookConfig.URL),
+			conntrack.DialWithName(w.URL),
 		),
 	}
 
-	if c := w.WebhookConfig.HttpConfig; c != nil {
+	if c := w.HttpConfig; c != nil {
 
 		if c.TLSConfig != nil {
 			tlsConfig := &tls.Config{InsecureSkipVerify: c.TLSConfig.InsecureSkipVerify}

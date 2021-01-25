@@ -8,3 +8,4 @@ spec:
   webhookConfigSelector:
     matchLabels:
       type: default
+  url: xxx
