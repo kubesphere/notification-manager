@@ -514,7 +514,7 @@ spec:
   to:
   - receiver1@xyz.com
   - receiver2@xyz.com
-  notificationSelector:
+  alertSelector:
     matchLabels:
       alerttype: auditing
 ```

@@ -685,6 +685,9 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+              defaultSecretNamespace:
+                description: The default namespace which the secret be in.
+                type: string
               image:
                 description: Docker Image used to start Notification Manager container,
                   for example kubesphere/notification-manager:v0.1.0
@@ -2295,6 +2298,8 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""

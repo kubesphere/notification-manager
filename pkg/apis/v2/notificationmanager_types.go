@@ -61,6 +61,8 @@ type NotificationManagerSpec struct {
 	DefaultConfigSelector *metav1.LabelSelector `json:"defaultConfigSelector,omitempty"`
 	// Receivers to send notifications to
 	Receivers *ReceiversSpec `json:"receivers"`
+	// The default namespace which the secret be in.
+	DefaultSecretNamespace string `json:"defaultSecretNamespace,omitempty"`
 	// List of volumes that can be mounted by containers belonging to the pod.
 	Volumes []v1.Volume `json:"volumes,omitempty"`
 	// Pod volumes to mount into the container's filesystem.
@@ -186,6 +188,7 @@ type NotificationManagerStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,shortName=nm
+// +kubebuilder:subresource:status
 
 // NotificationManager is the Schema for the notificationmanagers API
 type NotificationManager struct {
