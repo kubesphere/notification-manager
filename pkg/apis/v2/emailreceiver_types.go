@@ -36,6 +36,7 @@ type EmailReceiverStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,shortName=er
+// +kubebuilder:subresource:status
 
 // EmailReceiver is the Schema for the emailreceivers API
 type EmailReceiver struct {

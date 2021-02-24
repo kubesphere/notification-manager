@@ -185,7 +185,16 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
-			Env: []corev1.EnvVar{
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      "host-time",
+					MountPath: "/etc/localtime",
+				},
+			},
+		}
+
+		if nm.Spec.DefaultSecretNamespace == "" {
+			newC.Env = []corev1.EnvVar{
 				{
 					Name: "NAMESPACE",
 					ValueFrom: &corev1.EnvVarSource{
@@ -194,13 +203,14 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 						},
 					},
 				},
-			},
-			VolumeMounts: []corev1.VolumeMount{
+			}
+		} else {
+			newC.Env = []corev1.EnvVar{
 				{
-					Name:      "host-time",
-					MountPath: "/etc/localtime",
+					Name:  "NAMESPACE",
+					Value: nm.Spec.DefaultSecretNamespace,
 				},
-			},
+			}
 		}
 
 		if nm.Spec.VolumeMounts != nil {

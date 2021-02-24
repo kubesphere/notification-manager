@@ -38,6 +38,7 @@ type WechatReceiverStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,shortName=wcr
+// +kubebuilder:subresource:status
 
 // WechatReceiver is the Schema for the wechatreceivers API
 type WechatReceiver struct {
