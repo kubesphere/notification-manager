@@ -61,7 +61,7 @@ type NotificationManagerSpec struct {
 	DefaultConfigSelector *metav1.LabelSelector `json:"defaultConfigSelector,omitempty"`
 	// Receivers to send notifications to
 	Receivers *ReceiversSpec `json:"receivers"`
-	// The default namespace which the secret be in.
+	// The default namespace to which notification manager secrets belong.
 	DefaultSecretNamespace string `json:"defaultSecretNamespace,omitempty"`
 	// List of volumes that can be mounted by containers belonging to the pod.
 	Volumes []v1.Volume `json:"volumes,omitempty"`

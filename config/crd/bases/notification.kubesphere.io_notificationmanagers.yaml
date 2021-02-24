@@ -686,7 +686,8 @@ spec:
                     type: object
                 type: object
               defaultSecretNamespace:
-                description: The default namespace which the secret be in.
+                description: The default namespace to which notification manager secrets
+                  belong
                 type: string
               image:
                 description: Docker Image used to start Notification Manager container,
