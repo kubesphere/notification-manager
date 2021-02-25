@@ -10,6 +10,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: SlackReceiver
     listKind: SlackReceiverList
     plural: slackreceivers
@@ -18,7 +20,7 @@ spec:
     singular: slackreceiver
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: SlackReceiver is the Schema for the slackreceivers API

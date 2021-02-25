@@ -1,4 +1,4 @@
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: WechatConfig
 metadata:
   name: default-wechat-config

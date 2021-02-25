@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/apis/v2"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2alpha1"
 	"k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -65,7 +65,7 @@ type Config struct {
 	resourceFactory        map[string]factory
 	// Receiver config for each tenant user, in form of map[tenantID]map[type/name]Receiver
 	receivers    map[string]map[string]Receiver
-	ReceiverOpts *v2.Options
+	ReceiverOpts *v2alpha1.Options
 	// Channel to receive receiver create/update/delete operations and then update receivers
 	ch chan *param
 	// The pod's namespace
@@ -86,13 +86,13 @@ type param struct {
 	obj                    interface{}
 	receiver               Receiver
 	isConfig               bool
-	ReceiverOpts           *v2.Options
+	ReceiverOpts           *v2alpha1.Options
 	done                   chan interface{}
 }
 
 func New(ctx context.Context, logger log.Logger) (*Config, error) {
 	scheme := runtime.NewScheme()
-	_ = v2.AddToScheme(scheme)
+	_ = v2alpha1.AddToScheme(scheme)
 	_ = v1.AddToScheme(scheme)
 	_ = rbacv1.AddToScheme(scheme)
 
@@ -133,68 +133,68 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 
 	register(dingtalk, NewDingTalkReceiver,
 		func() runtime.Object {
-			return &v2.DingTalkReceiver{}
+			return &v2alpha1.DingTalkReceiver{}
 		},
 		func() runtime.Object {
-			return &v2.DingTalkReceiverList{}
+			return &v2alpha1.DingTalkReceiverList{}
 		},
 		func() runtime.Object {
-			return &v2.DingTalkConfig{}
+			return &v2alpha1.DingTalkConfig{}
 		},
 		func() runtime.Object {
-			return &v2.DingTalkConfigList{}
+			return &v2alpha1.DingTalkConfigList{}
 		})
 	register(email, NewEmailReceiver,
 		func() runtime.Object {
-			return &v2.EmailReceiver{}
+			return &v2alpha1.EmailReceiver{}
 		},
 		func() runtime.Object {
-			return &v2.EmailReceiverList{}
+			return &v2alpha1.EmailReceiverList{}
 		},
 		func() runtime.Object {
-			return &v2.EmailConfig{}
+			return &v2alpha1.EmailConfig{}
 		},
 		func() runtime.Object {
-			return &v2.EmailConfigList{}
+			return &v2alpha1.EmailConfigList{}
 		})
 	register(slack, NewSlackReceiver,
 		func() runtime.Object {
-			return &v2.SlackReceiver{}
+			return &v2alpha1.SlackReceiver{}
 		},
 		func() runtime.Object {
-			return &v2.SlackReceiverList{}
+			return &v2alpha1.SlackReceiverList{}
 		},
 		func() runtime.Object {
-			return &v2.SlackConfig{}
+			return &v2alpha1.SlackConfig{}
 		},
 		func() runtime.Object {
-			return &v2.SlackConfigList{}
+			return &v2alpha1.SlackConfigList{}
 		})
 	register(webhook, NewWebhookReceiver,
 		func() runtime.Object {
-			return &v2.WebhookReceiver{}
+			return &v2alpha1.WebhookReceiver{}
 		},
 		func() runtime.Object {
-			return &v2.WebhookReceiverList{}
+			return &v2alpha1.WebhookReceiverList{}
 		},
 		func() runtime.Object {
-			return &v2.WebhookConfig{}
+			return &v2alpha1.WebhookConfig{}
 		},
 		func() runtime.Object {
-			return &v2.WebhookConfigList{}
+			return &v2alpha1.WebhookConfigList{}
 		})
 	register(wechat, NewWechatReceiver,
 		func() runtime.Object {
-			return &v2.WechatReceiver{}
+			return &v2alpha1.WechatReceiver{}
 		},
 		func() runtime.Object {
-			return &v2.WechatReceiverList{}
+			return &v2alpha1.WechatReceiverList{}
 		},
 		func() runtime.Object {
-			return &v2.WechatConfig{}
+			return &v2alpha1.WechatConfig{}
 		},
 		func() runtime.Object {
-			return &v2.WechatConfigList{}
+			return &v2alpha1.WechatConfigList{}
 		})
 
 	ns := os.Getenv(nsEnvironment)
@@ -263,7 +263,7 @@ func (c *Config) Run() error {
 	}()
 
 	// Setup informer for NotificationManager
-	nmInf, err := c.cache.GetInformer(&v2.NotificationManager{})
+	nmInf, err := c.cache.GetInformer(&v2alpha1.NotificationManager{})
 	if err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to get informer for NotificationManager", "err", err)
 		return err
@@ -554,7 +554,7 @@ func (c *Config) RcvsFromNs(namespace *string) []Receiver {
 }
 
 func (c *Config) onNmAdd(obj interface{}) {
-	if nm, ok := obj.(*v2.NotificationManager); ok {
+	if nm, ok := obj.(*v2alpha1.NotificationManager); ok {
 		p := &param{}
 		p.op = opAdd
 		p.name = nm.Name
@@ -625,7 +625,7 @@ func (c *Config) updateReloadTimestamp() {
 }
 
 func (c *Config) onNmDel(obj interface{}) {
-	if _, ok := obj.(*v2.NotificationManager); ok {
+	if _, ok := obj.(*v2alpha1.NotificationManager); ok {
 		p := &param{}
 		p.op = opDel
 		p.opType = notificationManager
@@ -744,7 +744,7 @@ func (c *Config) OutputReceiver(tenant, receiver string) interface{} {
 	return m
 }
 
-func (c *Config) GetSecretData(selector *v2.SecretKeySelector) (string, error) {
+func (c *Config) GetSecretData(selector *v2alpha1.SecretKeySelector) (string, error) {
 
 	if selector == nil {
 		return "", fmt.Errorf("SecretKeySelector is nil")

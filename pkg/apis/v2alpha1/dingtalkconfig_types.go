@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package v2alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +39,7 @@ type DingTalkConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster,shortName=dc
+// +kubebuilder:resource:scope=Cluster,shortName=dc,categories=notification-manager
 // +kubebuilder:subresource:status
 
 // DingTalkConfig is the Schema for the dingtalkconfigs API

@@ -10,6 +10,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: WechatReceiver
     listKind: WechatReceiverList
     plural: wechatreceivers
@@ -18,7 +20,7 @@ spec:
     singular: wechatreceiver
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: WechatReceiver is the Schema for the wechatreceivers API
