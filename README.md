@@ -403,12 +403,13 @@ metadata:
     app: notification-manager
     type: default
 spec:
-  appkey: 
-    key: appkey
-    name: default-dingtalk-secret
-  appsecret:
-    key: appsecret
-    name: default-dingtalk-secret
+  conversation:
+    appkey: 
+      key: appkey
+      name: default-dingtalk-secret
+    appsecret:
+      key: appsecret
+      name: default-dingtalk-secret
 
 ---
 apiVersion: notification.kubesphere.io/v2alpha1
@@ -465,7 +466,6 @@ metadata:
   labels:
     app: notification-manager
     type: tenant
-    namespace: default
   name: user1-email-config
 spec:
   authPassword:
@@ -484,13 +484,11 @@ metadata:
   labels:
     app: notification-manager
     type: tenant
-    namespace: default
   name: user1-email-receiver
 spec:
   emailConfigSelector:
     matchLabels:
       type: tenant
-      namespace: default
   to:
   - receiver3@xyz.com
   - receiver4@xyz.com
