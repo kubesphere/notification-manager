@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package v2alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +29,7 @@ type WebhookConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster,shortName=wc
+// +kubebuilder:resource:scope=Cluster,shortName=wc,categories=notification-manager
 // +kubebuilder:subresource:status
 
 // WebhookConfig is the Schema for the webhookconfigs API

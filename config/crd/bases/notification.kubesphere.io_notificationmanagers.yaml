@@ -10,6 +10,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: NotificationManager
     listKind: NotificationManagerList
     plural: notificationmanagers
@@ -18,7 +20,7 @@ spec:
     singular: notificationmanager
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: NotificationManager is the Schema for the notificationmanagers
@@ -687,7 +689,7 @@ spec:
                 type: object
               defaultSecretNamespace:
                 description: The default namespace to which notification manager secrets
-                  belong
+                  belong.
                 type: string
               image:
                 description: Docker Image used to start Notification Manager container,

@@ -7,6 +7,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: DingTalkConfig
     listKind: DingTalkConfigList
     plural: dingtalkconfigs
@@ -15,7 +17,7 @@ spec:
     singular: dingtalkconfig
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: DingTalkConfig is the Schema for the dingtalkconfigs API
@@ -90,6 +92,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: DingTalkReceiver
     listKind: DingTalkReceiverList
     plural: dingtalkreceivers
@@ -98,7 +102,7 @@ spec:
     singular: dingtalkreceiver
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: DingTalkReceiver is the Schema for the dingtalkreceivers API
@@ -248,6 +252,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: EmailConfig
     listKind: EmailConfigList
     plural: emailconfigs
@@ -256,7 +262,7 @@ spec:
     singular: emailconfig
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: EmailConfig is the Schema for the emailconfigs API
@@ -415,6 +421,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: EmailReceiver
     listKind: EmailReceiverList
     plural: emailreceivers
@@ -423,7 +431,7 @@ spec:
     singular: emailreceiver
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: EmailReceiver is the Schema for the emailreceivers API
@@ -531,6 +539,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: NotificationManager
     listKind: NotificationManagerList
     plural: notificationmanagers
@@ -539,7 +549,7 @@ spec:
     singular: notificationmanager
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: NotificationManager is the Schema for the notificationmanagers API
@@ -932,7 +942,7 @@ spec:
                     type: object
                 type: object
               defaultSecretNamespace:
-                description: The default namespace to which notification manager secrets belong
+                description: The default namespace to which notification manager secrets belong.
                 type: string
               image:
                 description: Docker Image used to start Notification Manager container, for example kubesphere/notification-manager:v0.1.0
@@ -2053,6 +2063,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: SlackConfig
     listKind: SlackConfigList
     plural: slackconfigs
@@ -2061,7 +2073,7 @@ spec:
     singular: slackconfig
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: SlackConfig is the Schema for the slackconfigs API
@@ -2117,6 +2129,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: SlackReceiver
     listKind: SlackReceiverList
     plural: slackreceivers
@@ -2125,7 +2139,7 @@ spec:
     singular: slackreceiver
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: SlackReceiver is the Schema for the slackreceivers API
@@ -2231,6 +2245,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: WebhookConfig
     listKind: WebhookConfigList
     plural: webhookconfigs
@@ -2239,7 +2255,7 @@ spec:
     singular: webhookconfig
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: WebhookConfig is the Schema for the webhookconfigs API
@@ -2279,6 +2295,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: WebhookReceiver
     listKind: WebhookReceiverList
     plural: webhookreceivers
@@ -2287,7 +2305,7 @@ spec:
     singular: webhookreceiver
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: WebhookReceiver is the Schema for the webhookreceivers API
@@ -2518,6 +2536,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: WechatConfig
     listKind: WechatConfigList
     plural: wechatconfigs
@@ -2526,7 +2546,7 @@ spec:
     singular: wechatconfig
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: WechatConfig is the Schema for the wechatconfigs API
@@ -2595,6 +2615,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: WechatReceiver
     listKind: WechatReceiverList
     plural: wechatreceivers
@@ -2603,7 +2625,7 @@ spec:
     singular: wechatreceiver
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: WechatReceiver is the Schema for the wechatreceivers API

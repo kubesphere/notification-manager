@@ -10,6 +10,8 @@ metadata:
 spec:
   group: notification.kubesphere.io
   names:
+    categories:
+    - notification-manager
     kind: WebhookReceiver
     listKind: WebhookReceiverList
     plural: webhookreceivers
@@ -18,7 +20,7 @@ spec:
     singular: webhookreceiver
   scope: Cluster
   versions:
-  - name: v2
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         description: WebhookReceiver is the Schema for the webhookreceivers API

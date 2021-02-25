@@ -140,7 +140,7 @@ metadata:
   namespace: kubesphere-monitoring-system
 type: Opaque
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: DingTalkConfig
 metadata:
   labels:
@@ -157,7 +157,7 @@ spec:
       key: appsecret
       name: default-dingtalk-secret
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: DingTalkReceiver
 metadata:
   labels:
@@ -178,7 +178,7 @@ spec:
   conversation:
     chatid: chat894f9f4d634eb283933af6c7102977b2
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: EmailConfig
 metadata:
   labels:
@@ -197,7 +197,7 @@ spec:
     host: imap.xyz.com
     port: "25"
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: EmailConfig
 metadata:
   labels:
@@ -217,7 +217,7 @@ spec:
     host: imap.xyz.com
     port: "25"
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: EmailReceiver
 metadata:
   labels:
@@ -230,7 +230,7 @@ spec:
   - receiver1@xyz.com
   - receiver2@xyz.com
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: EmailReceiver
 metadata:
   labels:
@@ -248,7 +248,7 @@ spec:
   - receiver3@xyz.com
   - receiver4@xyz.com
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: NotificationManager
 metadata:
   labels:
@@ -303,7 +303,7 @@ spec:
       name: noification-manager-template
     name: noification-manager-template
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: SlackConfig
 metadata:
   labels:
@@ -316,7 +316,7 @@ spec:
     key: token
     name: slack-token-secret
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: SlackReceiver
 metadata:
   labels:
@@ -330,7 +330,7 @@ spec:
     matchLabels:
       type: default
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: WebhookConfig
 metadata:
   labels:
@@ -339,7 +339,7 @@ metadata:
   name: default-webhook-config
   namespace: kubesphere-monitoring-system
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: WebhookReceiver
 metadata:
   labels:
@@ -353,7 +353,7 @@ spec:
     matchLabels:
       type: default
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: WechatConfig
 metadata:
   labels:
@@ -369,7 +369,7 @@ spec:
     name: wechat-api-secret
   wechatApiUrl: wechat-api-url
 ---
-apiVersion: notification.kubesphere.io/v2
+apiVersion: notification.kubesphere.io/v2alpha1
 kind: WechatReceiver
 metadata:
   labels:

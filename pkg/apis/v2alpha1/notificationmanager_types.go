@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package v2alpha1
 
 import (
 	"k8s.io/api/core/v1"
@@ -187,7 +187,7 @@ type NotificationManagerStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster,shortName=nm
+// +kubebuilder:resource:scope=Cluster,shortName=nm,categories=notification-manager
 // +kubebuilder:subresource:status
 
 // NotificationManager is the Schema for the notificationmanagers API

@@ -17,7 +17,7 @@ limitations under the License.
 // Package v2 contains API Schema definitions for the notification v1alpha1 API group
 // +kubebuilder:object:generate=true
 // +groupName=notification.kubesphere.io
-package v2
+package v2alpha1
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"

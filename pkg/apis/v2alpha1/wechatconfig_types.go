@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package v2alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +37,7 @@ type WechatConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster,shortName=wcc
+// +kubebuilder:resource:scope=Cluster,shortName=wcc,categories=notification-manager
 // +kubebuilder:subresource:status
 
 // WechatConfig is the Schema for the wechatconfigs API

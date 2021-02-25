@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package v2alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,7 +51,7 @@ type EmailConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster,shortName=ec
+// +kubebuilder:resource:scope=Cluster,shortName=ec,categories=notification-manager
 // +kubebuilder:subresource:status
 
 // EmailConfig is the Schema for the emailconfigs API

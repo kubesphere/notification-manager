@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package v2alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +31,7 @@ type SlackConfigStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster,shortName=sc
+// +kubebuilder:resource:scope=Cluster,shortName=sc,categories=notification-manager
 // +kubebuilder:subresource:status
 
 // SlackConfig is the Schema for the slackconfigs API

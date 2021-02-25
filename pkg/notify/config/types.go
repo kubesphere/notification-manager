@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/apis/v2"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,15 +60,15 @@ type DingTalk struct {
 }
 
 type DingTalkConfig struct {
-	AppKey    *v2.SecretKeySelector
-	AppSecret *v2.SecretKeySelector
+	AppKey    *v2alpha1.SecretKeySelector
+	AppSecret *v2alpha1.SecretKeySelector
 }
 
 // Configuration of ChatBot
 type DingTalkChatBot struct {
-	Webhook  *v2.SecretKeySelector
+	Webhook  *v2alpha1.SecretKeySelector
 	Keywords []string
-	Secret   *v2.SecretKeySelector
+	Secret   *v2alpha1.SecretKeySelector
 }
 
 func NewDingTalkReceiver() Receiver {
@@ -99,7 +99,7 @@ func (d *DingTalk) SetConfig(obj interface{}) error {
 
 func (d *DingTalk) GenerateConfig(c *Config, obj interface{}) {
 
-	dc, ok := obj.(*v2.DingTalkConfig)
+	dc, ok := obj.(*v2alpha1.DingTalkConfig)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate dingtalk config error, wrong config type")
 		return
@@ -123,7 +123,7 @@ func (d *DingTalk) GenerateConfig(c *Config, obj interface{}) {
 
 func (d *DingTalk) GenerateReceiver(c *Config, obj interface{}) {
 
-	dr, ok := obj.(*v2.DingTalkReceiver)
+	dr, ok := obj.(*v2alpha1.DingTalkReceiver)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate dingtalk receiver error, wrong receiver type")
 		return
@@ -143,7 +143,7 @@ func (d *DingTalk) GenerateReceiver(c *Config, obj interface{}) {
 		}
 	}
 
-	dcList := v2.DingTalkConfigList{}
+	dcList := v2alpha1.DingTalkConfigList{}
 	dcSel, _ := metav1.LabelSelectorAsSelector(dr.Spec.DingTalkConfigSelector)
 	if err := c.cache.List(c.ctx, &dcList, client.MatchingLabelsSelector{Selector: dcSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list DingTalkConfig", "err", err)
@@ -168,14 +168,14 @@ type Email struct {
 
 type EmailConfig struct {
 	From         string
-	SmartHost    v2.HostPort
+	SmartHost    v2alpha1.HostPort
 	Hello        string
 	AuthUsername string
 	AuthIdentify string
-	AuthPassword *v2.SecretKeySelector
-	AuthSecret   *v2.SecretKeySelector
+	AuthPassword *v2alpha1.SecretKeySelector
+	AuthSecret   *v2alpha1.SecretKeySelector
 	RequireTLS   bool
-	TLS          *v2.TLSConfig
+	TLS          *v2alpha1.TLSConfig
 }
 
 func NewEmailReceiver() Receiver {
@@ -213,7 +213,7 @@ func (e *Email) SetConfig(obj interface{}) error {
 
 func (e *Email) GenerateConfig(c *Config, obj interface{}) {
 
-	ec, ok := obj.(*v2.EmailConfig)
+	ec, ok := obj.(*v2alpha1.EmailConfig)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate email config error, wrong config type")
 		return
@@ -252,7 +252,7 @@ func (e *Email) GenerateConfig(c *Config, obj interface{}) {
 
 func (e *Email) GenerateReceiver(c *Config, obj interface{}) {
 
-	er, ok := obj.(*v2.EmailReceiver)
+	er, ok := obj.(*v2alpha1.EmailReceiver)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate email receiver error, wrong receiver type")
 		return
@@ -261,7 +261,7 @@ func (e *Email) GenerateReceiver(c *Config, obj interface{}) {
 	e.To = er.Spec.To
 	e.Selector = er.Spec.AlertSelector
 
-	ecList := v2.EmailConfigList{}
+	ecList := v2alpha1.EmailConfigList{}
 	ecSel, _ := metav1.LabelSelectorAsSelector(er.Spec.EmailConfigSelector)
 	if err := c.cache.List(c.ctx, &ecList, client.MatchingLabelsSelector{Selector: ecSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list EmailConfig", "err", err)
@@ -286,7 +286,7 @@ type Slack struct {
 
 type SlackConfig struct {
 	// The token of user or bot.
-	Token *v2.SecretKeySelector
+	Token *v2alpha1.SecretKeySelector
 }
 
 func NewSlackReceiver() Receiver {
@@ -317,7 +317,7 @@ func (s *Slack) SetConfig(obj interface{}) error {
 
 func (s *Slack) GenerateConfig(c *Config, obj interface{}) {
 
-	sc, ok := obj.(*v2.SlackConfig)
+	sc, ok := obj.(*v2alpha1.SlackConfig)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate slack config error, wrong config type")
 		return
@@ -337,13 +337,13 @@ func (s *Slack) GenerateConfig(c *Config, obj interface{}) {
 
 func (s *Slack) GenerateReceiver(c *Config, obj interface{}) {
 
-	sr, ok := obj.(*v2.SlackReceiver)
+	sr, ok := obj.(*v2alpha1.SlackReceiver)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate slack receiver error, wrong receiver type")
 		return
 	}
 
-	scList := v2.SlackConfigList{}
+	scList := v2alpha1.SlackConfigList{}
 	scSel, _ := metav1.LabelSelectorAsSelector(sr.Spec.SlackConfigSelector)
 	if err := c.cache.List(c.ctx, &scList, client.MatchingLabelsSelector{Selector: scSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list SlackConfig", "err", err)
@@ -366,7 +366,7 @@ func (s *Slack) GenerateReceiver(c *Config, obj interface{}) {
 type Webhook struct {
 	// `url` gives the location of the webhook, in standard URL form.
 	URL           string
-	HttpConfig    *v2.HTTPClientConfig
+	HttpConfig    *v2alpha1.HTTPClientConfig
 	WebhookConfig *WebhookConfig
 	Selector      *metav1.LabelSelector
 	*common
@@ -408,7 +408,7 @@ func (w *Webhook) GenerateConfig(_ *Config, _ interface{}) {
 
 func (w *Webhook) GenerateReceiver(c *Config, obj interface{}) {
 
-	wr, ok := obj.(*v2.WebhookReceiver)
+	wr, ok := obj.(*v2alpha1.WebhookReceiver)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate webhook receiver error, wrong receiver type")
 		return
@@ -450,7 +450,7 @@ type Wechat struct {
 }
 
 type WechatConfig struct {
-	APISecret *v2.SecretKeySelector
+	APISecret *v2alpha1.SecretKeySelector
 	CorpID    string
 	APIURL    string
 	AgentID   string
@@ -483,7 +483,7 @@ func (w *Wechat) SetConfig(obj interface{}) error {
 }
 
 func (w *Wechat) GenerateConfig(c *Config, obj interface{}) {
-	wc, ok := obj.(*v2.WechatConfig)
+	wc, ok := obj.(*v2alpha1.WechatConfig)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate wechat config error, wrong config type")
 		return
@@ -504,13 +504,13 @@ func (w *Wechat) GenerateConfig(c *Config, obj interface{}) {
 
 func (w *Wechat) GenerateReceiver(c *Config, obj interface{}) {
 
-	wr, ok := obj.(*v2.WechatReceiver)
+	wr, ok := obj.(*v2alpha1.WechatReceiver)
 	if !ok {
 		_ = level.Warn(c.logger).Log("msg", "generate wechat receiver error, wrong receiver type")
 		return
 	}
 
-	wcList := v2.WechatConfigList{}
+	wcList := v2alpha1.WechatConfigList{}
 	wcSel, _ := metav1.LabelSelectorAsSelector(wr.Spec.WechatConfigSelector)
 	if err := c.cache.List(c.ctx, &wcList, client.MatchingLabelsSelector{Selector: wcSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list WechatConfig", "err", err)
