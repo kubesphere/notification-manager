@@ -73,10 +73,10 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 			continue
 		}
 
-		if receiver.WebhookConfig == nil {
-			_ = level.Warn(logger).Log("msg", "WebhookNotifier: ignore receiver because of empty config")
-			continue
-		}
+		//if receiver.WebhookConfig == nil {
+		//	_ = level.Warn(logger).Log("msg", "WebhookNotifier: ignore receiver because of empty config")
+		//	continue
+		//}
 
 		n.webhooks = append(n.webhooks, receiver)
 	}

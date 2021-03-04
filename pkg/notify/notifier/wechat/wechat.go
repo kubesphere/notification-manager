@@ -49,7 +49,7 @@ type weChatMessage struct {
 	Text    weChatMessageContent `yaml:"text,omitempty" json:"text,omitempty"`
 	ToUser  string               `yaml:"touser,omitempty" json:"touser,omitempty"`
 	ToParty string               `yaml:"toparty,omitempty" json:"toparty,omitempty"`
-	Totag   string               `yaml:"totag,omitempty" json:"totag,omitempty"`
+	ToTag   string               `yaml:"totag,omitempty" json:"totag,omitempty"`
 	AgentID string               `yaml:"agentid,omitempty" json:"agentid,omitempty"`
 	Safe    string               `yaml:"safe,omitempty" json:"safe,omitempty"`
 	Type    string               `yaml:"msgtype,omitempty" json:"msgtype,omitempty"`
@@ -171,7 +171,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			},
 			ToUser:  w.ToUser,
 			ToParty: w.ToParty,
-			Totag:   w.ToTag,
+			ToTag:   w.ToTag,
 			AgentID: w.WechatConfig.AgentID,
 			Type:    "text",
 			Safe:    "0",
