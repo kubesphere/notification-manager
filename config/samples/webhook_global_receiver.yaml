@@ -1,11 +1,12 @@
 apiVersion: notification.kubesphere.io/v2alpha1
-kind: WebhookReceiver
+kind: Receiver
 metadata:
   name: admin-webhook
   labels:
     type: global
 spec:
-  webhookConfigSelector:
-    matchLabels:
-      type: default
-  url: xxx
+  webhook:
+    webhookConfigSelector:
+      matchLabels:
+        type: default
+    url: xxx

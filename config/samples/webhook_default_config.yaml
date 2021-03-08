@@ -1,5 +1,5 @@
 apiVersion: notification.kubesphere.io/v2alpha1
-kind: WebhookConfig
+kind: Config
 metadata:
   name: default-webhook-config
   labels:

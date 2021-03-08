@@ -1,13 +1,13 @@
-# permissions for end users to edit wechatconfigs.
+# permissions for end users to edit emailconfigs.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: wechatconfig-editor-role
+  name: config-editor-role
 rules:
 - apiGroups:
   - notification.kubesphere.io
   resources:
-  - wechatconfigs
+  - configs
   verbs:
   - create
   - delete
@@ -19,6 +19,6 @@ rules:
 - apiGroups:
   - notification.kubesphere.io
   resources:
-  - wechatconfigs/status
+  - configs/status
   verbs:
   - get

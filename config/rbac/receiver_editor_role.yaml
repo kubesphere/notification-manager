@@ -1,13 +1,13 @@
-# permissions for end users to edit webhookconfigs.
+# permissions for end users to edit emailreceivers.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: webhookconfig-editor-role
+  name: receiver-editor-role
 rules:
 - apiGroups:
   - notification.kubesphere.io
   resources:
-  - webhookconfigs
+  - receivers
   verbs:
   - create
   - delete
@@ -19,6 +19,6 @@ rules:
 - apiGroups:
   - notification.kubesphere.io
   resources:
-  - webhookconfigs/status
+  - receivers/status
   verbs:
   - get

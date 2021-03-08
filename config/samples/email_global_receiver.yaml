@@ -5,6 +5,7 @@ metadata:
   labels:
     type: global
 spec:
-  to:
-  - receiver1@xyz.com
-  - receiver2@xyz.com
+  email:
+    to:
+    - receiver1@xyz.com
+    - receiver2@xyz.com

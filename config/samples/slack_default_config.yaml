@@ -1,10 +1,11 @@
 apiVersion: notification.kubesphere.io/v2alpha1
-kind: SlackConfig
+kind: Config
 metadata:
   name: default-slack-config
   labels:
     type: default
 spec:
-  slackTokenSecret:
-    key: token
-    name: slack-token-secret
+  slack:
+    slackTokenSecret:
+      key: token
+      name: slack-token-secret

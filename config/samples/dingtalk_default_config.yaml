@@ -1,14 +1,15 @@
 apiVersion: notification.kubesphere.io/v2alpha1
-kind: DingTalkConfig
+kind: Config
 metadata:
   name: default-dingtalk-config
   labels:
     type: default
 spec:
-  conversation:
-    appkey:
-      key: appkey
-      name: default-dingtalk-secret
-    appsecret:
-      key: appsecret
-      name: default-dingtalk-secret
+  dingtalk:
+    conversation:
+      appkey:
+        key: appkey
+        name: default-dingtalk-secret
+      appsecret:
+        key: appsecret
+        name: default-dingtalk-secret

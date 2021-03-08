@@ -1,15 +1,16 @@
 apiVersion: notification.kubesphere.io/v2alpha1
-kind: EmailReceiver
+kind: Receiver
 metadata:
   name: user1-email-receiver
   labels:
     type: tenant
     user: user1
 spec:
-  to:
-  - receiver3@xyz.com
-  - receiver4@xyz.com
-  emailConfigSelector:
-    matchLabels:
-      type: tenant
-      user: user1 
+  email:
+    to:
+    - receiver3@xyz.com
+    - receiver4@xyz.com
+    emailConfigSelector:
+      matchLabels:
+        type: tenant
+        user: user1

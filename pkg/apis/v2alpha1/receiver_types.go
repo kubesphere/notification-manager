@@ -20,42 +20,50 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ClientCertificate struct {
-	// The client cert file for the targets.
-	Cert *SecretKeySelector `json:"cert,omitempty"`
-	// The client key file for the targets.
-	Key *SecretKeySelector `json:"key,omitempty"`
+// Configuration of ChatBot
+type DingTalkChatBot struct {
+	// The webhook of ChatBot which the message will send to.
+	Webhook *SecretKeySelector `json:"webhook"`
+
+	// Custom keywords of ChatBot
+	Keywords []string `json:"keywords,omitempty"`
+
+	// Secret of ChatBot, you can get it after enabled Additional Signature of ChatBot.
+	Secret *SecretKeySelector `json:"secret,omitempty"`
 }
 
-// TLSConfig configures the options for TLS connections.
-type TLSConfig struct {
-	// RootCA defines the root certificate authorities
-	// that clients use when verifying server certificates.
-	RootCA *SecretKeySelector `json:"rootCA,omitempty"`
-	// The certificate of the client.
-	*ClientCertificate `json:"clientCertificate,omitempty"`
-	// Used to verify the hostname for the targets.
-	ServerName string `json:"serverName,omitempty"`
-	// Disable target certificate validation.
-	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
+// Configuration of conversation
+type DingTalkConversation struct {
+	ChatID string `json:"chatid"`
 }
 
-// BasicAuth contains basic HTTP authentication credentials.
-type BasicAuth struct {
-	Username string             `json:"username"`
-	Password *SecretKeySelector `json:"password,omitempty"`
+type DingTalkReceiver struct {
+	// DingTalkConfig to be selected for this receiver
+	DingTalkConfigSelector *metav1.LabelSelector `json:"dingtalkConfigSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	// Be careful, a ChatBot only can send 20 message per minute.
+	ChatBot *DingTalkChatBot `json:"chatbot,omitempty"`
+	// The conversation which message will send to.
+	Conversation *DingTalkConversation `json:"conversation,omitempty"`
 }
 
-// HTTPClientConfig configures an HTTP client.
-type HTTPClientConfig struct {
-	// The HTTP basic authentication credentials for the targets.
-	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
-	// The bearer token for the targets.
-	BearerToken *SecretKeySelector `json:"bearerToken,omitempty"`
-	// HTTP proxy server to use to connect to the targets.
-	ProxyURL string `json:"proxyUrl,omitempty"`
-	// TLSConfig to use to connect to the targets.
-	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
+type EmailReceiver struct {
+	// Receivers' email addresses
+	To []string `json:"to"`
+	// EmailConfig to be selected for this receiver
+	EmailConfigSelector *metav1.LabelSelector `json:"emailConfigSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+}
+
+type SlackReceiver struct {
+	// SlackConfig to be selected for this receiver
+	SlackConfigSelector *metav1.LabelSelector `json:"slackConfigSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	// The channel or user to send notifications to.
+	Channel string `json:"channel"`
 }
 
 // ServiceReference holds a reference to Service.legacy.k8s.io
@@ -84,8 +92,7 @@ type ServiceReference struct {
 	Scheme *string `json:"scheme,omitempty"`
 }
 
-// WebhookReceiverSpec defines the desired state of WebhookReceiver
-type WebhookReceiverSpec struct {
+type WebhookReceiver struct {
 	// WebhookConfig to be selected for this receiver
 	WebhookConfigSelector *metav1.LabelSelector `json:"webhookConfigSelector,omitempty"`
 	// Selector to filter alerts.
@@ -128,32 +135,52 @@ type WebhookReceiverSpec struct {
 	HTTPConfig *HTTPClientConfig `json:"httpConfig,omitempty"`
 }
 
-// WebhookReceiverStatus defines the observed state of WebhookReceiver
-type WebhookReceiverStatus struct {
+type WechatReceiver struct {
+	// WechatConfig to be selected for this receiver
+	WechatConfigSelector *metav1.LabelSelector `json:"wechatConfigSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	// +optional
+	ToUser  string `json:"toUser,omitempty"`
+	ToParty string `json:"toParty,omitempty"`
+	ToTag   string `json:"toTag,omitempty"`
+}
+
+//ReceiverSpec defines the desired state of Receiver
+type ReceiverSpec struct {
+	DingTalk *DingTalkReceiver `json:"dingtalk,omitempty"`
+	Email    *EmailReceiver    `json:"email,omitempty"`
+	Slack    *SlackReceiver    `json:"slack,omitempty"`
+	Webhook  *WebhookReceiver  `json:"webhook,omitempty"`
+	Wechat   *WechatReceiver   `json:"wechat,omitempty"`
+}
+
+// ReceiverStatus defines the observed state of Receiver
+type ReceiverStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster,shortName=wr,categories=notification-manager
+// +kubebuilder:resource:scope=Cluster,shortName=nr,categories=notification-manager
 // +kubebuilder:subresource:status
 
-// WebhookReceiver is the Schema for the webhookreceivers API
-type WebhookReceiver struct {
+// Receiver is the Schema for the receivers API
+type Receiver struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   WebhookReceiverSpec   `json:"spec,omitempty"`
-	Status WebhookReceiverStatus `json:"status,omitempty"`
+	Spec   ReceiverSpec   `json:"spec,omitempty"`
+	Status ReceiverStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// WebhookReceiverList contains a list of WebhookReceiver
-type WebhookReceiverList struct {
+// ReceiverList contains a list of Receiver
+type ReceiverList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []WebhookReceiver `json:"items"`
+	Items           []Receiver `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&WebhookReceiver{}, &WebhookReceiverList{})
+	SchemeBuilder.Register(&Receiver{}, &ReceiverList{})
 }

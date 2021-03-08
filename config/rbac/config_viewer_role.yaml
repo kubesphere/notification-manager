@@ -1,13 +1,13 @@
-# permissions for end users to view wechatreceivers.
+# permissions for end users to view emailconfigs.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: wechatreceiver-viewer-role
+  name: config-viewer-role
 rules:
 - apiGroups:
   - notification.kubesphere.io
   resources:
-  - wechatreceivers
+  - configs
   verbs:
   - get
   - list
@@ -15,6 +15,6 @@ rules:
 - apiGroups:
   - notification.kubesphere.io
   resources:
-  - wechatreceivers/status
+  - configs/status
   verbs:
   - get

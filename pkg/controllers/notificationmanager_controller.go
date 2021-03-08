@@ -57,7 +57,7 @@ type NotificationManagerReconciler struct {
 
 // Reconcile reads that state of NotificationManager objects and makes changes based on the state read
 // and what is in the NotificationManagerSpec
-// +kubebuilder:rbac:groups=notification.kubesphere.io,resources=notificationmanagers;receivers;dingtalkconfigs;dingtalkreceivers;emailconfigs;emailreceivers;webhookconfigs;webhookreceivers;wechatconfigs;wechatreceivers;slackconfigs;slackreceivers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=notification.kubesphere.io,resources=notificationmanagers;receivers;configs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=notification.kubesphere.io,resources=notificationmanagers/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete

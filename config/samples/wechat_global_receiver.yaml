@@ -1,15 +1,13 @@
 apiVersion: notification.kubesphere.io/v2alpha1
-kind: WechatReceiver
+kind: Receiver
 metadata:
   name: global-wechat-receiver
   labels:
     type: global
 spec:
-  wechatConfigSelector:
-    matchLabels:
-      type: default
-  # optional
-  # One of toUser, toParty, toParty should be specified.
-  toUser: abc
-  toParty: wechat-party
-  toTag: wechat-tag
+  wechat:
+    # optional
+    # One of toUser, toParty, toParty should be specified.
+    toUser: abc
+    toParty: wechat-party
+    toTag: wechat-tag
