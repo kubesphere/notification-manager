@@ -115,144 +115,6 @@ metadata:
   name: noification-manager-template
   namespace: kubesphere-monitoring-system
 ---
-apiVersion: v1
-data:
-  appkey: ZGluZ3RhbGthcHBrZXk=
-  appsecret: ZGluZ3RhbGthcHBzZWNyZXQ=
-  secret: ZGluZ3RhbGt3ZWJob29rc2VjcmV0
-  webhook: ZGluZ3RhbGt3ZWJob29r
-kind: Secret
-metadata:
-  labels:
-    app: notification-manager
-  name: default-dingtalk-secret
-  namespace: kubesphere-monitoring-system
-type: Opaque
----
-apiVersion: v1
-data:
-  password: dGVzdA==
-kind: Secret
-metadata:
-  labels:
-    app: notification-manager
-  name: default-email-secret
-  namespace: kubesphere-monitoring-system
-type: Opaque
----
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: Config
-metadata:
-  labels:
-    app: notification-manager
-    type: default
-  name: default-dingtalk-config
-  namespace: kubesphere-monitoring-system
-spec:
-  dingtalk:
-    conversation:
-      appkey:
-        key: appkey
-        name: default-dingtalk-secret
-      appsecret:
-        key: appsecret
-        name: default-dingtalk-secret
----
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: Config
-metadata:
-  labels:
-    app: notification-manager
-    type: default
-  name: default-email-config
-  namespace: kubesphere-monitoring-system
-spec:
-  email:
-    authPassword:
-      key: password
-      name: default-email-secret
-    authUsername: sender1
-    from: sender1@xyz.com
-    requireTLS: true
-    smartHost:
-      host: imap.xyz.com
-      port: "25"
----
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: Config
-metadata:
-  labels:
-    app: notification-manager
-    type: default
-  name: default-slack-config
-  namespace: kubesphere-monitoring-system
-spec:
-  slack:
-    slackTokenSecret:
-      key: token
-      name: slack-token-secret
----
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: Config
-metadata:
-  labels:
-    app: notification-manager
-    type: default
-  name: default-webhook-config
-  namespace: kubesphere-monitoring-system
----
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: Config
-metadata:
-  labels:
-    app: notification-manager
-    type: default
-  name: default-wechat-config
-  namespace: kubesphere-monitoring-system
-spec:
-  wechat:
-    wechatApiAgentId: wechat-api-agent-id
-    wechatApiCorpId: wechat-api-corp-id
-    wechatApiSecret:
-      key: wechat
-      name: wechat-api-secret
-    wechatApiUrl: wechat-api-url
----
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: Config
-metadata:
-  labels:
-    app: notification-manager
-    type: tenant
-    user: user1
-  name: user1-email-config
-  namespace: kubesphere-monitoring-system
-spec:
-  email:
-    authPassword:
-      key: password
-      name: default-email-secret
-    authUsername: sender1
-    from: sender1@xyz.com
-    requireTLS: true
-    smartHost:
-      host: imap.xyz.com
-      port: "25"
----
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: EmailReceiver
-metadata:
-  labels:
-    app: notification-manager
-    type: global
-  name: global-email-receiver
-  namespace: kubesphere-monitoring-system
-spec:
-  email:
-    to:
-    - receiver1@xyz.com
-    - receiver2@xyz.com
----
 apiVersion: notification.kubesphere.io/v2alpha1
 kind: NotificationManager
 metadata:
@@ -314,22 +176,7 @@ metadata:
   labels:
     app: notification-manager
     type: global
-  name: admin-webhook
-  namespace: kubesphere-monitoring-system
-spec:
-  webhook:
-    url: xxx
-    webhookConfigSelector:
-      matchLabels:
-        type: default
----
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: Receiver
-metadata:
-  labels:
-    app: notification-manager
-    type: global
-  name: global-dingtalk-receiver
+  name: global-receiver
   namespace: kubesphere-monitoring-system
 spec:
   dingtalk:
@@ -338,57 +185,87 @@ spec:
       - kubesphere
       secret:
         key: secret
-        name: default-dingtalk-secret
+        name: global-receiver-secret
       webhook:
         key: webhook
-        name: default-dingtalk-secret
+        name: global-receiver-secret
     conversation:
-      chatid: chat894f9f4d634eb283933af6c7102977b2
----
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: Receiver
-metadata:
-  labels:
-    app: notification-manager
-    type: global
-  name: global-slack-receiver
-  namespace: kubesphere-monitoring-system
-spec:
-  slack:
-    channel: slack_channel_x
-    slackConfigSelector:
-      matchLabels:
-        type: default
----
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: Receiver
-metadata:
-  labels:
-    app: notification-manager
-    type: global
-  name: global-wechat-receiver
-  namespace: kubesphere-monitoring-system
-spec:
-  wechat:
-    toParty: wechat-party
-    toTag: wechat-tag
-    toUser: abc
----
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: Receiver
-metadata:
-  labels:
-    app: notification-manager
-    type: tenant
-    user: user1
-  name: user1-email-receiver
-  namespace: kubesphere-monitoring-system
-spec:
+      chatids:
+      - chat894f9f4d634eb283933af6c7102977b2
   email:
-    emailConfigSelector:
-      matchLabels:
-        type: tenant
-        user: user1
     to:
-    - receiver3@xyz.com
-    - receiver4@xyz.com
+    - receiver1@xyz.com
+    - receiver2@xyz.com
+  slack:
+    channels:
+    - global
+  webhook:
+    httpConfig:
+      basicAuth:
+        password:
+          key: password
+          name: global-receiver-secret
+        username: user
+      tlsConfig:
+        clientCertificate:
+          cert:
+            key: cert
+            name: global-receiver-secret
+          key:
+            key: key
+            name: global-receiver-secret
+        insecureSkipVerify: false
+        rootCA:
+          key: ca
+          name: default-webhook-secret
+        serverName: '*'
+    url: https://sample-webhook.svc:443/
+  wechat:
+    toParty:
+    - party1
+    - party2
+    toTag:
+    - tag1
+    - tag2
+    toUser:
+    - user1
+    - user2
+---
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Config
+metadata:
+  labels:
+    app: notification-manager
+    type: default
+  name: default-config
+  namespace: kubesphere-monitoring-system
+spec:
+  dingtalk:
+    conversation:
+      appkey:
+        key: appkey
+        name: defalut-config-secret
+      appsecret:
+        key: appsecret
+        name: defalut-config-secret
+  email:
+    authPassword:
+      key: password
+      name: default-email-secret
+    authUsername: sender1
+    from: sender1@xyz.com
+    requireTLS: true
+    smartHost:
+      host: imap.xyz.com
+      port: 25
+  slack:
+    slackTokenSecret:
+      key: token
+      name: defalut-config-secret
+  wechat:
+    wechatApiAgentId: wechat-api-agent-id
+    wechatApiCorpId: wechat-api-corp-id
+    wechatApiSecret:
+      key: wechat
+      name: defalut-config-secret
+    wechatApiUrl: https://qyapi.weixin.qq.com/cgi-bin/

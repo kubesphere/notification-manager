@@ -64,7 +64,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubesphere/notification-manag
 #### Deploy Notification Manager
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: NotificationManager
 metadata:
   name: notification-manager
@@ -118,7 +118,7 @@ EOF
 #### Deploy the default EmailConfig and a global EmailReceiver
 ```
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Config
 metadata:
   labels:
@@ -137,7 +137,7 @@ spec:
       host: imap.xyz.com
       port: "25"
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
 metadata:
   labels:
@@ -146,6 +146,7 @@ metadata:
   name: global-email-receiver
 spec:
   email:
+    enabled: true
     # emailConfigSelector needn't to be configured for a global receiver
     to:
     - receiver1@xyz.com
@@ -167,7 +168,7 @@ EOF
 #### Deploy a tenant EmailConfig and a EmailReceiver
 ```
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Config
 metadata:
   labels:
@@ -187,7 +188,7 @@ spec:
       host: imap.xyz.com
       port: "25"
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
 metadata:
   labels:
@@ -223,7 +224,7 @@ EOF
 
 ```
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Config
 metadata:
   name: default-wechat-config
@@ -239,7 +240,7 @@ spec:
     wechatApiCorpId: < wechat-api-corp-id >
     wechatApiAgentId: < wechat-api-agent-id >
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
 metadata:
   name: global-wechat-receiver
@@ -276,7 +277,7 @@ EOF
 
 ```
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Config
 metadata:
   name: default-slack-config
@@ -289,7 +290,7 @@ spec:
       key: token
       name: < slack-token-secret >
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
 metadata:
   name: global-slack-receiver
@@ -335,7 +336,7 @@ metadata:
 type: Opaque
 
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Config
 metadata:
   name: default-webhook-config
@@ -344,7 +345,7 @@ metadata:
     type: default
 
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
 metadata:
   name: global-webhook-receiver
@@ -396,7 +397,7 @@ metadata:
 type: Opaque
 
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Config
 metadata:
   name: default-dingtalk-config
@@ -414,7 +415,7 @@ spec:
         name: default-dingtalk-secret
 
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
 metadata:
   name: global-dingtalk-receiver
@@ -450,7 +451,7 @@ Deploying Notification Manager in Kubernetes is similar to deploying it in KubeS
 First of all, change the `tenantKey` to `namespace` like this.
 
 ```
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: NotificationManager
 metadata:
   name: notification-manager
@@ -463,7 +464,7 @@ Secondly, change the label of receiver and config from `user: ${user}` to `names
 
 ```
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Config
 metadata:
   labels:
@@ -483,7 +484,7 @@ spec:
       host: imap.xyz.com
       port: "25"
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
 metadata:
   labels:
@@ -508,7 +509,7 @@ A receiver can filter alerts by setting a label selector, only alerts that match
 Here is a sample, this receiver will only receive alerts from auditing.
 
 ```
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
 metadata:
   labels:
@@ -533,7 +534,7 @@ It can set a global template, or set a template for each type of receivers. If t
 
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: NotificationManager
 metadata:
   name: notification-manager

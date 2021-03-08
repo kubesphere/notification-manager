@@ -17,7 +17,7 @@ spec:
     singular: config
   scope: Cluster
   versions:
-  - name: v2alpha1
+  - name: v2beta1
     schema:
       openAPIV3Schema:
         description: DingTalkConfig is the Schema for the dingtalkconfigs API
@@ -131,7 +131,7 @@ spec:
                       host:
                         type: string
                       port:
-                        type: string
+                        type: integer
                     required:
                     - host
                     - port
@@ -298,7 +298,7 @@ spec:
     singular: notificationmanager
   scope: Cluster
   versions:
-  - name: v2alpha1
+  - name: v2beta1
     schema:
       openAPIV3Schema:
         description: NotificationManager is the Schema for the notificationmanagers API
@@ -1822,7 +1822,7 @@ spec:
     singular: receiver
   scope: Cluster
   versions:
-  - name: v2alpha1
+  - name: v2beta1
     schema:
       openAPIV3Schema:
         description: Receiver is the Schema for the receivers API
@@ -1914,10 +1914,12 @@ spec:
                   conversation:
                     description: The conversation which message will send to.
                     properties:
-                      chatid:
-                        type: string
+                      chatids:
+                        items:
+                          type: string
+                        type: array
                     required:
-                    - chatid
+                    - chatids
                     type: object
                   dingtalkConfigSelector:
                     description: DingTalkConfig to be selected for this receiver
@@ -1949,6 +1951,9 @@ spec:
                         description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
+                  enabled:
+                    description: whether the receiver is enabled
+                    type: boolean
                 type: object
               email:
                 properties:
@@ -2012,6 +2017,9 @@ spec:
                         description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
+                  enabled:
+                    description: whether the receiver is enabled
+                    type: boolean
                   to:
                     description: Receivers' email addresses
                     items:
@@ -2052,9 +2060,14 @@ spec:
                         description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
-                  channel:
+                  channels:
                     description: The channel or user to send notifications to.
-                    type: string
+                    items:
+                      type: string
+                    type: array
+                  enabled:
+                    description: whether the receiver is enabled
+                    type: boolean
                   slackConfigSelector:
                     description: SlackConfig to be selected for this receiver
                     properties:
@@ -2086,7 +2099,7 @@ spec:
                         type: object
                     type: object
                 required:
-                - channel
+                - channels
                 type: object
               webhook:
                 properties:
@@ -2120,6 +2133,9 @@ spec:
                         description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
+                  enabled:
+                    description: whether the receiver is enabled
+                    type: boolean
                   httpConfig:
                     description: HTTPClientConfig configures an HTTP client.
                     properties:
@@ -2313,12 +2329,21 @@ spec:
                         description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
+                  enabled:
+                    description: whether the receiver is enabled
+                    type: boolean
                   toParty:
-                    type: string
+                    items:
+                      type: string
+                    type: array
                   toTag:
-                    type: string
+                    items:
+                      type: string
+                    type: array
                   toUser:
-                    type: string
+                    items:
+                      type: string
+                    type: array
                   wechatConfigSelector:
                     description: WechatConfig to be selected for this receiver
                     properties:

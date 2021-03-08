@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2alpha1
+package v2beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -74,7 +74,7 @@ type HTTPClientConfig struct {
 
 type HostPort struct {
 	Host string `json:"host"`
-	Port string `json:"port"`
+	Port int    `json:"port"`
 }
 
 type EmailConfig struct {

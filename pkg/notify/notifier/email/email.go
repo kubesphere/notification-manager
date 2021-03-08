@@ -16,6 +16,7 @@ import (
 	commoncfg "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -251,7 +252,7 @@ func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error
 		Hello: e.EmailConfig.Hello,
 		Smarthost: config.HostPort{
 			Host: e.EmailConfig.SmartHost.Host,
-			Port: e.EmailConfig.SmartHost.Port,
+			Port: strconv.Itoa(e.EmailConfig.SmartHost.Port),
 		},
 		AuthUsername: e.EmailConfig.AuthUsername,
 		AuthPassword: "",

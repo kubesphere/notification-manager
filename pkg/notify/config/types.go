@@ -4,12 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/apis/v2alpha1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
+	"github.com/modern-go/reflect2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Receiver interface {
+	Enabled() bool
 	UseDefault() bool
 	SetUseDefault(b bool)
 	GetConfig() interface{}
@@ -17,8 +19,17 @@ type Receiver interface {
 }
 
 type common struct {
+	enabled *bool
 	// True means receiver use the default config.
 	useDefault bool
+}
+
+func (c *common) Enabled() bool {
+	if c.enabled == nil {
+		return true
+	}
+
+	return *c.enabled
 }
 
 func (c *common) UseDefault() bool {
@@ -31,94 +42,60 @@ func (c *common) SetUseDefault(b bool) {
 
 func NewReceiver(c *Config, obj interface{}) Receiver {
 
-	switch obj.(type) {
-	case *v2alpha1.Receiver:
-		spec := obj.(*v2alpha1.Receiver).Spec
-		if spec.DingTalk != nil {
-			return NewDingTalkReceiver(c, spec.DingTalk)
-		}
-		if spec.Email != nil {
-			return NewEmailReceiver(c, spec.Email)
-		}
-		if spec.Slack != nil {
-			return NewSlackReceiver(c, spec.Slack)
-		}
-		if spec.Webhook != nil {
-			return NewWebhookReceiver(c, spec.Webhook)
-		}
-		if spec.Wechat != nil {
-			return NewWechatReceiver(c, spec.Wechat)
-		}
-	case *v2alpha1.Config:
-		spec := obj.(*v2alpha1.Config).Spec
-		if spec.DingTalk != nil {
-			return NewDingTalkConfig(spec.DingTalk)
-		}
-		if spec.Email != nil {
-			return NewEmailConfig(spec.Email)
-		}
-		if spec.Slack != nil {
-			return NewSlackConfig(spec.Slack)
-		}
-		if spec.Webhook != nil {
-			return NewWebhookConfig(spec.Webhook)
-		}
-		if spec.Wechat != nil {
-			return NewWechatConfig(spec.Wechat)
-		}
-	default:
+	if reflect2.IsNil(obj) {
 		return nil
 	}
 
-	return nil
+	switch obj.(type) {
+	case *v2beta1.DingTalkReceiver:
+		return NewDingTalkReceiver(c, obj.(*v2beta1.DingTalkReceiver))
+	case *v2beta1.DingTalkConfig:
+		return NewDingTalkConfig(obj.(*v2beta1.DingTalkConfig))
+	case *v2beta1.EmailReceiver:
+		return NewEmailReceiver(c, obj.(*v2beta1.EmailReceiver))
+	case *v2beta1.EmailConfig:
+		return NewEmailConfig(obj.(*v2beta1.EmailConfig))
+	case *v2beta1.SlackReceiver:
+		return NewSlackReceiver(c, obj.(*v2beta1.SlackReceiver))
+	case *v2beta1.SlackConfig:
+		return NewSlackConfig(obj.(*v2beta1.SlackConfig))
+	case *v2beta1.WebhookReceiver:
+		return NewWebhookReceiver(c, obj.(*v2beta1.WebhookReceiver))
+	case *v2beta1.WebhookConfig:
+		return NewWebhookConfig(obj.(*v2beta1.WebhookConfig))
+	case *v2beta1.WechatReceiver:
+		return NewWechatReceiver(c, obj.(*v2beta1.WechatReceiver))
+	case *v2beta1.WechatConfig:
+		return NewWechatConfig(obj.(*v2beta1.WechatConfig))
+	default:
+		return nil
+	}
 }
 
 func getOpType(obj interface{}) string {
 
-	switch obj.(type) {
-	case *v2alpha1.Receiver:
-		spec := obj.(*v2alpha1.Receiver).Spec
-		if spec.DingTalk != nil {
-			return dingtalk
-		}
-		if spec.Email != nil {
-			return email
-		}
-		if spec.Slack != nil {
-			return slack
-		}
-		if spec.Webhook != nil {
-			return webhook
-		}
-		if spec.Wechat != nil {
-			return wechat
-		}
-	case *v2alpha1.Config:
-		spec := obj.(*v2alpha1.Config).Spec
-		if spec.DingTalk != nil {
-			return dingtalk
-		}
-		if spec.Email != nil {
-			return email
-		}
-		if spec.Slack != nil {
-			return slack
-		}
-		if spec.Webhook != nil {
-			return webhook
-		}
-		if spec.Wechat != nil {
-			return wechat
-		}
-	default:
+	if reflect2.IsNil(obj) {
 		return ""
 	}
 
-	return ""
+	switch obj.(type) {
+	case *v2beta1.DingTalkReceiver, *v2beta1.DingTalkConfig:
+		return dingtalk
+	case *v2beta1.EmailReceiver, *v2beta1.EmailConfig:
+		return email
+	case *v2beta1.SlackReceiver, *v2beta1.SlackConfig:
+		return slack
+	case *v2beta1.WebhookReceiver, *v2beta1.WebhookConfig:
+		return webhook
+	case *v2beta1.WechatReceiver, *v2beta1.WechatConfig:
+		return wechat
+	default:
+		return ""
+	}
 }
 
 type DingTalk struct {
-	ChatID         string
+	ChatIDs        []string
 	ChatBot        *DingTalkChatBot
 	DingTalkConfig *DingTalkConfig
 	Selector       *metav1.LabelSelector
@@ -126,26 +103,28 @@ type DingTalk struct {
 }
 
 type DingTalkConfig struct {
-	AppKey    *v2alpha1.SecretKeySelector
-	AppSecret *v2alpha1.SecretKeySelector
+	AppKey    *v2beta1.SecretKeySelector
+	AppSecret *v2beta1.SecretKeySelector
 }
 
 // Configuration of ChatBot
 type DingTalkChatBot struct {
-	Webhook  *v2alpha1.SecretKeySelector
+	Webhook  *v2beta1.SecretKeySelector
 	Keywords []string
-	Secret   *v2alpha1.SecretKeySelector
+	Secret   *v2beta1.SecretKeySelector
 }
 
-func NewDingTalkReceiver(c *Config, dr *v2alpha1.DingTalkReceiver) Receiver {
+func NewDingTalkReceiver(c *Config, dr *v2beta1.DingTalkReceiver) Receiver {
 
 	d := &DingTalk{
-		common:   &common{},
+		common: &common{
+			enabled: dr.Enabled,
+		},
 		Selector: dr.AlertSelector,
 	}
 
 	if dr.Conversation != nil {
-		d.ChatID = dr.Conversation.ChatID
+		d.ChatIDs = dr.Conversation.ChatIDs
 	}
 
 	if dr.ChatBot != nil {
@@ -172,7 +151,7 @@ func NewDingTalkReceiver(c *Config, dr *v2alpha1.DingTalkReceiver) Receiver {
 	return d
 }
 
-func NewDingTalkConfig(dc *v2alpha1.DingTalkConfig) Receiver {
+func NewDingTalkConfig(dc *v2beta1.DingTalkConfig) Receiver {
 	d := &DingTalk{
 		common: &common{},
 	}
@@ -181,7 +160,7 @@ func NewDingTalkConfig(dc *v2alpha1.DingTalkConfig) Receiver {
 	return d
 }
 
-func (d *DingTalk) generateConfig(dc *v2alpha1.DingTalkConfig) {
+func (d *DingTalk) generateConfig(dc *v2beta1.DingTalkConfig) {
 
 	if dc == nil {
 		return
@@ -232,19 +211,21 @@ type Email struct {
 
 type EmailConfig struct {
 	From         string
-	SmartHost    v2alpha1.HostPort
+	SmartHost    v2beta1.HostPort
 	Hello        string
 	AuthUsername string
 	AuthIdentify string
-	AuthPassword *v2alpha1.SecretKeySelector
-	AuthSecret   *v2alpha1.SecretKeySelector
+	AuthPassword *v2beta1.SecretKeySelector
+	AuthSecret   *v2beta1.SecretKeySelector
 	RequireTLS   bool
-	TLS          *v2alpha1.TLSConfig
+	TLS          *v2beta1.TLSConfig
 }
 
-func NewEmailReceiver(c *Config, er *v2alpha1.EmailReceiver) Receiver {
+func NewEmailReceiver(c *Config, er *v2beta1.EmailReceiver) Receiver {
 	e := &Email{
-		common:   &common{},
+		common: &common{
+			enabled: er.Enabled,
+		},
 		To:       er.To,
 		Selector: er.AlertSelector,
 	}
@@ -264,7 +245,7 @@ func NewEmailReceiver(c *Config, er *v2alpha1.EmailReceiver) Receiver {
 	return e
 }
 
-func NewEmailConfig(ec *v2alpha1.EmailConfig) Receiver {
+func NewEmailConfig(ec *v2beta1.EmailConfig) Receiver {
 	e := &Email{
 		common: &common{},
 	}
@@ -273,7 +254,7 @@ func NewEmailConfig(ec *v2alpha1.EmailConfig) Receiver {
 	return e
 }
 
-func (e *Email) generateConfig(ec *v2alpha1.EmailConfig) {
+func (e *Email) generateConfig(ec *v2beta1.EmailConfig) {
 
 	if ec == nil {
 		return
@@ -339,7 +320,7 @@ func (e *Email) SetConfig(obj interface{}) error {
 
 type Slack struct {
 	// The channel or user to send notifications to.
-	Channel     string
+	Channels    []string
 	SlackConfig *SlackConfig
 	Selector    *metav1.LabelSelector
 	*common
@@ -347,13 +328,15 @@ type Slack struct {
 
 type SlackConfig struct {
 	// The token of user or bot.
-	Token *v2alpha1.SecretKeySelector
+	Token *v2beta1.SecretKeySelector
 }
 
-func NewSlackReceiver(c *Config, sr *v2alpha1.SlackReceiver) Receiver {
+func NewSlackReceiver(c *Config, sr *v2beta1.SlackReceiver) Receiver {
 	s := &Slack{
-		common:   &common{},
-		Channel:  sr.Channel,
+		common: &common{
+			enabled: sr.Enabled,
+		},
+		Channels: sr.Channels,
 		Selector: sr.AlertSelector,
 	}
 
@@ -372,7 +355,7 @@ func NewSlackReceiver(c *Config, sr *v2alpha1.SlackReceiver) Receiver {
 	return s
 }
 
-func NewSlackConfig(sc *v2alpha1.SlackConfig) Receiver {
+func NewSlackConfig(sc *v2beta1.SlackConfig) Receiver {
 	s := &Slack{
 		common: &common{},
 	}
@@ -381,7 +364,7 @@ func NewSlackConfig(sc *v2alpha1.SlackConfig) Receiver {
 	return s
 }
 
-func (s *Slack) generateConfig(sc *v2alpha1.SlackConfig) {
+func (s *Slack) generateConfig(sc *v2beta1.SlackConfig) {
 
 	if sc == nil || sc.SlackTokenSecret == nil {
 		return
@@ -417,7 +400,7 @@ func (s *Slack) SetConfig(obj interface{}) error {
 type Webhook struct {
 	// `url` gives the location of the webhook, in standard URL form.
 	URL           string
-	HttpConfig    *v2alpha1.HTTPClientConfig
+	HttpConfig    *v2beta1.HTTPClientConfig
 	WebhookConfig *WebhookConfig
 	Selector      *metav1.LabelSelector
 	*common
@@ -426,9 +409,11 @@ type Webhook struct {
 type WebhookConfig struct {
 }
 
-func NewWebhookReceiver(_ *Config, wr *v2alpha1.WebhookReceiver) Receiver {
+func NewWebhookReceiver(_ *Config, wr *v2beta1.WebhookReceiver) Receiver {
 	w := &Webhook{
-		common:     &common{},
+		common: &common{
+			enabled: wr.Enabled,
+		},
 		Selector:   wr.AlertSelector,
 		HttpConfig: wr.HTTPConfig,
 	}
@@ -455,7 +440,7 @@ func NewWebhookReceiver(_ *Config, wr *v2alpha1.WebhookReceiver) Receiver {
 	return w
 }
 
-func NewWebhookConfig(_ *v2alpha1.WebhookConfig) Receiver {
+func NewWebhookConfig(_ *v2beta1.WebhookConfig) Receiver {
 	return &Webhook{
 		common: &common{},
 	}
@@ -482,24 +467,26 @@ func (w *Webhook) SetConfig(obj interface{}) error {
 }
 
 type Wechat struct {
-	ToUser       string
-	ToParty      string
-	ToTag        string
+	ToUser       []string
+	ToParty      []string
+	ToTag        []string
 	WechatConfig *WechatConfig
 	Selector     *metav1.LabelSelector
 	*common
 }
 
 type WechatConfig struct {
-	APISecret *v2alpha1.SecretKeySelector
+	APISecret *v2beta1.SecretKeySelector
 	CorpID    string
 	APIURL    string
 	AgentID   string
 }
 
-func NewWechatReceiver(c *Config, wr *v2alpha1.WechatReceiver) Receiver {
+func NewWechatReceiver(c *Config, wr *v2beta1.WechatReceiver) Receiver {
 	w := &Wechat{
-		common:   &common{},
+		common: &common{
+			enabled: wr.Enabled,
+		},
 		ToUser:   wr.ToUser,
 		ToParty:  wr.ToParty,
 		ToTag:    wr.ToTag,
@@ -518,7 +505,7 @@ func NewWechatReceiver(c *Config, wr *v2alpha1.WechatReceiver) Receiver {
 	return w
 }
 
-func NewWechatConfig(wc *v2alpha1.WechatConfig) Receiver {
+func NewWechatConfig(wc *v2beta1.WechatConfig) Receiver {
 	w := &Wechat{
 		common: &common{},
 	}
@@ -527,7 +514,7 @@ func NewWechatConfig(wc *v2alpha1.WechatConfig) Receiver {
 	return w
 }
 
-func (w *Wechat) generateConfig(wc *v2alpha1.WechatConfig) {
+func (w *Wechat) generateConfig(wc *v2beta1.WechatConfig) {
 
 	if wc == nil || wc.WechatApiSecret == nil {
 		return
@@ -577,8 +564,8 @@ func (w *Wechat) Clone() *Wechat {
 	}
 }
 
-func listConfigs(c *Config, selector *metav1.LabelSelector) []v2alpha1.Config {
-	configList := v2alpha1.ConfigList{}
+func listConfigs(c *Config, selector *metav1.LabelSelector) []v2beta1.Config {
+	configList := v2beta1.ConfigList{}
 	configSel, _ := metav1.LabelSelectorAsSelector(selector)
 	if err := c.cache.List(c.ctx, &configList, client.MatchingLabelsSelector{Selector: configSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list DingTalkConfig", "err", err)

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2alpha1
+package v2beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,10 +34,12 @@ type DingTalkChatBot struct {
 
 // Configuration of conversation
 type DingTalkConversation struct {
-	ChatID string `json:"chatid"`
+	ChatIDs []string `json:"chatids"`
 }
 
 type DingTalkReceiver struct {
+	// whether the receiver is enabled
+	Enabled *bool `json:"enabled,omitempty"`
 	// DingTalkConfig to be selected for this receiver
 	DingTalkConfigSelector *metav1.LabelSelector `json:"dingtalkConfigSelector,omitempty"`
 	// Selector to filter alerts.
@@ -49,6 +51,8 @@ type DingTalkReceiver struct {
 }
 
 type EmailReceiver struct {
+	// whether the receiver is enabled
+	Enabled *bool `json:"enabled,omitempty"`
 	// Receivers' email addresses
 	To []string `json:"to"`
 	// EmailConfig to be selected for this receiver
@@ -58,12 +62,14 @@ type EmailReceiver struct {
 }
 
 type SlackReceiver struct {
+	// whether the receiver is enabled
+	Enabled *bool `json:"enabled,omitempty"`
 	// SlackConfig to be selected for this receiver
 	SlackConfigSelector *metav1.LabelSelector `json:"slackConfigSelector,omitempty"`
 	// Selector to filter alerts.
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	// The channel or user to send notifications to.
-	Channel string `json:"channel"`
+	Channels []string `json:"channels"`
 }
 
 // ServiceReference holds a reference to Service.legacy.k8s.io
@@ -93,6 +99,8 @@ type ServiceReference struct {
 }
 
 type WebhookReceiver struct {
+	// whether the receiver is enabled
+	Enabled *bool `json:"enabled,omitempty"`
 	// WebhookConfig to be selected for this receiver
 	WebhookConfigSelector *metav1.LabelSelector `json:"webhookConfigSelector,omitempty"`
 	// Selector to filter alerts.
@@ -136,14 +144,16 @@ type WebhookReceiver struct {
 }
 
 type WechatReceiver struct {
+	// whether the receiver is enabled
+	Enabled *bool `json:"enabled,omitempty"`
 	// WechatConfig to be selected for this receiver
 	WechatConfigSelector *metav1.LabelSelector `json:"wechatConfigSelector,omitempty"`
 	// Selector to filter alerts.
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	// +optional
-	ToUser  string `json:"toUser,omitempty"`
-	ToParty string `json:"toParty,omitempty"`
-	ToTag   string `json:"toTag,omitempty"`
+	ToUser  []string `json:"toUser,omitempty"`
+	ToParty []string `json:"toParty,omitempty"`
+	ToTag   []string `json:"toTag,omitempty"`
 }
 
 //ReceiverSpec defines the desired state of Receiver

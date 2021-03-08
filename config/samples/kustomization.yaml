@@ -1,20 +1,8 @@
 resources:
-- email_default_config.yaml
-- email_tenant_config.yaml
-- email_tenant_receiver.yaml
-- email_global_receiver.yaml
-- notification_manager.yaml
-- slack_default_config.yaml
-- slack_global_receiver.yaml
-- webhook_default_config.yaml
-- webhook_global_receiver.yaml
-- wechat_default_config.yaml
-- wechat_global_receiver.yaml
-- email_default_secret.yaml
-- dingtalk_default_secret.yaml
-- dingtalk_default_config.yaml
-- dingtalk_global_receiver.yaml
+- default_config.yaml
+- global_receiver.yaml
 - template.yaml
+- notification_manager.yaml
 
 namespace: kubesphere-monitoring-system
 

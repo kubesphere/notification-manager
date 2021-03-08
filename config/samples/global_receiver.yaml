@@ -1,0 +1,59 @@
+apiVersion: notification.kubesphere.io/v2alpha1
+kind: Receiver
+metadata:
+  name: global-receiver
+  labels:
+    app: notification-manager
+    type: global
+spec:
+  dingtalk:
+    conversation:
+      chatids:
+      - chat894f9f4d634eb283933af6c7102977b2
+    chatbot:
+      webhook:
+        key: webhook
+        name: global-receiver-secret
+      keywords:
+        - kubesphere
+      secret:
+        key: secret
+        name: global-receiver-secret
+  email:
+    to:
+    - receiver1@xyz.com
+    - receiver2@xyz.com
+  slack:
+    channels:
+    - global
+  webhook:
+    url: https://sample-webhook.svc:443/
+    httpConfig:
+      basicAuth:
+        username: user
+        password:
+          key: password
+          name: global-receiver-secret
+      tlsConfig:
+        serverName: "*"
+        rootCA:
+          key: ca
+          name: default-webhook-secret
+        clientCertificate:
+          cert:
+            key: cert
+            name: global-receiver-secret
+          key:
+            key: key
+            name: global-receiver-secret
+        insecureSkipVerify: false
+  wechat:
+    toUser:
+    - user1
+    - user2
+    toParty:
+    - party1
+    - party2
+    toTag:
+    - tag1
+    - tag2

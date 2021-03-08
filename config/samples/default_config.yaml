@@ -1,0 +1,37 @@
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Config
+metadata:
+  name: default-config
+  labels:
+    app: notification-manager
+    type: default
+spec:
+  dingtalk:
+    conversation:
+      appkey:
+        key: appkey
+        name: defalut-config-secret
+      appsecret:
+        key: appsecret
+        name: defalut-config-secret
+  email:
+    authPassword:
+      key: password
+      name: default-email-secret
+    authUsername: sender1
+    from: sender1@xyz.com
+    requireTLS: true
+    smartHost:
+      host: imap.xyz.com
+      port: 25
+  slack:
+    slackTokenSecret:
+      key: token
+      name: defalut-config-secret
+  wechat:
+    wechatApiUrl: https://qyapi.weixin.qq.com/cgi-bin/
+    wechatApiCorpId: wechat-api-corp-id
+    wechatApiAgentId: wechat-api-agent-id
+    wechatApiSecret:
+      key: wechat
+      name: defalut-config-secret

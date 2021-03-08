@@ -20,7 +20,7 @@ spec:
     singular: config
   scope: Cluster
   versions:
-  - name: v2alpha1
+  - name: v2beta1
     schema:
       openAPIV3Schema:
         description: DingTalkConfig is the Schema for the dingtalkconfigs API
@@ -151,7 +151,7 @@ spec:
                       host:
                         type: string
                       port:
-                        type: string
+                        type: integer
                     required:
                     - host
                     - port

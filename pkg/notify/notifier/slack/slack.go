@@ -94,11 +94,11 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	send := func(c *config.Slack) error {
+	send := func(channel string, c *config.Slack) error {
 
 		start := time.Now()
 		defer func() {
-			_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "used", time.Since(start).String())
+			_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "channel", channel, "used", time.Since(start).String())
 		}()
 
 		newData := notifier.Filter(data, c.Selector, n.logger)
@@ -108,18 +108,18 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 		msg, err := n.template.TempleText(n.templateName, newData, n.logger)
 		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "SlackNotifier: generate message error", "error", err.Error())
+			_ = level.Error(n.logger).Log("msg", "SlackNotifier: generate message error", "channel", channel, "error", err.Error())
 			return err
 		}
 
 		sr := &slackRequest{
-			Channel: c.Channel,
+			Channel: channel,
 			Text:    msg,
 		}
 
 		var buf bytes.Buffer
 		if err := json.NewEncoder(&buf).Encode(sr); err != nil {
-			_ = level.Error(n.logger).Log("msg", "SlackNotifier: encode message error", "error", err.Error())
+			_ = level.Error(n.logger).Log("msg", "SlackNotifier: encode message error", "channel", channel, "error", err.Error())
 			return err
 		}
 
@@ -131,7 +131,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 		token, err := n.notifierCfg.GetSecretData(c.SlackConfig.Token)
 		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "SlackNotifier: get token secret", "error", err.Error())
+			_ = level.Error(n.logger).Log("msg", "SlackNotifier: get token secret", "channel", channel, "error", err.Error())
 			return err
 		}
 
@@ -139,22 +139,22 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 		body, err := notifier.DoHttpRequest(ctx, nil, request.WithContext(ctx))
 		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "SlackNotifier: do http error", "error", err)
+			_ = level.Error(n.logger).Log("msg", "SlackNotifier: do http error", "channel", channel, "error", err)
 			return err
 		}
 
 		var slResp slackResponse
 		if err := json.Unmarshal(body, &slResp); err != nil {
-			_ = level.Error(n.logger).Log("msg", "SlackNotifier: decode response body error", "error", err)
+			_ = level.Error(n.logger).Log("msg", "SlackNotifier: decode response body error", "channel", channel, "error", err)
 			return err
 		}
 
 		if !slResp.OK {
-			_ = level.Error(n.logger).Log("msg", "SlackNotifier: slack error", "error", slResp.Error)
+			_ = level.Error(n.logger).Log("msg", "SlackNotifier: slack error", "channel", channel, "error", slResp.Error)
 			return fmt.Errorf("%s", slResp.Error)
 		}
 
-		_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "channel", c.Channel)
+		_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "channel", channel)
 
 		return nil
 	}
@@ -162,9 +162,11 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	group := async.NewGroup(ctx)
 	for _, slack := range n.slack {
 		s := slack
-		group.Add(func(stopCh chan interface{}) {
-			stopCh <- send(s)
-		})
+		for _, channel := range s.Channels {
+			group.Add(func(stopCh chan interface{}) {
+				stopCh <- send(channel, s)
+			})
+		}
 	}
 
 	return group.Wait()

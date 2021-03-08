@@ -9,6 +9,7 @@ require (
 	github.com/go-logr/logr v0.1.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/json-iterator/go v1.1.8
+	github.com/modern-go/reflect2 v1.0.1
 	github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1

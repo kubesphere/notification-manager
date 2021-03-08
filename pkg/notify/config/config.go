@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/apis/v2alpha1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
 	"k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -64,7 +64,7 @@ type Config struct {
 	tenantReceiverSelector *metav1.LabelSelector
 	// Receiver config for each tenant user, in form of map[tenantID]map[type/name]Receiver
 	receivers    map[string]map[string]Receiver
-	ReceiverOpts *v2alpha1.Options
+	ReceiverOpts *v2beta1.Options
 	// Channel to receive receiver create/update/delete operations and then update receivers
 	ch chan *param
 	// The pod's namespace
@@ -78,6 +78,7 @@ type param struct {
 	tenantID               string
 	opType                 string
 	name                   string
+	labels                 map[string]string
 	tenantKey              string
 	defaultConfigSelector  *metav1.LabelSelector
 	tenantReceiverSelector *metav1.LabelSelector
@@ -85,13 +86,13 @@ type param struct {
 	obj                    interface{}
 	receiver               Receiver
 	isConfig               bool
-	ReceiverOpts           *v2alpha1.Options
+	ReceiverOpts           *v2beta1.Options
 	done                   chan interface{}
 }
 
 func New(ctx context.Context, logger log.Logger) (*Config, error) {
 	scheme := runtime.NewScheme()
-	_ = v2alpha1.AddToScheme(scheme)
+	_ = v2beta1.AddToScheme(scheme)
 	_ = v1.AddToScheme(scheme)
 	_ = rbacv1.AddToScheme(scheme)
 
@@ -181,7 +182,7 @@ func (c *Config) Run() error {
 	}()
 
 	// Setup informer for NotificationManager
-	nmInf, err := c.cache.GetInformer(&v2alpha1.NotificationManager{})
+	nmInf, err := c.cache.GetInformer(&v2beta1.NotificationManager{})
 	if err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to get informer for NotificationManager", "err", err)
 		return err
@@ -194,7 +195,7 @@ func (c *Config) Run() error {
 		DeleteFunc: c.onNmDel,
 	})
 
-	receiverInformer, err := c.cache.GetInformer(&v2alpha1.Receiver{})
+	receiverInformer, err := c.cache.GetInformer(&v2beta1.Receiver{})
 	if err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to get receiver informer", "err", err)
 		return err
@@ -211,7 +212,7 @@ func (c *Config) Run() error {
 		},
 	})
 
-	configInformer, err := c.cache.GetInformer(&v2alpha1.Config{})
+	configInformer, err := c.cache.GetInformer(&v2beta1.Config{})
 	if err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to get config informer", "err", err)
 		return err
@@ -237,15 +238,38 @@ func (c *Config) Run() error {
 }
 
 func (c *Config) onChange(obj interface{}, op string, isConfig bool) {
-	p := &param{
-		op:       op,
-		obj:      obj,
-		isConfig: isConfig,
+
+	name := ""
+	var lbs map[string]string
+	var spec interface{}
+	if isConfig {
+		config := obj.(*v2beta1.Config)
+		name = config.Name
+		lbs = config.Labels
+		spec = config.Spec
+	} else {
+		receiver := obj.(*v2beta1.Receiver)
+		name = receiver.Name
+		lbs = receiver.Labels
+		spec = receiver.Spec
 	}
 
-	p.done = make(chan interface{}, 1)
-	c.ch <- p
-	<-p.done
+	v := reflect.ValueOf(spec)
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		if !f.IsZero() {
+			p := &param{
+				name:     name,
+				labels:   lbs,
+				op:       op,
+				isConfig: isConfig,
+				obj:      f.Interface(),
+			}
+			p.done = make(chan interface{}, 1)
+			c.ch <- p
+			<-p.done
+		}
+	}
 }
 
 func (c *Config) sync(p *param) {
@@ -427,7 +451,9 @@ func (c *Config) RcvsFromNs(namespace *string) []Receiver {
 		o := <-p.done
 		if r, ok := o.(map[string]Receiver); ok {
 			for _, v := range r {
-				rcvs = append(rcvs, v)
+				if v.Enabled() {
+					rcvs = append(rcvs, v)
+				}
 			}
 		}
 	} else {
@@ -440,7 +466,9 @@ func (c *Config) RcvsFromNs(namespace *string) []Receiver {
 		o := <-p.done
 		if r, ok := o.(map[string]Receiver); ok {
 			for _, v := range r {
-				rcvs = append(rcvs, v)
+				if v.Enabled() {
+					rcvs = append(rcvs, v)
+				}
 			}
 		}
 
@@ -457,7 +485,9 @@ func (c *Config) RcvsFromNs(namespace *string) []Receiver {
 				o := <-p.done
 				if r, ok := o.(map[string]Receiver); ok {
 					for _, v := range r {
-						rcvs = append(rcvs, v)
+						if v.Enabled() {
+							rcvs = append(rcvs, v)
+						}
 					}
 				}
 			}
@@ -468,7 +498,7 @@ func (c *Config) RcvsFromNs(namespace *string) []Receiver {
 }
 
 func (c *Config) onNmAdd(obj interface{}) {
-	if nm, ok := obj.(*v2alpha1.NotificationManager); ok {
+	if nm, ok := obj.(*v2beta1.NotificationManager); ok {
 		p := &param{}
 		p.op = opAdd
 		p.name = nm.Name
@@ -490,13 +520,13 @@ func (c *Config) onNmAdd(obj interface{}) {
 
 func (c *Config) updateReloadTimestamp() {
 
-	receiverList := v2alpha1.ReceiverList{}
+	receiverList := v2beta1.ReceiverList{}
 	if err := c.client.List(c.ctx, &receiverList, client.InNamespace("")); err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to list receiver", "err", err)
 		return
 	}
 
-	configList := v2alpha1.ConfigList{}
+	configList := v2beta1.ConfigList{}
 	if err := c.client.List(c.ctx, &configList, client.InNamespace("")); err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to list config", "err", err)
 		return
@@ -524,7 +554,7 @@ func (c *Config) updateReloadTimestamp() {
 }
 
 func (c *Config) onNmDel(obj interface{}) {
-	if _, ok := obj.(*v2alpha1.NotificationManager); ok {
+	if _, ok := obj.(*v2beta1.NotificationManager); ok {
 		p := &param{}
 		p.op = opDel
 		p.opType = notificationManager
@@ -540,22 +570,13 @@ func (c *Config) getReceiver(p *param) {
 		return
 	}
 
-	accessor, err := meta.Accessor(p.obj)
-	if err != nil {
-		_ = level.Warn(c.logger).Log("msg", "obj is not a meta object")
-		return
-	}
-
-	p.name = accessor.GetName()
-	lbs := accessor.GetLabels()
-
-	_ = level.Info(c.logger).Log("msg", "resource change", "op", p.op, "type", p.opType, "name", p.name)
+	_ = level.Info(c.logger).Log("msg", "resource change", "op", p.op, "name", p.name)
 
 	// If crd's label matches globalSelector such as "type = global",
 	// then this is a global receiver or config, and tenantID should be set to an unique tenantID
 	if c.globalReceiverSelector != nil {
 		for k, expected := range c.globalReceiverSelector.MatchLabels {
-			if v, exists := lbs[k]; exists && v == expected {
+			if v, exists := p.labels[k]; exists && v == expected {
 				p.tenantID = globalTenantID
 				break
 			}
@@ -568,8 +589,8 @@ func (c *Config) getReceiver(p *param) {
 	// then "admin" should be used as tenantID
 	if c.tenantReceiverSelector != nil {
 		for k, expected := range c.tenantReceiverSelector.MatchLabels {
-			if v, exists := lbs[k]; exists && v == expected {
-				if v, exists := lbs[c.tenantKey]; exists {
+			if v, exists := p.labels[k]; exists && v == expected {
+				if v, exists := p.labels[c.tenantKey]; exists {
 					p.tenantID = v
 				}
 				break
@@ -580,13 +601,13 @@ func (c *Config) getReceiver(p *param) {
 	// If it is a config crd, update global default configs if crd's label match defaultConfigSelector
 	if c.defaultConfigSelector != nil && p.isConfig {
 		sel, _ := metav1.LabelSelectorAsSelector(c.defaultConfigSelector)
-		if sel.Matches(labels.Set(lbs)) {
+		if sel.Matches(labels.Set(p.labels)) {
 			p.tenantID = defaultConfig
 		}
 	}
 
 	if len(p.tenantID) == 0 {
-		_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "op", p.op, "type", p.opType, "tenantKey", c.tenantKey, "name", p.name)
+		_ = level.Warn(c.logger).Log("msg", "Ignore empty tenantID", "op", p.op, "tenantKey", c.tenantKey, "name", p.name)
 		return
 	}
 
@@ -620,7 +641,7 @@ func (c *Config) OutputReceiver(tenant, receiver string) interface{} {
 	return m
 }
 
-func (c *Config) GetSecretData(selector *v2alpha1.SecretKeySelector) (string, error) {
+func (c *Config) GetSecretData(selector *v2beta1.SecretKeySelector) (string, error) {
 
 	if selector == nil {
 		return "", fmt.Errorf("SecretKeySelector is nil")
