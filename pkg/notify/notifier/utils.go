@@ -15,7 +15,22 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"net/http"
 	"net/url"
+	"strings"
 )
+
+func ArrayToString(array []string, sep string) string {
+
+	if array == nil || len(array) == 0 {
+		return ""
+	}
+
+	s := ""
+	for _, elem := range array {
+		s = s + elem + sep
+	}
+
+	return strings.TrimSuffix(s, sep)
+}
 
 func Md5key(val interface{}) (string, error) {
 

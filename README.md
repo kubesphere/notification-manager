@@ -25,16 +25,8 @@ Notification Manager could receive webhook notifications from Alertmanager and t
 ## CustomResourceDefinitions
 Notification Manager uses the following CRDs to define the desired alerts/notifications webhook and receiver configs:
 - NotificationManager: Defines the desired alerts/notification webhook deployment. The Notification Manager Operator ensures a deployment meeting the resource requirements is running.
-- EmailConfig: Defines the email configs like SmartHost, AuthUserName, AuthPassword, From, RequireTLS etc. 
-- EmailReceiver: Define email receiver's mail addresses and the EmailConfig selector.
-- WechatConfig: Define the wechat configs like ApiUrl, ApiCorpId, AgentId and ApiSecret. 
-- WechatReceiver: Define the wechat receiver related info like ToUser, ToParty, ToTag as well as WechatConfig Selector.
-- SlackConfig: Define the slack configs like SlackTokenSecret.
-- SlackReceiver: Define the slack channel to send notifications to and the SlackConfig selector.
-- WebhookConfig: Define the webhook Url, HttpConfig.
-- WebhookReceiver: Define the WebhookConfig selector.
-- DingTalkConfig: Define the dingtalk configs like AppKey, AppSecret, ChatID, chatbot Webhook etc.
-- DingTalkReceiver: Define the DingTalkConfig selector.
+- Config: Defines the dingtalk, email, slack, webhook, wechat configs. 
+- Receiver: Define dingtalk, email, slack, webhook, wechat receivers.
 
 The relationship between receivers and configs can be demonstrated as below:
 
@@ -50,7 +42,7 @@ Usually alerts received from Alertmanager contains a `namespace` label, Notifica
 
 For alerts without a `namespace` label, for example alerts of node or kubelet, user can set up a receiver with `type = global` label to receive alerts without a `namespace` label. A global receiver sends notifications for all alerts received regardless any label. A global receiver is usually set for an admin role.
 
-Config CRDs like EmailConfig, WechatConfig, SlackConfig, WebhookConfig can be categorized into 2 types `tenant` and `default` by label like `type = tenant`, `type = default`:
+Config CRDs can be categorized into 2 types `tenant` and `default` by label like `type = tenant`, `type = default`:
 - Tenant EmailConfig is to be selected by a tenant EmailReceiver which means each tenant can have his own EmailConfig. 
 - If no EmailConfig selector is configured in a EmailReceiver, then this EmailReceiver will try to find a `default` EmailConfig. Usually admin will set a global default config.
 
@@ -64,7 +56,7 @@ A receiver could be configured without xxxConfigSelector, in which case Notifica
 Deploy CRDs and the Notification Manager Operator:
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/kubesphere/notification-manager/v0.6.0/config/update/bundle.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubesphere/notification-manager/0.8.0/config/bundle.yaml
 ```
 
 ### Deploy Notification Manager in KubeSphere (Uses `workspace` to distinguish each tenant user):
@@ -72,7 +64,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubesphere/notification-manag
 #### Deploy Notification Manager
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: NotificationManager
 metadata:
   name: notification-manager
@@ -126,36 +118,39 @@ EOF
 #### Deploy the default EmailConfig and a global EmailReceiver
 ```
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: EmailConfig
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Config
 metadata:
   labels:
     app: notification-manager
     type: default
   name: default-email-config
 spec:
-  authPassword:
-    key: password
-    name: default-email-secret
-  authUsername: sender1 
-  from: sender1@xyz.com
-  requireTLS: true
-  smartHost:
-    host: imap.xyz.com
-    port: "25"
+  email:
+    authPassword:
+      key: password
+      name: default-email-secret
+    authUsername: sender1 
+    from: sender1@xyz.com
+    requireTLS: true
+    smartHost:
+      host: imap.xyz.com
+      port: "25"
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: EmailReceiver
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Receiver
 metadata:
   labels:
     app: notification-manager
     type: global
   name: global-email-receiver
 spec:
-  # emailConfigSelector needn't to be configured for a global receiver
-  to:
-  - receiver1@xyz.com
-  - receiver2@xyz.com
+  email:
+    enabled: true
+    # emailConfigSelector needn't to be configured for a global receiver
+    to:
+    - receiver1@xyz.com
+    - receiver2@xyz.com
 ---
 apiVersion: v1
 data:
@@ -173,8 +168,8 @@ EOF
 #### Deploy a tenant EmailConfig and a EmailReceiver
 ```
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: EmailConfig
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Config
 metadata:
   labels:
     app: notification-manager
@@ -182,18 +177,19 @@ metadata:
     user: user1 
   name: user1-email-config
 spec:
-  authPassword:
-    key: password
-    name: default-email-secret
-  authUsername: sender1 
-  from: sender1@xyz.com
-  requireTLS: true
-  smartHost:
-    host: imap.xyz.com
-    port: "25"
+  email:
+    authPassword:
+      key: password
+      name: default-email-secret
+    authUsername: sender1 
+    from: sender1@xyz.com
+    requireTLS: true
+    smartHost:
+      host: imap.xyz.com
+      port: "25"
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: EmailReceiver
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Receiver
 metadata:
   labels:
     app: notification-manager
@@ -201,14 +197,15 @@ metadata:
     user: user1
   name: user1-email-receiver
 spec:
-  # This emailConfigSelector could be omitted in which case a defalut EmailConfig should be configured
-  emailConfigSelector:
-    matchLabels:
-      type: tenant
-      user: user1 
-  to:
-  - receiver1@xyz.com
-  - receiver2@xyz.com
+  email:
+    # This emailConfigSelector could be omitted in which case a defalut EmailConfig should be configured
+    emailConfigSelector:
+      matchLabels:
+        type: tenant
+        user: user1 
+    to:
+    - receiver1@xyz.com
+    - receiver2@xyz.com
 ---
 apiVersion: v1
 data:
@@ -227,35 +224,37 @@ EOF
 
 ```
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: WechatConfig
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Config
 metadata:
   name: default-wechat-config
   labels:
     app: notification-manager
     type: default
 spec:
-  wechatApiUrl: < wechat-api-url >
-  wechatApiSecret:
-    key: wechat
-    name: < wechat-api-secret >
-  wechatApiCorpId: < wechat-api-corp-id >
-  wechatApiAgentId: < wechat-api-agent-id >
+  wechat:
+    wechatApiUrl: < wechat-api-url >
+    wechatApiSecret:
+      key: wechat
+      name: < wechat-api-secret >
+    wechatApiCorpId: < wechat-api-corp-id >
+    wechatApiAgentId: < wechat-api-agent-id >
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: WechatReceiver
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Receiver
 metadata:
   name: global-wechat-receiver
   labels:
     app: notification-manager
     type: global 
 spec:
-  # wechatConfigSelector needn't to be configured for a global receiver
-  # optional
-  # One of toUser, toParty, toParty should be specified.
-  toUser: < wechat-user >
-  toParty: < wechat-party >
-  toTag: < wechat-tag >
+  wechat:
+    # wechatConfigSelector needn't to be configured for a global receiver
+    # optional
+    # One of toUser, toParty, toParty should be specified.
+    toUser: < wechat-user >
+    toParty: < wechat-party >
+    toTag: < wechat-tag >
 ---
 apiVersion: v1
 data:
@@ -278,28 +277,30 @@ EOF
 
 ```
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: SlackConfig
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Config
 metadata:
   name: default-slack-config
   labels:
     app: notification-manager
     type: default
 spec:
-  slackTokenSecret: 
-    key: token
-    name: < slack-token-secret >
+  slack:
+    slackTokenSecret: 
+      key: token
+      name: < slack-token-secret >
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: SlackReceiver
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Receiver
 metadata:
   name: global-slack-receiver
   labels:
     app: notification-manager
     type: global
 spec:
-  # slackConfigSelector needn't to be configured for a global receiver
-  channel: < slack-channel >
+  slack:
+    # slackConfigSelector needn't to be configured for a global receiver
+    channel: < slack-channel >
 ---
 apiVersion: v1
 data:
@@ -335,8 +336,8 @@ metadata:
 type: Opaque
 
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: WebhookConfig
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Config
 metadata:
   name: default-webhook-config
   labels:
@@ -344,31 +345,32 @@ metadata:
     type: default
 
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: WebhookReceiver
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Receiver
 metadata:
   name: global-webhook-receiver
   labels:
     app: notification-manager
     type: global
 spec:
-  url: http://127.0.0.1:8080/
-  httpConfig: 
-    bearerToken
-      key: password
-      name: default-webhook-secret
-    tlsConfig:
-      rootCA:
-        key: ca
+  webhook:
+    url: http://127.0.0.1:8080/
+    httpConfig: 
+      bearerToken
+        key: password
         name: default-webhook-secret
-      clientCertificate:
-        cert:
-          key: cert
+      tlsConfig:
+        rootCA:
+          key: ca
           name: default-webhook-secret
-        key:
-          key: key
-          name: default-webhook-secret
-      insecureSkipVerify: false
+        clientCertificate:
+          cert:
+            key: cert
+            name: default-webhook-secret
+          key:
+            key: key
+            name: default-webhook-secret
+        insecureSkipVerify: false
 EOF
 ```
 
@@ -395,42 +397,44 @@ metadata:
 type: Opaque
 
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: DingTalkConfig
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Config
 metadata:
   name: default-dingtalk-config
   labels:
     app: notification-manager
     type: default
 spec:
-  conversation:
-    appkey: 
-      key: appkey
-      name: default-dingtalk-secret
-    appsecret:
-      key: appsecret
-      name: default-dingtalk-secret
+  dingtalk:
+    conversation:
+      appkey: 
+        key: appkey
+        name: default-dingtalk-secret
+      appsecret:
+        key: appsecret
+        name: default-dingtalk-secret
 
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: DingTalkReceiver
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Receiver
 metadata:
   name: global-dingtalk-receiver
   labels:
     app: notification-manager
     type: global
 spec:
-  conversation:
-    chatid: chat894f9f4d634eb283933af6c7102977b2
-  chatbot:
-    webhook:
-      key: webhook
-      name: default-dingtalk-secret
-    keywords: 
-    - kubesphere
-    secret:
-      key: secret
-      name: default-dingtalk-secret
+  dingtalk:
+    conversation:
+      chatid: chat894f9f4d634eb283933af6c7102977b2
+    chatbot:
+      webhook:
+        key: webhook
+        name: default-dingtalk-secret
+      keywords: 
+      - kubesphere
+      secret:
+        key: secret
+        name: default-dingtalk-secret
 EOF
 ```
 
@@ -447,7 +451,7 @@ Deploying Notification Manager in Kubernetes is similar to deploying it in KubeS
 First of all, change the `tenantKey` to `namespace` like this.
 
 ```
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: NotificationManager
 metadata:
   name: notification-manager
@@ -460,38 +464,42 @@ Secondly, change the label of receiver and config from `user: ${user}` to `names
 
 ```
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: EmailConfig
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Config
 metadata:
   labels:
     app: notification-manager
     type: tenant
+    namespace: default
   name: user1-email-config
 spec:
-  authPassword:
-    key: password
-    name: user1-email-secret
-  authUsername: sender1 
-  from: sender1@xyz.com
-  requireTLS: true
-  smartHost:
-    host: imap.xyz.com
-    port: "25"
+  email:
+    authPassword:
+      key: password
+      name: user1-email-secret
+    authUsername: sender1 
+    from: sender1@xyz.com
+    requireTLS: true
+    smartHost:
+      host: imap.xyz.com
+      port: "25"
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: EmailReceiver
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Receiver
 metadata:
   labels:
     app: notification-manager
     type: tenant
+    namespace: default
   name: user1-email-receiver
 spec:
-  emailConfigSelector:
-    matchLabels:
-      type: tenant
-  to:
-  - receiver3@xyz.com
-  - receiver4@xyz.com
+  email:
+    emailConfigSelector:
+      matchLabels:
+        type: tenant
+    to:
+    - receiver3@xyz.com
+    - receiver4@xyz.com
 EOF
 ```
 
@@ -501,20 +509,21 @@ A receiver can filter alerts by setting a label selector, only alerts that match
 Here is a sample, this receiver will only receive alerts from auditing.
 
 ```
-apiVersion: notification.kubesphere.io/v2alpha1
-kind: EmailReceiver
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Receiver
 metadata:
   labels:
     app: notification-manager
     type: global
   name: global-email-receiver
 spec:
-  to:
-  - receiver1@xyz.com
-  - receiver2@xyz.com
-  alertSelector:
-    matchLabels:
-      alerttype: auditing
+  email:
+    to:
+    - receiver1@xyz.com
+    - receiver2@xyz.com
+    alertSelector:
+      matchLabels:
+        alerttype: auditing
 ```
 
 ### Customize template
@@ -525,7 +534,7 @@ It can set a global template, or set a template for each type of receivers. If t
 
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: NotificationManager
 metadata:
   name: notification-manager

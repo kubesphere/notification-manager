@@ -26,7 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/kubesphere/notification-manager/pkg/apis/v2alpha1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
 	"github.com/kubesphere/notification-manager/pkg/controllers"
 	// +kubebuilder:scaffold:imports
 )
@@ -39,7 +39,7 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
-	_ = v2alpha1.AddToScheme(scheme)
+	_ = v2beta1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 

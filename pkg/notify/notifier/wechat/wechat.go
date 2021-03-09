@@ -12,7 +12,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/prometheus/alertmanager/template"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -135,20 +134,17 @@ func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierC
 			w = c
 		}
 
-		if len(receiver.ToUser) > 0 {
-			w.ToUser += "|" + receiver.ToUser
+		if receiver.ToUser != nil && len(receiver.ToUser) > 0 {
+			w.ToUser = append(w.ToUser, receiver.ToUser...)
 		}
-		w.ToUser = strings.TrimPrefix(w.ToUser, "|")
 
-		if len(receiver.ToTag) > 0 {
-			w.ToTag += "|" + receiver.ToTag
+		if receiver.ToParty != nil && len(receiver.ToParty) > 0 {
+			w.ToParty = append(w.ToUser, receiver.ToParty...)
 		}
-		w.ToTag = strings.TrimPrefix(w.ToTag, "|")
 
-		if len(receiver.ToParty) > 0 {
-			w.ToParty += "|" + receiver.ToParty
+		if receiver.ToTag != nil && len(receiver.ToTag) > 0 {
+			w.ToTag = append(w.ToUser, receiver.ToTag...)
 		}
-		w.ToParty = strings.TrimPrefix(w.ToParty, "|")
 
 		n.wechat[key] = w
 	}
@@ -169,9 +165,9 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			Text: weChatMessageContent{
 				Content: msg,
 			},
-			ToUser:  w.ToUser,
-			ToParty: w.ToParty,
-			ToTag:   w.ToTag,
+			ToUser:  notifier.ArrayToString(w.ToUser, "|"),
+			ToParty: notifier.ArrayToString(w.ToParty, "|"),
+			ToTag:   notifier.ArrayToString(w.ToTag, "|"),
 			AgentID: w.WechatConfig.AgentID,
 			Type:    "text",
 			Safe:    "0",
@@ -262,9 +258,9 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}
 
 		us, ps, ts := 0, 0, 0
-		toUser := strings.Split(w.ToUser, "|")
-		toParty := strings.Split(w.ToParty, "|")
-		toTag := strings.Split(w.ToTag, "|")
+		toUser := w.ToUser
+		toParty := w.ToParty
+		toTag := w.ToTag
 
 		nw := w.Clone()
 		for {
@@ -340,9 +336,9 @@ func (n *Notifier) invalidToken(ctx context.Context, w *config.Wechat) {
 	n.ats.InvalidToken(ctx, key, n.logger)
 }
 
-func batch(src []string, index *int, size int) string {
+func batch(src []string, index *int, size int) []string {
 	if *index > len(src) {
-		return ""
+		return nil
 	}
 
 	var sub []string
@@ -353,11 +349,5 @@ func batch(src []string, index *int, size int) string {
 	}
 
 	*index += size
-
-	to := ""
-	for _, t := range sub {
-		to += fmt.Sprintf("%s|", t)
-	}
-
-	return to
+	return sub
 }

@@ -18,11 +18,11 @@ package controllers
 
 import (
 	"context"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/go-logr/logr"
-	"github.com/kubesphere/notification-manager/pkg/apis/v2alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -40,7 +40,7 @@ const (
 
 var (
 	ownerKey               = ".metadata.controller"
-	apiGVStr               = v2alpha1.GroupVersion.String()
+	apiGVStr               = v2beta1.GroupVersion.String()
 	log                    logr.Logger
 	minReplicas            int32 = 1
 	defaultImage                 = "kubesphere/notification-manager:v0.1.0"
@@ -57,7 +57,7 @@ type NotificationManagerReconciler struct {
 
 // Reconcile reads that state of NotificationManager objects and makes changes based on the state read
 // and what is in the NotificationManagerSpec
-// +kubebuilder:rbac:groups=notification.kubesphere.io,resources=notificationmanagers;receivers;dingtalkconfigs;dingtalkreceivers;emailconfigs;emailreceivers;webhookconfigs;webhookreceivers;wechatconfigs;wechatreceivers;slackconfigs;slackreceivers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=notification.kubesphere.io,resources=notificationmanagers;receivers;configs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=notification.kubesphere.io,resources=notificationmanagers/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -68,7 +68,7 @@ func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 	ctx := context.Background()
 	log = r.Log.WithValues("NotificationManager Operator", req.NamespacedName)
 
-	var nm v2alpha1.NotificationManager
+	var nm v2beta1.NotificationManager
 	if err := r.Get(ctx, req.NamespacedName, &nm); err != nil {
 		log.Error(err, "Unable to get NotificationManager", "Req", req.NamespacedName.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -97,7 +97,7 @@ func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 	return ctrl.Result{}, nil
 }
 
-func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context, nm *v2alpha1.NotificationManager) error {
+func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context, nm *v2beta1.NotificationManager) error {
 	nm = nm.DeepCopy()
 	if nm.Spec.PortName == "" {
 		nm.Spec.PortName = defaultPortName
@@ -134,7 +134,7 @@ func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context,
 	return nil
 }
 
-func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployment, nm *v2alpha1.NotificationManager) controllerutil.MutateFn {
+func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployment, nm *v2beta1.NotificationManager) controllerutil.MutateFn {
 	return func() error {
 		nm = nm.DeepCopy()
 
@@ -258,7 +258,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 	}
 }
 
-func (r *NotificationManagerReconciler) makeCommonLabels(nm *v2alpha1.NotificationManager) *map[string]string {
+func (r *NotificationManagerReconciler) makeCommonLabels(nm *v2beta1.NotificationManager) *map[string]string {
 	return &map[string]string{"app": notificationManager, notificationManager: nm.Name}
 }
 
@@ -296,7 +296,7 @@ func (r *NotificationManagerReconciler) SetupWithManager(mgr ctrl.Manager) error
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v2alpha1.NotificationManager{}).
+		For(&v2beta1.NotificationManager{}).
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }
