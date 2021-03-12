@@ -534,7 +534,12 @@ func (c *Config) updateReloadTimestamp() {
 
 	for _, obj := range receiverList.Items {
 
-		obj.Annotations["reloadtimestamp"] = time.Now().String()
+		annotations := obj.Annotations
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+		annotations["reloadtimestamp"] = time.Now().String()
+		obj.SetAnnotations(annotations)
 		err := c.client.Update(c.ctx, &obj)
 		if err != nil {
 			_ = level.Error(c.logger).Log("msg", "update receiver error", "name", obj.GetName(), "err", err)
@@ -544,7 +549,12 @@ func (c *Config) updateReloadTimestamp() {
 
 	for _, obj := range configList.Items {
 
-		obj.Annotations["reloadtimestamp"] = time.Now().String()
+		annotations := obj.Annotations
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+		annotations["reloadtimestamp"] = time.Now().String()
+		obj.SetAnnotations(annotations)
 		err := c.client.Update(c.ctx, &obj)
 		if err != nil {
 			_ = level.Error(c.logger).Log("msg", "update config error", "name", obj.GetName(), "err", err)
