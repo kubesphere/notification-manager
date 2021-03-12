@@ -115,7 +115,46 @@ metadata:
   name: noification-manager-template
   namespace: kubesphere-monitoring-system
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Config
+metadata:
+  labels:
+    app: notification-manager
+    type: default
+  name: default-config
+  namespace: kubesphere-monitoring-system
+spec:
+  dingtalk:
+    conversation:
+      appkey:
+        key: appkey
+        name: defalut-config-secret
+      appsecret:
+        key: appsecret
+        name: defalut-config-secret
+  email:
+    authPassword:
+      key: password
+      name: default-email-secret
+    authUsername: sender1
+    from: sender1@xyz.com
+    requireTLS: true
+    smartHost:
+      host: imap.xyz.com
+      port: 25
+  slack:
+    slackTokenSecret:
+      key: token
+      name: defalut-config-secret
+  wechat:
+    wechatApiAgentId: wechat-api-agent-id
+    wechatApiCorpId: wechat-api-corp-id
+    wechatApiSecret:
+      key: wechat
+      name: defalut-config-secret
+    wechatApiUrl: https://qyapi.weixin.qq.com/cgi-bin/
+---
+apiVersion: notification.kubesphere.io/v2beta1
 kind: NotificationManager
 metadata:
   labels:
@@ -170,7 +209,7 @@ spec:
       name: noification-manager-template
     name: noification-manager-template
 ---
-apiVersion: notification.kubesphere.io/v2alpha1
+apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
 metadata:
   labels:
@@ -230,42 +269,3 @@ spec:
     toUser:
     - user1
     - user2
----
-apiVersion: notification.kubesphere.io/v2beta1
-kind: Config
-metadata:
-  labels:
-    app: notification-manager
-    type: default
-  name: default-config
-  namespace: kubesphere-monitoring-system
-spec:
-  dingtalk:
-    conversation:
-      appkey:
-        key: appkey
-        name: defalut-config-secret
-      appsecret:
-        key: appsecret
-        name: defalut-config-secret
-  email:
-    authPassword:
-      key: password
-      name: default-email-secret
-    authUsername: sender1
-    from: sender1@xyz.com
-    requireTLS: true
-    smartHost:
-      host: imap.xyz.com
-      port: 25
-  slack:
-    slackTokenSecret:
-      key: token
-      name: defalut-config-secret
-  wechat:
-    wechatApiAgentId: wechat-api-agent-id
-    wechatApiCorpId: wechat-api-corp-id
-    wechatApiSecret:
-      key: wechat
-      name: defalut-config-secret
-    wechatApiUrl: https://qyapi.weixin.qq.com/cgi-bin/
