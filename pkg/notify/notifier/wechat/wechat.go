@@ -55,9 +55,12 @@ type weChatMessage struct {
 }
 
 type weChatResponse struct {
-	Code        int    `json:"code"`
-	Error       string `json:"error"`
-	AccessToken string `json:"access_token,omitempty"`
+	ErrorCode    int    `json:"errcode"`
+	ErrorMsg     string `json:"errmsg"`
+	AccessToken  string `json:"access_token,omitempty"`
+	InvalidUser  string `json:"invaliduser,omitempty"`
+	InvalidParty string `json:"invalidparty,omitempty"`
+	InvalidTag   string `json:"invalidTag,omitempty"`
 }
 
 func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg *config.Config) notifier.Notifier {
@@ -122,8 +125,8 @@ func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierC
 			receiver.WechatConfig.APIURL = DefaultApiURL
 		}
 
-		c := receiver.Clone()
-		key, err := notifier.Md5key(c)
+		newReceiver := receiver.Clone()
+		key, err := notifier.Md5key(newReceiver.WechatConfig)
 		if err != nil {
 			_ = level.Error(logger).Log("msg", "WechatNotifier: get notifier error", "error", err.Error())
 			continue
@@ -131,19 +134,19 @@ func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierC
 
 		w, ok := n.wechat[key]
 		if !ok {
-			w = c
-		}
+			w = newReceiver
+		} else {
+			if newReceiver.ToUser != nil && len(newReceiver.ToUser) > 0 {
+				w.ToUser = append(w.ToUser, newReceiver.ToUser...)
+			}
 
-		if receiver.ToUser != nil && len(receiver.ToUser) > 0 {
-			w.ToUser = append(w.ToUser, receiver.ToUser...)
-		}
+			if newReceiver.ToParty != nil && len(newReceiver.ToParty) > 0 {
+				w.ToParty = append(w.ToUser, newReceiver.ToParty...)
+			}
 
-		if receiver.ToParty != nil && len(receiver.ToParty) > 0 {
-			w.ToParty = append(w.ToUser, receiver.ToParty...)
-		}
-
-		if receiver.ToTag != nil && len(receiver.ToTag) > 0 {
-			w.ToTag = append(w.ToUser, receiver.ToTag...)
+			if newReceiver.ToTag != nil && len(newReceiver.ToTag) > 0 {
+				w.ToTag = append(w.ToUser, newReceiver.ToTag...)
+			}
 		}
 
 		n.wechat[key] = w
@@ -219,19 +222,35 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 				return false, err
 			}
 
-			if weResp.Code == 0 {
-				_ = level.Debug(n.logger).Log("msg", "WechatNotifier: send message", "from", w.WechatConfig.AgentID, "toUser", w.ToUser, "toParty", w.ToParty, "toTag", w.ToTag)
+			if weResp.ErrorCode == 0 {
+				if weResp.InvalidUser != "" || weResp.InvalidParty != "" || weResp.InvalidTag != "" {
+					_ = level.Error(n.logger).Log("msg", "WechatNotifier: send message",
+						"from", w.WechatConfig.AgentID,
+						"Invalid user", weResp.InvalidUser,
+						"Invalid party", weResp.InvalidParty,
+						"Invalid tag", weResp.InvalidTag)
+				}
+				_ = level.Debug(n.logger).Log("msg", "WechatNotifier: send message",
+					"from", w.WechatConfig.AgentID,
+					"toUser", notifier.ArrayToString(w.ToUser, "|"),
+					"toParty", notifier.ArrayToString(w.ToParty, "|"),
+					"toTag", notifier.ArrayToString(w.ToTag, "|"))
 				return false, nil
 			}
 
 			// AccessToken is expired
-			if weResp.Code == AccessTokenInvalid {
+			if weResp.ErrorCode == AccessTokenInvalid {
 				_ = level.Error(n.logger).Log("msg", "WechatNotifier: token expired", "error", err)
 				go n.invalidToken(ctx, w)
-				return true, fmt.Errorf("%s", weResp.Error)
+				return true, fmt.Errorf("%s", weResp.ErrorMsg)
 			}
 
-			_ = level.Error(n.logger).Log("msg", "WechatNotifier: wechat response error", "error", weResp.Code, "message", weResp.Error)
+			_ = level.Error(n.logger).Log("msg", "WechatNotifier: wechat response error",
+				"error code", weResp.ErrorCode, "error message", weResp.ErrorMsg,
+				"from", w.WechatConfig.AgentID,
+				"toUser", notifier.ArrayToString(w.ToUser, "|"),
+				"toParty", notifier.ArrayToString(w.ToParty, "|"),
+				"toTag", notifier.ArrayToString(w.ToTag, "|"))
 			return false, nil
 		}
 
@@ -322,6 +341,10 @@ func (n *Notifier) getToken(ctx context.Context, w *config.Wechat) (string, erro
 		err = json.Unmarshal(body, resp)
 		if err != nil {
 			return "", 0, err
+		}
+
+		if resp.ErrorCode != 0 {
+			return "", 0, fmt.Errorf("error code %d, error message %s", resp.ErrorCode, resp.ErrorMsg)
 		}
 
 		_ = level.Debug(n.logger).Log("msg", "WechatNotifier: get token", "key", w.WechatConfig.CorpID+" | "+w.WechatConfig.AgentID)

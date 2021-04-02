@@ -40,6 +40,7 @@ import (
 
 const (
 	TivoliAlertUnknown  = 1
+	TivoliAlertOrdinary = 2
 	TivoliAlertError    = 3
 	TivoliAlertCritical = 4
 
@@ -288,12 +289,13 @@ func getMessage(alert *Alert) string {
 		case "critical":
 			level = TivoliAlertCritical
 		case "error":
-		case "warning":
 			level = TivoliAlertError
+		case "warning":
+			level = TivoliAlertOrdinary
 		}
 	}
 
-	if level < TivoliAlertError {
+	if level < TivoliAlertOrdinary {
 		return ""
 	}
 

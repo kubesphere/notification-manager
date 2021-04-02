@@ -163,8 +163,9 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	for _, slack := range n.slack {
 		s := slack
 		for _, channel := range s.Channels {
+			ch := channel
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- send(channel, s)
+				stopCh <- send(ch, s)
 			})
 		}
 	}

@@ -7,7 +7,7 @@ Supported senders includes:
 
 Supported receivers includes:
 - Email
-- [Wechat Work](https://work.weixin.qq.com/)
+- [WeCom](https://work.weixin.qq.com/)
 - Slack 
 - Webhook 
 - DingTalk
@@ -115,7 +115,7 @@ spec:
 EOF
 ```
 
-#### Deploy the default EmailConfig and a global EmailReceiver
+#### Deploy the default EmailConfig and global EmailReceiver
 ```
 cat <<EOF | kubectl apply -f -
 apiVersion: notification.kubesphere.io/v2beta1
@@ -135,7 +135,7 @@ spec:
     requireTLS: true
     smartHost:
       host: imap.xyz.com
-      port: "25"
+      port: 25
 ---
 apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
@@ -186,7 +186,7 @@ spec:
     requireTLS: true
     smartHost:
       host: imap.xyz.com
-      port: "25"
+      port: 25
 ---
 apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
@@ -220,7 +220,7 @@ type: Opaque
 EOF
 ```
 
-#### Deploy the default WechatConfig and a global WechatReceivers
+#### Deploy the default WechatConfig and global WechatReceivers
 
 ```
 cat <<EOF | kubectl apply -f -
@@ -252,9 +252,15 @@ spec:
     # wechatConfigSelector needn't to be configured for a global receiver
     # optional
     # One of toUser, toParty, toParty should be specified.
-    toUser: < wechat-user >
-    toParty: < wechat-party >
-    toTag: < wechat-tag >
+    toUser: 
+      - user1
+      - user2
+    toParty: 
+      - party1
+      - party2
+    toTag:
+      - tag1
+      - tag2
 ---
 apiVersion: v1
 data:
@@ -273,7 +279,7 @@ EOF
 > - You can get these two parameters in App Management of your Wechat Work. 
 > - Note that any user, party or tag who wants to receive notifications must be in the allowed users list of this app.
 
-#### Deploy the default SlackConfig and a global SlackReceiver
+#### Deploy the default SlackConfig and global SlackReceiver
 
 ```
 cat <<EOF | kubectl apply -f -
@@ -300,7 +306,9 @@ metadata:
 spec:
   slack:
     # slackConfigSelector needn't to be configured for a global receiver
-    channel: < slack-channel >
+    channels: 
+      - channel1
+      - channel2
 ---
 apiVersion: v1
 data:
@@ -314,9 +322,9 @@ metadata:
 type: Opaque
 EOF
 ```
-> Slack token is the OAuth Access Token or Bot User OAuth Access Token when you create a slack app. This app must have the scope chat:write. The user who creates the app or bot user must be in the channel which you want to send notification to.
+> Slack token is the OAuth Access Token or Bot User OAuth Access Token when you create a Slack app. This app must have the scope chat:write. The user who creates the app or bot user must be in the channel which you want to send notification to.
 
-#### Deploy the default WebhookConfig and a global WebhookReceiver
+#### Deploy the default WebhookConfig and global WebhookReceiver
 
 ```
 cat <<EOF | kubectl apply -f -
@@ -425,7 +433,9 @@ metadata:
 spec:
   dingtalk:
     conversation:
-      chatid: chat894f9f4d634eb283933af6c7102977b2
+      chatids: 
+        - chat1
+        - chat2
     chatbot:
       webhook:
         key: webhook
@@ -441,14 +451,14 @@ EOF
 > - DingTalkReceiver can both send messages to `conversation` and `chatbot`.
 > - If you want to send messages to conversation, the application used to send messages to conversation must have the authority `Enterprise conversation`, and the IP which notification manager used to send messages must be in the white list of the application. Usually, it is the IP of Kubernetes nodes, you can simply add all Kubernetes nodes to the white list.
 > - The `appkey` is the key of the application, the `appsecret` is the secret of the application.
-> - The `chatid` is the id of the conversation, it can only be obtained from the response of [creating conversation](https://ding-doc.dingtalk.com/document#/org-dev-guide/create-chat).
+> - The `chatids` is the id of the conversation, it can only be obtained from the response of [creating conversation](https://ding-doc.dingtalk.com/document#/org-dev-guide/create-chat).
 > - The `webhook` is the URL of a chatbot, the `keywords` is the keywords of a chatbot, The `secret` is the secret of chatbot, you can get them in the setting page of chatbot.
 
 ### Deploy Notification Manager in any other Kubernetes cluster (Uses `namespace` to distinguish each tenant user):
 
 Deploying Notification Manager in Kubernetes is similar to deploying it in KubeSphere, the differences are:
 
-First of all, change the `tenantKey` to `namespace` like this.
+Firstly, change the `tenantKey` to `namespace` like this.
 
 ```
 apiVersion: notification.kubesphere.io/v2beta1
@@ -482,7 +492,7 @@ spec:
     requireTLS: true
     smartHost:
       host: imap.xyz.com
-      port: "25"
+      port: 25
 ---
 apiVersion: notification.kubesphere.io/v2beta1
 kind: Receiver
@@ -599,6 +609,82 @@ To receive Alertmanager alerts, add webhook config like below to the `receivers`
      - "name": "notification-manager"
        "webhook_configs":
        - "url": "http://notification-manager-svc.kubesphere-monitoring-system.svc:19093/api/v2/alerts"
+```
+
+## Update
+
+There has a very big change since v1.0.0, all config crds are aggregated into a crd named `Config`, 
+and all receiver crds are aggregated into a crd named `Receiver`, and the crds now is the cluster scope crd.
+All the changes are as follows
+
+- All config crds are aggregated into a crd named `Config`.
+- All receivers crds are aggregated into a crd named `Receiver`.
+- Now the `Config`, `Receiver`, and `NotificationManager` are cluster scope crd.
+- The `NotificationManager` crd add a properties named `defaultSecretNamespace` which defines the default namespace to which notification manager secrets belong.
+- Now the namespace of the secret can be specified in `SecretKeySelector` like this. 
+  If the `namespace` of `SecretKeySelector` has be set, notification manager will get the secret in this namespace, 
+  else, notification manager will get the secret in the `defaultSecretNamespace`,
+  if the `defaultSecretNamespace` does not set, notification manager will get the secret in the namespace which the `notification manager operator` be in.
+
+```yaml
+    kind: Config
+    metadata:
+      labels:
+        type: tenant
+        namespace: default
+      name: user1-email-config
+    spec:
+      email:
+        authPassword:
+          key: password
+          name: user1-email-secret
+          namespace: kubesphere-monitoringsystem
+```
+
+- Move the configuration of DingTalk chatbot from dingtalk config to dingtalk receiver.
+- Move the chatid of DingTalk conversation from dingtalk config to dingtalk receiver.
+- Now the `chatid` of DingTalk conversation is an array types, and renamed to `chatids`.
+- Now the `port` of email `smartHost` is an integer type.
+- Now the `channel` fo slack is an array types, and renamed to `channels`.
+- Move the configuration of webhook from webhook config to webhook receiver.
+- Now the `toUser`, `toParty`, `toTag` of wechat receiver are array type.
+
+You can update the v0.x to the latest version by following this.
+
+Firstly, backup the old crds and converts to new crds.
+
+```shell
+curl -o update.sh https://raw.githubusercontent.com/kubesphere/notification-manager/master/config/update/update.sh && sh update.sh
+```
+
+>This command will generate two directories, backup and crds. The `backup` directory store the old crds, and the `crds` directory store the new crds
+
+Secondly, delete old crds.
+
+```shell
+kubectl delete --ignore-not-found=true crd notificationmanagers.notification.kubesphere.io
+kubectl delete --ignore-not-found=true crd dingtalkconfigs.notification.kubesphere.io
+kubectl delete --ignore-not-found=true crd dingtalkreceivers.notification.kubesphere.io
+kubectl delete --ignore-not-found=true crd emailconfigs.notification.kubesphere.io
+kubectl delete --ignore-not-found=true crd emailreceivers.notification.kubesphere.io
+kubectl delete --ignore-not-found=true crd slackconfigs.notification.kubesphere.io
+kubectl delete --ignore-not-found=true crd slackreceivers.notification.kubesphere.io
+kubectl delete --ignore-not-found=true crd webhookconfigs.notification.kubesphere.io
+kubectl delete --ignore-not-found=true crd webhookreceivers.notification.kubesphere.io
+kubectl delete --ignore-not-found=true crd wechatconfigs.notification.kubesphere.io
+kubectl delete --ignore-not-found=true crd wechatreceivers.notification.kubesphere.io
+```
+
+Thirdly, deploy the notification-manager of the latest version.
+
+```shell
+kubectl apply -f https://raw.githubusercontent.com/kubesphere/notification-manager/master/config/bundle.yaml
+```
+
+Fourthly, deploy configs and receivers.
+
+```shell
+kubectl apply -f crds/
 ```
 
 ## Development

@@ -42,14 +42,11 @@ func NewAlerts(data []byte) ([]*Alert, error) {
 
 	var as []*Alert
 	for _, a := range d.Alerts {
-		for k, v := range d.CommonLabels {
-			a.Labels[k] = v
-		}
-		alert := Alert{
-			&a,
+		alert := a
+		as = append(as, &Alert{
+			&alert,
 			&TraceInfo{ReceivedTime: time.Now()},
-		}
-		as = append(as, &alert)
+		})
 	}
 
 	return as, nil

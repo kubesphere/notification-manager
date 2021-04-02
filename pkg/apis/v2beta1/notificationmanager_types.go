@@ -24,7 +24,8 @@ import (
 
 // SecretKeySelector selects a key of a Secret.
 type SecretKeySelector struct {
-	// The namespace of the secret, default to the pod's namespace.
+	// The namespace of the secret, default to the `defaultSecretNamespace` of `NotificationManager` crd.
+	// If the `defaultSecretNamespace` does not set, default to the pod's namespace.
 	// +optional
 	Namespace string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
 	// Name of the secret.

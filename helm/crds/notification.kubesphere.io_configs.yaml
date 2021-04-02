@@ -58,7 +58,9 @@ spec:
                             type: string
                           namespace:
                             description: The namespace of the secret, default to the
-                              pod's namespace.
+                              `defaultSecretNamespace` of `NotificationManager` crd.
+                              If the `defaultSecretNamespace` does not set, default
+                              to the pod's namespace.
                             type: string
                         required:
                         - key
@@ -76,7 +78,9 @@ spec:
                             type: string
                           namespace:
                             description: The namespace of the secret, default to the
-                              pod's namespace.
+                              `defaultSecretNamespace` of `NotificationManager` crd.
+                              If the `defaultSecretNamespace` does not set, default
+                              to the pod's namespace.
                             type: string
                         required:
                         - key
@@ -104,8 +108,9 @@ spec:
                         description: Name of the secret.
                         type: string
                       namespace:
-                        description: The namespace of the secret, default to the pod's
-                          namespace.
+                        description: The namespace of the secret, default to the `defaultSecretNamespace`
+                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                          does not set, default to the pod's namespace.
                         type: string
                     required:
                     - key
@@ -122,8 +127,9 @@ spec:
                         description: Name of the secret.
                         type: string
                       namespace:
-                        description: The namespace of the secret, default to the pod's
-                          namespace.
+                        description: The namespace of the secret, default to the `defaultSecretNamespace`
+                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                          does not set, default to the pod's namespace.
                         type: string
                     required:
                     - key
@@ -174,7 +180,9 @@ spec:
                                 type: string
                               namespace:
                                 description: The namespace of the secret, default
-                                  to the pod's namespace.
+                                  to the `defaultSecretNamespace` of `NotificationManager`
+                                  crd. If the `defaultSecretNamespace` does not set,
+                                  default to the pod's namespace.
                                 type: string
                             required:
                             - key
@@ -191,7 +199,9 @@ spec:
                                 type: string
                               namespace:
                                 description: The namespace of the secret, default
-                                  to the pod's namespace.
+                                  to the `defaultSecretNamespace` of `NotificationManager`
+                                  crd. If the `defaultSecretNamespace` does not set,
+                                  default to the pod's namespace.
                                 type: string
                             required:
                             - key
@@ -213,7 +223,9 @@ spec:
                             type: string
                           namespace:
                             description: The namespace of the secret, default to the
-                              pod's namespace.
+                              `defaultSecretNamespace` of `NotificationManager` crd.
+                              If the `defaultSecretNamespace` does not set, default
+                              to the pod's namespace.
                             type: string
                         required:
                         - key
@@ -243,8 +255,9 @@ spec:
                         description: Name of the secret.
                         type: string
                       namespace:
-                        description: The namespace of the secret, default to the pod's
-                          namespace.
+                        description: The namespace of the secret, default to the `defaultSecretNamespace`
+                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                          does not set, default to the pod's namespace.
                         type: string
                     required:
                     - key
@@ -280,8 +293,9 @@ spec:
                         description: Name of the secret.
                         type: string
                       namespace:
-                        description: The namespace of the secret, default to the pod's
-                          namespace.
+                        description: The namespace of the secret, default to the `defaultSecretNamespace`
+                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                          does not set, default to the pod's namespace.
                         type: string
                     required:
                     - key
