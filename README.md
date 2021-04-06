@@ -613,18 +613,16 @@ To receive Alertmanager alerts, add webhook config like below to the `receivers`
 
 ## Update
 
-There has a very big change since v1.0.0, all config crds are aggregated into a crd named `Config`, 
-and all receiver crds are aggregated into a crd named `Receiver`, and the crds now is the cluster scope crd.
-All the changes are as follows
+There are some breaking changes in v1.0.0 :
 
 - All config crds are aggregated into a crd named `Config`.
 - All receivers crds are aggregated into a crd named `Receiver`.
-- Now the `Config`, `Receiver`, and `NotificationManager` are cluster scope crd.
-- The `NotificationManager` crd add a properties named `defaultSecretNamespace` which defines the default namespace to which notification manager secrets belong.
+- Now the `Config`, `Receiver`, and `NotificationManager` are cluster scoped crd.
+- The `NotificationManager` crd add a property named `defaultSecretNamespace` which defines the default namespace to which notification manager secrets belong.
 - Now the namespace of the secret can be specified in `SecretKeySelector` like this. 
   If the `namespace` of `SecretKeySelector` has be set, notification manager will get the secret in this namespace, 
   else, notification manager will get the secret in the `defaultSecretNamespace`,
-  if the `defaultSecretNamespace` does not set, notification manager will get the secret in the namespace which the `notification manager operator` be in.
+  if the `defaultSecretNamespace` does not set, will get the secret from the namespace of notification manager operator.
 
 ```yaml
     kind: Config
@@ -648,6 +646,8 @@ All the changes are as follows
 - Now the `channel` fo slack is an array types, and renamed to `channels`.
 - Move the configuration of webhook from webhook config to webhook receiver.
 - Now the `toUser`, `toParty`, `toTag` of wechat receiver are array type.
+
+### Steps to migrate crds from v0.x to v1.0
 
 You can update the v0.x to the latest version by following this.
 
@@ -681,7 +681,7 @@ Thirdly, deploy the notification-manager of the latest version.
 kubectl apply -f https://raw.githubusercontent.com/kubesphere/notification-manager/master/config/bundle.yaml
 ```
 
-Fourthly, deploy configs and receivers.
+Finally, deploy configs and receivers.
 
 ```shell
 kubectl apply -f crds/
