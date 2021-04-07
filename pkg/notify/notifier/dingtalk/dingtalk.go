@@ -235,10 +235,13 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 			return err
 		}
 
-		secret, err := n.notifierCfg.GetSecretData(bot.Secret)
-		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get chatbot secret error", "error", err.Error())
-			return err
+		secret := ""
+		if bot.Secret != nil {
+			secret, err = n.notifierCfg.GetSecretData(bot.Secret)
+			if err != nil {
+				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get chatbot secret error", "error", err.Error())
+				return err
+			}
 		}
 
 		u := webhook
@@ -415,10 +418,11 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 	for _, m := range messages {
 		msg := m
 		for _, chatID := range d.ChatIDs {
+			id := chatID
 			group.Add(func(stopCh chan interface{}) {
 				n.throttle.TryAdd(appkey, n.conversationThreshold, n.conversationUnit, n.conversationMaxWaitTime)
 				if n.throttle.Allow(appkey, n.logger) {
-					stopCh <- send(chatID, msg)
+					stopCh <- send(id, msg)
 				} else {
 					_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: message to conversation dropped because of flow control", "conversation", chatID)
 					stopCh <- fmt.Errorf("")
