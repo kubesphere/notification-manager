@@ -636,7 +636,7 @@ There are some breaking changes in v1.0.0 :
         authPassword:
           key: password
           name: user1-email-secret
-          namespace: kubesphere-monitoringsystem
+          namespace: kubesphere-monitoring-system
 ```
 
 - Move the configuration of DingTalk chatbot from dingtalk config to dingtalk receiver.
