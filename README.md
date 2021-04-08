@@ -56,7 +56,7 @@ A receiver could be configured without xxxConfigSelector, in which case Notifica
 Deploy CRDs and the Notification Manager Operator:
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/kubesphere/notification-manager/0.8.0/config/bundle.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubesphere/notification-manager/release-1.0/config/bundle.yaml
 ```
 
 ### Deploy Notification Manager in KubeSphere (Uses `workspace` to distinguish each tenant user):
@@ -77,7 +77,7 @@ spec:
     requests:
       cpu: 100m
       memory: 20Mi
-  image: kubesphere/notification-manager:v0.6.0
+  image: kubesphere/notification-manager:v1.0.0
   imagePullPolicy: IfNotPresent
   serviceAccountName: notification-manager-sa
   portName: webhook
@@ -649,12 +649,12 @@ There are some breaking changes in v1.0.0 :
 
 ### Steps to migrate crds from v0.x to v1.0
 
-You can update the v0.x to the latest version by following this.
+You can update the v0.x to the v1.0 by following this.
 
 Firstly, backup the old crds and converts to new crds.
 
 ```shell
-curl -o update.sh https://raw.githubusercontent.com/kubesphere/notification-manager/master/config/update/update.sh && sh update.sh
+curl -o update.sh https://raw.githubusercontent.com/kubesphere/notification-manager/release-1.0/config/update/update.sh && sh update.sh
 ```
 
 >This command will generate two directories, backup and crds. The `backup` directory store the old crds, and the `crds` directory store the new crds
