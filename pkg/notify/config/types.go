@@ -3,8 +3,9 @@ package config
 import (
 	"errors"
 	"fmt"
+
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/modern-go/reflect2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,14 +15,21 @@ type Receiver interface {
 	Enabled() bool
 	UseDefault() bool
 	SetUseDefault(b bool)
+	GetType() string
+	GetConfigSelector() *metav1.LabelSelector
 	GetConfig() interface{}
 	SetConfig(c interface{}) error
+	Validate() error
 }
 
 type common struct {
 	enabled *bool
 	// True means receiver use the default config.
 	useDefault bool
+	// The type of receiver.
+	receiverType string
+	// The config selector of receiver
+	configSelector *metav1.LabelSelector
 }
 
 func (c *common) Enabled() bool {
@@ -40,6 +48,14 @@ func (c *common) SetUseDefault(b bool) {
 	c.useDefault = b
 }
 
+func (c *common) GetType() string {
+	return c.receiverType
+}
+
+func (c *common) GetConfigSelector() *metav1.LabelSelector {
+	return c.configSelector
+}
+
 func NewReceiver(c *Config, obj interface{}) Receiver {
 
 	if reflect2.IsNil(obj) {
@@ -47,26 +63,26 @@ func NewReceiver(c *Config, obj interface{}) Receiver {
 	}
 
 	switch obj.(type) {
-	case *v2beta1.DingTalkReceiver:
-		return NewDingTalkReceiver(c, obj.(*v2beta1.DingTalkReceiver))
-	case *v2beta1.DingTalkConfig:
-		return NewDingTalkConfig(obj.(*v2beta1.DingTalkConfig))
-	case *v2beta1.EmailReceiver:
-		return NewEmailReceiver(c, obj.(*v2beta1.EmailReceiver))
-	case *v2beta1.EmailConfig:
-		return NewEmailConfig(obj.(*v2beta1.EmailConfig))
-	case *v2beta1.SlackReceiver:
-		return NewSlackReceiver(c, obj.(*v2beta1.SlackReceiver))
-	case *v2beta1.SlackConfig:
-		return NewSlackConfig(obj.(*v2beta1.SlackConfig))
-	case *v2beta1.WebhookReceiver:
-		return NewWebhookReceiver(c, obj.(*v2beta1.WebhookReceiver))
-	case *v2beta1.WebhookConfig:
-		return NewWebhookConfig(obj.(*v2beta1.WebhookConfig))
-	case *v2beta1.WechatReceiver:
-		return NewWechatReceiver(c, obj.(*v2beta1.WechatReceiver))
-	case *v2beta1.WechatConfig:
-		return NewWechatConfig(obj.(*v2beta1.WechatConfig))
+	case *v2beta2.DingTalkReceiver:
+		return NewDingTalkReceiver(c, obj.(*v2beta2.DingTalkReceiver))
+	case *v2beta2.DingTalkConfig:
+		return NewDingTalkConfig(obj.(*v2beta2.DingTalkConfig))
+	case *v2beta2.EmailReceiver:
+		return NewEmailReceiver(c, obj.(*v2beta2.EmailReceiver))
+	case *v2beta2.EmailConfig:
+		return NewEmailConfig(obj.(*v2beta2.EmailConfig))
+	case *v2beta2.SlackReceiver:
+		return NewSlackReceiver(c, obj.(*v2beta2.SlackReceiver))
+	case *v2beta2.SlackConfig:
+		return NewSlackConfig(obj.(*v2beta2.SlackConfig))
+	case *v2beta2.WebhookReceiver:
+		return NewWebhookReceiver(c, obj.(*v2beta2.WebhookReceiver))
+	case *v2beta2.WebhookConfig:
+		return NewWebhookConfig(obj.(*v2beta2.WebhookConfig))
+	case *v2beta2.WechatReceiver:
+		return NewWechatReceiver(c, obj.(*v2beta2.WechatReceiver))
+	case *v2beta2.WechatConfig:
+		return NewWechatConfig(obj.(*v2beta2.WechatConfig))
 	default:
 		return nil
 	}
@@ -79,15 +95,15 @@ func getOpType(obj interface{}) string {
 	}
 
 	switch obj.(type) {
-	case *v2beta1.DingTalkReceiver, *v2beta1.DingTalkConfig:
+	case *v2beta2.DingTalkReceiver, *v2beta2.DingTalkConfig:
 		return dingtalk
-	case *v2beta1.EmailReceiver, *v2beta1.EmailConfig:
+	case *v2beta2.EmailReceiver, *v2beta2.EmailConfig:
 		return email
-	case *v2beta1.SlackReceiver, *v2beta1.SlackConfig:
+	case *v2beta2.SlackReceiver, *v2beta2.SlackConfig:
 		return slack
-	case *v2beta1.WebhookReceiver, *v2beta1.WebhookConfig:
+	case *v2beta2.WebhookReceiver, *v2beta2.WebhookConfig:
 		return webhook
-	case *v2beta1.WechatReceiver, *v2beta1.WechatConfig:
+	case *v2beta2.WechatReceiver, *v2beta2.WechatConfig:
 		return wechat
 	default:
 		return ""
@@ -103,22 +119,24 @@ type DingTalk struct {
 }
 
 type DingTalkConfig struct {
-	AppKey    *v2beta1.SecretKeySelector
-	AppSecret *v2beta1.SecretKeySelector
+	AppKey    *v2beta2.Credential
+	AppSecret *v2beta2.Credential
 }
 
-// Configuration of ChatBot
+// DingTalkChatBot is the configuration of ChatBot
 type DingTalkChatBot struct {
-	Webhook  *v2beta1.SecretKeySelector
+	Webhook  *v2beta2.Credential
 	Keywords []string
-	Secret   *v2beta1.SecretKeySelector
+	Secret   *v2beta2.Credential
 }
 
-func NewDingTalkReceiver(c *Config, dr *v2beta1.DingTalkReceiver) Receiver {
+func NewDingTalkReceiver(c *Config, dr *v2beta2.DingTalkReceiver) Receiver {
 
 	d := &DingTalk{
 		common: &common{
-			enabled: dr.Enabled,
+			enabled:        dr.Enabled,
+			receiverType:   dingtalk,
+			configSelector: dr.DingTalkConfigSelector,
 		},
 		Selector: dr.AlertSelector,
 	}
@@ -151,16 +169,18 @@ func NewDingTalkReceiver(c *Config, dr *v2beta1.DingTalkReceiver) Receiver {
 	return d
 }
 
-func NewDingTalkConfig(dc *v2beta1.DingTalkConfig) Receiver {
+func NewDingTalkConfig(dc *v2beta2.DingTalkConfig) Receiver {
 	d := &DingTalk{
-		common: &common{},
+		common: &common{
+			receiverType: dingtalk,
+		},
 	}
 
 	d.generateConfig(dc)
 	return d
 }
 
-func (d *DingTalk) generateConfig(dc *v2beta1.DingTalkConfig) {
+func (d *DingTalk) generateConfig(dc *v2beta2.DingTalkConfig) {
 
 	if dc == nil {
 		return
@@ -202,6 +222,41 @@ func (d *DingTalk) SetConfig(obj interface{}) error {
 	return nil
 }
 
+func (d *DingTalk) Validate() error {
+
+	if d.ChatBot == nil && (d.ChatIDs == nil || len(d.ChatIDs) == 0) {
+		return fmt.Errorf("%s", "must specify one of: `chatbot` or `chatIDs`")
+	}
+
+	if d.ChatBot != nil {
+		if err := validateCredential(d.ChatBot.Webhook); err != nil {
+			return fmt.Errorf("chatbot webhook error, %s", err.Error())
+		}
+
+		if d.ChatBot.Secret != nil {
+			if err := validateCredential(d.ChatBot.Secret); err != nil {
+				return fmt.Errorf("chatbot secret error, %s", err.Error())
+			}
+		}
+	}
+
+	if d.ChatIDs != nil && len(d.ChatIDs) > 0 {
+		if d.DingTalkConfig == nil {
+			return fmt.Errorf("config is nil")
+		}
+
+		if err := validateCredential(d.DingTalkConfig.AppKey); err != nil {
+			return fmt.Errorf("appkey error, %s", err.Error())
+		}
+
+		if err := validateCredential(d.DingTalkConfig.AppSecret); err != nil {
+			return fmt.Errorf("appsecret error, %s", err.Error())
+		}
+	}
+
+	return nil
+}
+
 type Email struct {
 	To          []string
 	EmailConfig *EmailConfig
@@ -211,20 +266,22 @@ type Email struct {
 
 type EmailConfig struct {
 	From         string
-	SmartHost    v2beta1.HostPort
+	SmartHost    v2beta2.HostPort
 	Hello        string
 	AuthUsername string
 	AuthIdentify string
-	AuthPassword *v2beta1.SecretKeySelector
-	AuthSecret   *v2beta1.SecretKeySelector
+	AuthPassword *v2beta2.Credential
+	AuthSecret   *v2beta2.Credential
 	RequireTLS   bool
-	TLS          *v2beta1.TLSConfig
+	TLS          *v2beta2.TLSConfig
 }
 
-func NewEmailReceiver(c *Config, er *v2beta1.EmailReceiver) Receiver {
+func NewEmailReceiver(c *Config, er *v2beta2.EmailReceiver) Receiver {
 	e := &Email{
 		common: &common{
-			enabled: er.Enabled,
+			enabled:        er.Enabled,
+			receiverType:   email,
+			configSelector: er.EmailConfigSelector,
 		},
 		To:       er.To,
 		Selector: er.AlertSelector,
@@ -245,16 +302,18 @@ func NewEmailReceiver(c *Config, er *v2beta1.EmailReceiver) Receiver {
 	return e
 }
 
-func NewEmailConfig(ec *v2beta1.EmailConfig) Receiver {
+func NewEmailConfig(ec *v2beta2.EmailConfig) Receiver {
 	e := &Email{
-		common: &common{},
+		common: &common{
+			receiverType: email,
+		},
 	}
 
 	e.generateConfig(ec)
 	return e
 }
 
-func (e *Email) generateConfig(ec *v2beta1.EmailConfig) {
+func (e *Email) generateConfig(ec *v2beta2.EmailConfig) {
 
 	if ec == nil {
 		return
@@ -318,6 +377,19 @@ func (e *Email) SetConfig(obj interface{}) error {
 	return nil
 }
 
+func (e *Email) Validate() error {
+
+	if e.To == nil || len(e.To) == 0 {
+		return fmt.Errorf("email receivers is nil")
+	}
+
+	if e.EmailConfig == nil {
+		return fmt.Errorf("config is nil")
+	}
+
+	return nil
+}
+
 type Slack struct {
 	// The channel or user to send notifications to.
 	Channels    []string
@@ -328,13 +400,15 @@ type Slack struct {
 
 type SlackConfig struct {
 	// The token of user or bot.
-	Token *v2beta1.SecretKeySelector
+	Token *v2beta2.Credential
 }
 
-func NewSlackReceiver(c *Config, sr *v2beta1.SlackReceiver) Receiver {
+func NewSlackReceiver(c *Config, sr *v2beta2.SlackReceiver) Receiver {
 	s := &Slack{
 		common: &common{
-			enabled: sr.Enabled,
+			enabled:        sr.Enabled,
+			receiverType:   slack,
+			configSelector: sr.SlackConfigSelector,
 		},
 		Channels: sr.Channels,
 		Selector: sr.AlertSelector,
@@ -355,16 +429,18 @@ func NewSlackReceiver(c *Config, sr *v2beta1.SlackReceiver) Receiver {
 	return s
 }
 
-func NewSlackConfig(sc *v2beta1.SlackConfig) Receiver {
+func NewSlackConfig(sc *v2beta2.SlackConfig) Receiver {
 	s := &Slack{
-		common: &common{},
+		common: &common{
+			receiverType: slack,
+		},
 	}
 
 	s.generateConfig(sc)
 	return s
 }
 
-func (s *Slack) generateConfig(sc *v2beta1.SlackConfig) {
+func (s *Slack) generateConfig(sc *v2beta2.SlackConfig) {
 
 	if sc == nil || sc.SlackTokenSecret == nil {
 		return
@@ -397,10 +473,27 @@ func (s *Slack) SetConfig(obj interface{}) error {
 	return nil
 }
 
+func (s *Slack) Validate() error {
+
+	if s.Channels == nil || len(s.Channels) == 0 {
+		return fmt.Errorf("channel must be specified")
+	}
+
+	if s.SlackConfig == nil {
+		return fmt.Errorf("config is nil")
+	}
+
+	if err := validateCredential(s.SlackConfig.Token); err != nil {
+		return fmt.Errorf("slack token error, %s", err.Error())
+	}
+
+	return nil
+}
+
 type Webhook struct {
 	// `url` gives the location of the webhook, in standard URL form.
 	URL           string
-	HttpConfig    *v2beta1.HTTPClientConfig
+	HttpConfig    *v2beta2.HTTPClientConfig
 	WebhookConfig *WebhookConfig
 	Selector      *metav1.LabelSelector
 	*common
@@ -409,10 +502,12 @@ type Webhook struct {
 type WebhookConfig struct {
 }
 
-func NewWebhookReceiver(_ *Config, wr *v2beta1.WebhookReceiver) Receiver {
+func NewWebhookReceiver(_ *Config, wr *v2beta2.WebhookReceiver) Receiver {
 	w := &Webhook{
 		common: &common{
-			enabled: wr.Enabled,
+			enabled:        wr.Enabled,
+			receiverType:   webhook,
+			configSelector: wr.WebhookConfigSelector,
 		},
 		Selector:   wr.AlertSelector,
 		HttpConfig: wr.HTTPConfig,
@@ -440,9 +535,11 @@ func NewWebhookReceiver(_ *Config, wr *v2beta1.WebhookReceiver) Receiver {
 	return w
 }
 
-func NewWebhookConfig(_ *v2beta1.WebhookConfig) Receiver {
+func NewWebhookConfig(_ *v2beta2.WebhookConfig) Receiver {
 	return &Webhook{
-		common: &common{},
+		common: &common{
+			receiverType: webhook,
+		},
 	}
 }
 
@@ -466,6 +563,15 @@ func (w *Webhook) SetConfig(obj interface{}) error {
 	return nil
 }
 
+func (w *Webhook) Validate() error {
+
+	if len(w.URL) == 0 {
+		return fmt.Errorf("url is nil")
+	}
+
+	return nil
+}
+
 type Wechat struct {
 	ToUser       []string
 	ToParty      []string
@@ -476,16 +582,18 @@ type Wechat struct {
 }
 
 type WechatConfig struct {
-	APISecret *v2beta1.SecretKeySelector
+	APISecret *v2beta2.Credential
 	CorpID    string
 	APIURL    string
 	AgentID   string
 }
 
-func NewWechatReceiver(c *Config, wr *v2beta1.WechatReceiver) Receiver {
+func NewWechatReceiver(c *Config, wr *v2beta2.WechatReceiver) Receiver {
 	w := &Wechat{
 		common: &common{
-			enabled: wr.Enabled,
+			enabled:        wr.Enabled,
+			receiverType:   wechat,
+			configSelector: wr.WechatConfigSelector,
 		},
 		ToUser:   wr.ToUser,
 		ToParty:  wr.ToParty,
@@ -505,16 +613,18 @@ func NewWechatReceiver(c *Config, wr *v2beta1.WechatReceiver) Receiver {
 	return w
 }
 
-func NewWechatConfig(wc *v2beta1.WechatConfig) Receiver {
+func NewWechatConfig(wc *v2beta2.WechatConfig) Receiver {
 	w := &Wechat{
-		common: &common{},
+		common: &common{
+			receiverType: wechat,
+		},
 	}
 
 	w.generateConfig(wc)
 	return w
 }
 
-func (w *Wechat) generateConfig(wc *v2beta1.WechatConfig) {
+func (w *Wechat) generateConfig(wc *v2beta2.WechatConfig) {
 
 	if wc == nil || wc.WechatApiSecret == nil {
 		return
@@ -548,6 +658,33 @@ func (w *Wechat) SetConfig(obj interface{}) error {
 	return nil
 }
 
+func (w *Wechat) Validate() error {
+
+	if (w.ToUser == nil || len(w.ToUser) == 0) &&
+		(w.ToParty == nil || len(w.ToParty) == 0) &&
+		(w.ToTag == nil || len(w.ToTag) == 0) {
+		return fmt.Errorf("must specify one of: `toUser`, `toParty` or `toTag`")
+	}
+
+	if w.WechatConfig == nil {
+		return fmt.Errorf("config is nil")
+	}
+
+	if len(w.WechatConfig.CorpID) == 0 {
+		return fmt.Errorf("corpid must be specified")
+	}
+
+	if len(w.WechatConfig.AgentID) == 0 {
+		return fmt.Errorf("agentid must be specified")
+	}
+
+	if err := validateCredential(w.WechatConfig.APISecret); err != nil {
+		return fmt.Errorf("apisecret error, %s", err.Error())
+	}
+
+	return nil
+}
+
 func (w *Wechat) Clone() *Wechat {
 
 	return &Wechat{
@@ -564,8 +701,8 @@ func (w *Wechat) Clone() *Wechat {
 	}
 }
 
-func listConfigs(c *Config, selector *metav1.LabelSelector) []v2beta1.Config {
-	configList := v2beta1.ConfigList{}
+func listConfigs(c *Config, selector *metav1.LabelSelector) []v2beta2.Config {
+	configList := v2beta2.ConfigList{}
 	configSel, _ := metav1.LabelSelectorAsSelector(selector)
 	if err := c.cache.List(c.ctx, &configList, client.MatchingLabelsSelector{Selector: configSel}); client.IgnoreNotFound(err) != nil {
 		_ = level.Error(c.logger).Log("msg", "Unable to list DingTalkConfig", "err", err)
@@ -573,4 +710,35 @@ func listConfigs(c *Config, selector *metav1.LabelSelector) []v2beta1.Config {
 	}
 
 	return configList.Items
+}
+
+func validateCredential(c *v2beta2.Credential) error {
+
+	if c == nil {
+		return fmt.Errorf("%s", "Credential is nil")
+	}
+
+	if len(c.Value) == 0 && c.ValueFrom == nil {
+		return fmt.Errorf("%s", "must specify one of: `value` or `valueFrom`")
+	}
+
+	if len(c.Value) != 0 && c.ValueFrom != nil {
+		return fmt.Errorf("valueFrom may not be specified when `value` is not empty")
+	}
+
+	if c.ValueFrom != nil {
+		if c.ValueFrom.SecretKeyRef == nil {
+			return fmt.Errorf("secretKeyRef must be specify when valueFrom is not nil")
+		}
+
+		if len(c.ValueFrom.SecretKeyRef.Key) == 0 {
+			return fmt.Errorf("key must be specify when secretKeyRef is not nil")
+		}
+
+		if len(c.ValueFrom.SecretKeyRef.Name) == 0 {
+			return fmt.Errorf("name must be specify when secretKeyRef is not nil")
+		}
+	}
+
+	return nil
 }

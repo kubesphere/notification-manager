@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/controllers"
 	// +kubebuilder:scaffold:imports
 )
@@ -40,6 +41,7 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
 	_ = v2beta1.AddToScheme(scheme)
+	_ = v2beta2.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -81,6 +83,17 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "NotificationManager")
 		os.Exit(1)
 	}
+
+	if err = (&v2beta2.Config{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Config")
+		os.Exit(1)
+	}
+
+	if err = (&v2beta2.Receiver{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "receiver")
+		os.Exit(1)
+	}
+
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

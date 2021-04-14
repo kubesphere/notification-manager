@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	json "github.com/json-iterator/go"
@@ -11,9 +14,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/prometheus/alertmanager/template"
-	"net/http"
-
-	"time"
 )
 
 const (
@@ -129,7 +129,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		token, err := n.notifierCfg.GetSecretData(c.SlackConfig.Token)
+		token, err := n.notifierCfg.GetCredential(c.SlackConfig.Token)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "SlackNotifier: get token secret", "channel", channel, "error", err.Error())
 			return err

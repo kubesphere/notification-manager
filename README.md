@@ -13,7 +13,7 @@ Supported receivers includes:
 - DingTalk
 
 ## Architecture
-Notification Manager uses CRDs to store notification configs like email, wechat and slack. It also includes an operator to create and reconcile NotificationManager CRD which watches all notification config CRDs, updates notification settings accordingly and sends notifications to users.
+Notification Manager uses CRDs to store notification configs like email, WeCom and slack. It also includes an operator to create and reconcile NotificationManager CRD which watches all notification config CRDs, updates notification settings accordingly and sends notifications to users.
 
 ![Architecture](docs/images/architecture.png)
 
@@ -274,9 +274,9 @@ metadata:
 type: Opaque
 EOF
 ```
-> - wechatApiAgentId is the id of app which sends messages to user in your Wechat Work.
+> - wechatApiAgentId is the id of app which sends messages to user in your WeCom.
 > - wechatApiSecret is the secret of this app.
-> - You can get these two parameters in App Management of your Wechat Work. 
+> - You can get these two parameters in App Management of your WeCom. 
 > - Note that any user, party or tag who wants to receive notifications must be in the allowed users list of this app.
 
 #### Deploy the default SlackConfig and global SlackReceiver

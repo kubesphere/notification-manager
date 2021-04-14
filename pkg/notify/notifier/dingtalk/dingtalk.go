@@ -7,6 +7,11 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	json "github.com/json-iterator/go"
@@ -14,10 +19,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/prometheus/alertmanager/template"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
 )
 
 const (
@@ -209,7 +210,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 
 	bot := d.ChatBot
 
-	webhook, err := n.notifierCfg.GetSecretData(bot.Webhook)
+	webhook, err := n.notifierCfg.GetCredential(bot.Webhook)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get webhook secret error", "error", err.Error())
 		return []error{err}
@@ -237,7 +238,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 
 		secret := ""
 		if bot.Secret != nil {
-			secret, err = n.notifierCfg.GetSecretData(bot.Secret)
+			secret, err = n.notifierCfg.GetCredential(bot.Secret)
 			if err != nil {
 				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get chatbot secret error", "error", err.Error())
 				return err
@@ -277,16 +278,16 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 		}
 
 		if res.Code != 0 {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "name", bot.Webhook.Name, "key", bot.Webhook.Key, "errcode", res.Code, "errmsg", res.Message)
+			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "errcode", res.Code, "errmsg", res.Message)
 			return err
 		}
 
 		if res.Status != 0 {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "name", bot.Webhook.Name, "key", bot.Webhook.Key, "status", res.Status, "punish", res.Punish)
+			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "name", "status", res.Status, "punish", res.Punish)
 			return err
 		}
 
-		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot", "name", bot.Webhook.Name, "key", bot.Webhook.Key)
+		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot")
 
 		return nil
 	}
@@ -315,7 +316,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 			if n.throttle.Allow(webhook, n.logger) {
 				stopCh <- send(msg)
 			} else {
-				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: message to chatbot dropped because of flow control", "name", bot.Webhook.Name, "key", bot.Webhook.Key)
+				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: message to chatbot dropped because of flow control")
 				stopCh <- fmt.Errorf("")
 			}
 		})
@@ -326,13 +327,13 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 
 func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, data template.Data) []error {
 
-	appkey, err := n.notifierCfg.GetSecretData(d.DingTalkConfig.AppKey)
+	appkey, err := n.notifierCfg.GetCredential(d.DingTalkConfig.AppKey)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appkey error", "error", err)
 		return []error{err}
 	}
 
-	appsecret, err := n.notifierCfg.GetSecretData(d.DingTalkConfig.AppSecret)
+	appsecret, err := n.notifierCfg.GetCredential(d.DingTalkConfig.AppSecret)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appsecret error", "error", err)
 		return []error{err}

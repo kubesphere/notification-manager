@@ -3,6 +3,12 @@ package notifier
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"reflect"
+	"regexp"
+	"strings"
+	"sync"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	json "github.com/json-iterator/go"
@@ -10,11 +16,6 @@ import (
 	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/alertmanager/types"
 	"github.com/prometheus/common/model"
-	"net/url"
-	"reflect"
-	"regexp"
-	"strings"
-	"sync"
 )
 
 type Template struct {

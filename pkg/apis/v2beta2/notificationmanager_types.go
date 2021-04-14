@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2beta1
+package v2beta2
 
 import (
 	"time"
@@ -30,10 +30,21 @@ type SecretKeySelector struct {
 	// +optional
 	Namespace string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
 	// Name of the secret.
-	// +optional
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	// The key of the secret to select from.  Must be a valid secret key.
 	Key string `json:"key" protobuf:"bytes,2,opt,name=key"`
+}
+
+type ValueSource struct {
+	// Selects a key of a secret in the pod's namespace
+	// +optional
+	SecretKeyRef *SecretKeySelector `json:"secretKeyRef,omitempty" protobuf:"bytes,4,opt,name=secretKeyRef"`
+}
+
+type Credential struct {
+	// +optional
+	Value     string       `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
+	ValueFrom *ValueSource `json:"valueFrom,omitempty" protobuf:"bytes,3,opt,name=valueFrom"`
 }
 
 // NotificationManagerSpec defines the desired state of NotificationManager
@@ -191,6 +202,7 @@ type NotificationManagerStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,shortName=nm,categories=notification-manager
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 
 // NotificationManager is the Schema for the notificationmanagers API
 type NotificationManager struct {
