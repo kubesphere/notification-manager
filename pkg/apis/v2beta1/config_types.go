@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Configuration of conversation
+// DingTalkApplicationConfig is the configuration of conversation
 type DingTalkApplicationConfig struct {
 	// The key of the application with which to send messages.
 	AppKey *SecretKeySelector `json:"appkey,omitempty"`
@@ -137,7 +137,7 @@ type ConfigStatus struct {
 // +kubebuilder:resource:scope=Cluster,shortName=nc,categories=notification-manager
 // +kubebuilder:subresource:status
 
-// DingTalkConfig is the Schema for the dingtalkconfigs API
+// Config is the Schema for the dingtalkconfigs API
 type Config struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

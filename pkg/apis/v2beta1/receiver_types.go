@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Configuration of ChatBot
+// DingTalkChatBot is the configuration of ChatBot
 type DingTalkChatBot struct {
 	// The webhook of ChatBot which the message will send to.
 	Webhook *SecretKeySelector `json:"webhook"`
@@ -32,7 +32,7 @@ type DingTalkChatBot struct {
 	Secret *SecretKeySelector `json:"secret,omitempty"`
 }
 
-// Configuration of conversation
+// DingTalkConversation is the configuration of conversation
 type DingTalkConversation struct {
 	ChatIDs []string `json:"chatids"`
 }
