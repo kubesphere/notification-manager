@@ -145,7 +145,7 @@ type WebhookOptions struct {
 	Template string `json:"template,omitempty"`
 }
 
-// The config of flow control.
+// Throttle is the config of flow control.
 type Throttle struct {
 	// The maximum calls in `Unit`.
 	Threshold int           `json:"threshold,omitempty"`
