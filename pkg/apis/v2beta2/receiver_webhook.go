@@ -107,17 +107,17 @@ func (r *Receiver) validateReceiver() error {
 
 	if r.Spec.DingTalk.Conversation != nil && len(r.Spec.DingTalk.Conversation.ChatIDs) == 0 {
 		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("dingtalk").Child("conversation").Child("chatids"),
-			"must be specify"))
+			"must be specified"))
 	}
 
 	if r.Spec.Email != nil && len(r.Spec.Email.To) == 0 {
 		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("email").Child("to"),
-			"must be specify"))
+			"must be specified"))
 	}
 
 	if r.Spec.Slack != nil && len(r.Spec.Slack.Channels) == 0 {
 		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("slack").Child("channels"),
-			"must be specify"))
+			"must be specified"))
 	}
 
 	if r.Spec.Webhook != nil {

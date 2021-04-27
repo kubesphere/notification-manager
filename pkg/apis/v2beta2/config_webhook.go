@@ -140,7 +140,7 @@ func validateCredential(c *Credential, fldPath *field.Path) *field.Error {
 
 	if c.ValueFrom != nil {
 		if c.ValueFrom.SecretKeyRef == nil {
-			return field.Invalid(fldPath.Child("valueFrom").Child("SecretKeyRef"), "", "must be specify")
+			return field.Invalid(fldPath.Child("valueFrom").Child("SecretKeyRef"), "", "must be specified")
 		}
 	}
 

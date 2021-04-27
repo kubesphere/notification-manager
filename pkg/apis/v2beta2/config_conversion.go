@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertTo converts this Config to the Hub version (v2beta2).
+// ConvertTo converts this Config to the Hub version (v2beta1).
 func (src *Config) ConvertTo(dstRaw conversion.Hub) error {
 
 	dst := dstRaw.(*v2beta1.Config)

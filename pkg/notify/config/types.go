@@ -728,15 +728,15 @@ func validateCredential(c *v2beta2.Credential) error {
 
 	if c.ValueFrom != nil {
 		if c.ValueFrom.SecretKeyRef == nil {
-			return fmt.Errorf("secretKeyRef must be specify when valueFrom is not nil")
+			return fmt.Errorf("secretKeyRef must be specified when valueFrom is not nil")
 		}
 
 		if len(c.ValueFrom.SecretKeyRef.Key) == 0 {
-			return fmt.Errorf("key must be specify when secretKeyRef is not nil")
+			return fmt.Errorf("key must be specified when secretKeyRef is not nil")
 		}
 
 		if len(c.ValueFrom.SecretKeyRef.Name) == 0 {
-			return fmt.Errorf("name must be specify when secretKeyRef is not nil")
+			return fmt.Errorf("name must be specified when secretKeyRef is not nil")
 		}
 	}
 
