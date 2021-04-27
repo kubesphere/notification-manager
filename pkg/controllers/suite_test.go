@@ -17,9 +17,10 @@ limitations under the License.
 package controllers
 
 import (
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
 	"path/filepath"
 	"testing"
+
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -23,7 +23,7 @@ spec:
   - name: v2beta1
     schema:
       openAPIV3Schema:
-        description: DingTalkConfig is the Schema for the dingtalkconfigs API
+        description: Config is the Schema for the configs API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

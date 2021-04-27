@@ -3,6 +3,11 @@ package email
 import (
 	"context"
 	"fmt"
+	"math"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
@@ -15,10 +20,6 @@ import (
 	"github.com/prometheus/alertmanager/types"
 	commoncfg "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
-	"math"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -263,7 +264,7 @@ func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error
 	}
 
 	if e.EmailConfig.AuthPassword != nil {
-		pass, err := n.notifierCfg.GetSecretData(e.EmailConfig.AuthPassword)
+		pass, err := n.notifierCfg.GetCredential(e.EmailConfig.AuthPassword)
 		if err != nil {
 			return nil, err
 		}
@@ -272,7 +273,7 @@ func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error
 	}
 
 	if e.EmailConfig.AuthSecret != nil {
-		secret, err := n.notifierCfg.GetSecretData(e.EmailConfig.AuthSecret)
+		secret, err := n.notifierCfg.GetCredential(e.EmailConfig.AuthSecret)
 		if err != nil {
 			return nil, err
 		}
@@ -289,7 +290,7 @@ func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error
 		// If a CA cert is provided then let's read it in so we can validate the
 		// scrape target's certificate properly.
 		if e.EmailConfig.TLS.RootCA != nil {
-			if ca, err := n.notifierCfg.GetSecretData(e.EmailConfig.TLS.RootCA); err != nil {
+			if ca, err := n.notifierCfg.GetCredential(e.EmailConfig.TLS.RootCA); err != nil {
 				return nil, err
 			} else {
 				tlsConfig.CAFile = ca
@@ -303,12 +304,12 @@ func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error
 			} else if e.EmailConfig.TLS.Cert == nil && e.EmailConfig.TLS.Key != nil {
 				return nil, fmt.Errorf("client key file specified without client cert file")
 			} else if e.EmailConfig.TLS.Cert != nil && e.EmailConfig.TLS.Key != nil {
-				key, err := n.notifierCfg.GetSecretData(e.EmailConfig.TLS.Key)
+				key, err := n.notifierCfg.GetCredential(e.EmailConfig.TLS.Key)
 				if err != nil {
 					return nil, err
 				}
 
-				cert, err := n.notifierCfg.GetSecretData(e.EmailConfig.TLS.Cert)
+				cert, err := n.notifierCfg.GetCredential(e.EmailConfig.TLS.Cert)
 				if err != nil {
 					return nil, err
 				}

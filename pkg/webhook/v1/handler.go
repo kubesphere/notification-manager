@@ -2,16 +2,19 @@ package v1
 
 import (
 	"context"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/prometheus/alertmanager/template"
-	"io"
-	"net/http"
-	"time"
 )
 
 type HttpHandler struct {
@@ -38,8 +41,10 @@ func New(logger log.Logger, semCh chan struct{}, webhookTimeout time.Duration, w
 	return h
 }
 
-func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func (h *HttpHandler) CreateNotificationFromAlerts(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		_ = r.Body.Close()
+	}()
 
 	// Parse alerts sent through Alertmanager webhook, more detail please refer to
 	// https://github.com/prometheus/alertmanager/blob/master/template/template.go#L231
@@ -145,7 +150,9 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 		select {
 		case <-ctx.Done():
 			err = ctx.Err()
-			_ = level.Warn(h.logger).Log("msg", "Worker: sending notification timeout in "+h.wkrTimeout.String(), "error", err.Error())
+			if err != nil {
+				_ = level.Warn(h.logger).Log("msg", "Worker: sending notification timeout in "+h.wkrTimeout.String(), "error", err.Error())
+			}
 		case <-wkrCh:
 			_ = level.Debug(h.logger).Log("msg", "Worker: exiting")
 		}
@@ -182,23 +189,23 @@ func (h *HttpHandler) CreateNotificationfromAlerts(w http.ResponseWriter, r *htt
 	h.handle(w, &response{http.StatusOK, "Notification request accepted"})
 }
 
-func (h *HttpHandler) ServeMetrics(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) ServeMetrics(w http.ResponseWriter, _ *http.Request) {
 	h.handle(w, &response{http.StatusOK, "metrics"})
 }
 
-func (h *HttpHandler) ServeReload(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) ServeReload(w http.ResponseWriter, _ *http.Request) {
 	h.handle(w, &response{http.StatusOK, "reload"})
 }
 
-func (h *HttpHandler) ServeHealthCheck(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) ServeHealthCheck(w http.ResponseWriter, _ *http.Request) {
 	h.handle(w, &response{http.StatusOK, "health check"})
 }
 
-func (h *HttpHandler) ServeReadinessCheck(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) ServeReadinessCheck(w http.ResponseWriter, _ *http.Request) {
 	h.handle(w, &response{http.StatusOK, "ready"})
 }
 
-func (h *HttpHandler) ServeStatus(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) ServeStatus(w http.ResponseWriter, _ *http.Request) {
 	h.handle(w, &response{http.StatusOK, "status"})
 }
 
@@ -221,4 +228,94 @@ func (h *HttpHandler) GetReceivers(w http.ResponseWriter, r *http.Request) {
 	bs, _ := jsoniter.MarshalIndent(h.notifierCfg.OutputReceiver(r.FormValue("tenant"), r.FormValue("type")), "", "  ")
 	_, _ = w.Write(bs)
 	return
+}
+
+func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
+
+	m := make(map[string]interface{})
+	if err := jsoniter.NewDecoder(r.Body).Decode(&m); err != nil {
+		h.handle(w, &response{http.StatusBadRequest, err.Error()})
+		return
+	}
+
+	nr := v2beta2.Receiver{}
+	if _, ok := m["receiver"]; !ok {
+		h.handle(w, &response{http.StatusBadRequest, "receiver is nil"})
+		return
+	}
+
+	if err := mapToStruct(m["receiver"].(map[string]interface{}), &nr); err != nil {
+		h.handle(w, &response{http.StatusBadRequest, err.Error()})
+		return
+	}
+
+	var nc *v2beta2.Config = nil
+	if _, ok := m["config"]; ok {
+		tmp := v2beta2.Config{}
+		if err := mapToStruct(m["config"].(map[string]interface{}), &tmp); err != nil {
+			h.handle(w, &response{http.StatusBadRequest, err.Error()})
+		}
+		nc = &tmp
+	}
+
+	receivers, err := h.notifierCfg.GenerateReceivers(&nr, nc)
+	if err != nil {
+		h.handle(w, &response{http.StatusBadRequest, err.Error()})
+		return
+	}
+
+	labels := template.KV{
+		"alertname": "Test",
+	}
+	annotations := template.KV{
+		"message": "Congratulations, your configuration is correct!",
+	}
+
+	d := template.Data{
+		Receiver: "Default",
+		Status:   "firing",
+		Alerts: template.Alerts{
+			{
+				Status:      "firing",
+				Labels:      labels,
+				Annotations: annotations,
+				StartsAt:    time.Now(),
+				EndsAt:      time.Now(),
+			},
+		},
+		GroupLabels:       labels,
+		CommonLabels:      labels,
+		CommonAnnotations: annotations,
+		ExternalURL:       "kubesphere.io",
+	}
+
+	n := notify.NewNotification(h.logger, receivers, h.notifierCfg, d)
+	ctx, cancel := context.WithTimeout(context.Background(), h.wkrTimeout)
+	defer cancel()
+	errs := n.Notify(ctx)
+	if errs != nil && len(errs) > 0 {
+		msg := ""
+		for _, err := range errs {
+			msg += err.Error() + ", "
+		}
+		msg = strings.TrimSuffix(msg, ", ")
+		h.handle(w, &response{http.StatusBadRequest, msg})
+		return
+	}
+
+	h.handle(w, &response{http.StatusOK, "Verify successfully"})
+}
+
+func mapToStruct(mv map[string]interface{}, v interface{}) error {
+	bs, err := jsoniter.Marshal(mv)
+	if err != nil {
+		return err
+	}
+
+	err = jsoniter.Unmarshal(bs, &v)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

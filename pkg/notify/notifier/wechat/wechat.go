@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	json "github.com/json-iterator/go"
@@ -11,8 +14,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/prometheus/alertmanager/template"
-	"net/http"
-	"time"
 )
 
 const (
@@ -312,7 +313,7 @@ func (n *Notifier) getToken(ctx context.Context, w *config.Wechat) (string, erro
 			return "", 0, err
 		}
 
-		apiSecret, err := n.notifierCfg.GetSecretData(w.WechatConfig.APISecret)
+		apiSecret, err := n.notifierCfg.GetCredential(w.WechatConfig.APISecret)
 		if err != nil {
 			return "", 0, err
 		}

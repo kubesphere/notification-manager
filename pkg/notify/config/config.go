@@ -3,10 +3,15 @@ package config
 import (
 	"context"
 	"fmt"
+	"os"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
-	"k8s.io/api/core/v1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
+	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,14 +20,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	kcache "k8s.io/client-go/tools/cache"
-	"os"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	kconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
-	"strings"
-	"time"
 )
 
 const (
@@ -64,7 +65,7 @@ type Config struct {
 	tenantReceiverSelector *metav1.LabelSelector
 	// Receiver config for each tenant user, in form of map[tenantID]map[type/name]Receiver
 	receivers    map[string]map[string]Receiver
-	ReceiverOpts *v2beta1.Options
+	ReceiverOpts *v2beta2.Options
 	// Channel to receive receiver create/update/delete operations and then update receivers
 	ch chan *param
 	// The pod's namespace
@@ -86,13 +87,13 @@ type param struct {
 	obj                    interface{}
 	receiver               Receiver
 	isConfig               bool
-	ReceiverOpts           *v2beta1.Options
+	ReceiverOpts           *v2beta2.Options
 	done                   chan interface{}
 }
 
 func New(ctx context.Context, logger log.Logger) (*Config, error) {
 	scheme := runtime.NewScheme()
-	_ = v2beta1.AddToScheme(scheme)
+	_ = v2beta2.AddToScheme(scheme)
 	_ = v1.AddToScheme(scheme)
 	_ = rbacv1.AddToScheme(scheme)
 
@@ -182,7 +183,7 @@ func (c *Config) Run() error {
 	}()
 
 	// Setup informer for NotificationManager
-	nmInf, err := c.cache.GetInformer(&v2beta1.NotificationManager{})
+	nmInf, err := c.cache.GetInformer(&v2beta2.NotificationManager{})
 	if err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to get informer for NotificationManager", "err", err)
 		return err
@@ -195,7 +196,7 @@ func (c *Config) Run() error {
 		DeleteFunc: c.onNmDel,
 	})
 
-	receiverInformer, err := c.cache.GetInformer(&v2beta1.Receiver{})
+	receiverInformer, err := c.cache.GetInformer(&v2beta2.Receiver{})
 	if err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to get receiver informer", "err", err)
 		return err
@@ -212,7 +213,7 @@ func (c *Config) Run() error {
 		},
 	})
 
-	configInformer, err := c.cache.GetInformer(&v2beta1.Config{})
+	configInformer, err := c.cache.GetInformer(&v2beta2.Config{})
 	if err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to get config informer", "err", err)
 		return err
@@ -243,12 +244,12 @@ func (c *Config) onChange(obj interface{}, op string, isConfig bool) {
 	var lbs map[string]string
 	var spec interface{}
 	if isConfig {
-		config := obj.(*v2beta1.Config)
+		config := obj.(*v2beta2.Config)
 		name = config.Name
 		lbs = config.Labels
 		spec = config.Spec
 	} else {
-		receiver := obj.(*v2beta1.Receiver)
+		receiver := obj.(*v2beta2.Receiver)
 		name = receiver.Name
 		lbs = receiver.Labels
 		spec = receiver.Spec
@@ -498,7 +499,7 @@ func (c *Config) RcvsFromNs(namespace *string) []Receiver {
 }
 
 func (c *Config) onNmAdd(obj interface{}) {
-	if nm, ok := obj.(*v2beta1.NotificationManager); ok {
+	if nm, ok := obj.(*v2beta2.NotificationManager); ok {
 		p := &param{}
 		p.op = opAdd
 		p.name = nm.Name
@@ -520,13 +521,13 @@ func (c *Config) onNmAdd(obj interface{}) {
 
 func (c *Config) updateReloadTimestamp() {
 
-	receiverList := v2beta1.ReceiverList{}
+	receiverList := v2beta2.ReceiverList{}
 	if err := c.client.List(c.ctx, &receiverList, client.InNamespace("")); err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to list receiver", "err", err)
 		return
 	}
 
-	configList := v2beta1.ConfigList{}
+	configList := v2beta2.ConfigList{}
 	if err := c.client.List(c.ctx, &configList, client.InNamespace("")); err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to list config", "err", err)
 		return
@@ -564,7 +565,7 @@ func (c *Config) updateReloadTimestamp() {
 }
 
 func (c *Config) onNmDel(obj interface{}) {
-	if _, ok := obj.(*v2beta1.NotificationManager); ok {
+	if _, ok := obj.(*v2beta2.NotificationManager); ok {
 		p := &param{}
 		p.op = opDel
 		p.opType = notificationManager
@@ -582,36 +583,22 @@ func (c *Config) getReceiver(p *param) {
 
 	_ = level.Info(c.logger).Log("msg", "resource change", "op", p.op, "name", p.name)
 
-	// If crd's label matches globalSelector such as "type = global",
-	// then this is a global receiver or config, and tenantID should be set to an unique tenantID
-	if c.globalReceiverSelector != nil {
-		for k, expected := range c.globalReceiverSelector.MatchLabels {
-			if v, exists := p.labels[k]; exists && v == expected {
-				p.tenantID = globalTenantID
-				break
-			}
-		}
+	// If crd is a global receiver, tenantID should be set to an unique tenantID.
+	if c.isGlobalReceiver(p.labels) {
+		p.tenantID = globalTenantID
 	}
 
-	// If crd's label matches tenantReceiverSelector such as "type = tenant",
+	// If crd is a tenant receiver or config,
 	// then crd's tenantKey's value should be used as tenantID,
 	// For example, if tenantKey is "user" and label "user=admin" exists,
 	// then "admin" should be used as tenantID
-	if c.tenantReceiverSelector != nil {
-		for k, expected := range c.tenantReceiverSelector.MatchLabels {
-			if v, exists := p.labels[k]; exists && v == expected {
-				if v, exists := p.labels[c.tenantKey]; exists {
-					p.tenantID = v
-				}
-				break
-			}
-		}
+	if b, v := c.isTenant(p.labels); b {
+		p.tenantID = v
 	}
 
-	// If it is a config crd, update global default configs if crd's label match defaultConfigSelector
-	if c.defaultConfigSelector != nil && p.isConfig {
-		sel, _ := metav1.LabelSelectorAsSelector(c.defaultConfigSelector)
-		if sel.Matches(labels.Set(p.labels)) {
+	// If it is a config crd, update global default configs if crd is a default config
+	if p.isConfig {
+		if c.isDefaultConfig(p.labels) {
 			p.tenantID = defaultConfig
 		}
 	}
@@ -625,6 +612,53 @@ func (c *Config) getReceiver(p *param) {
 	if p.op == opAdd {
 		p.receiver = NewReceiver(c, p.obj)
 	}
+}
+
+// If the label matches globalSelector such as "type = global",
+// then the crd with this label is a global receiver.
+func (c *Config) isGlobalReceiver(label map[string]string) bool {
+
+	if c.globalReceiverSelector != nil {
+		for k, expected := range c.globalReceiverSelector.MatchLabels {
+			if v, exists := label[k]; exists && v == expected {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// If the label matches defaultConfigSelector such as "type = default",
+// then the crd with this label is a default config.
+func (c *Config) isDefaultConfig(label map[string]string) bool {
+
+	if c.defaultConfigSelector != nil {
+		sel, _ := metav1.LabelSelectorAsSelector(c.defaultConfigSelector)
+		if sel.Matches(labels.Set(label)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// If the label matches tenantReceiverSelector such as "type = tenant",
+// then the crd with this label is a tenant receiver or config,
+func (c *Config) isTenant(label map[string]string) (bool, string) {
+
+	if c.tenantReceiverSelector != nil {
+		for k, expected := range c.tenantReceiverSelector.MatchLabels {
+			if v, exists := label[k]; exists && v == expected {
+				if v, exists := label[c.tenantKey]; exists {
+					return true, v
+				}
+				break
+			}
+		}
+	}
+
+	return false, ""
 }
 
 func (c *Config) OutputReceiver(tenant, receiver string) interface{} {
@@ -651,21 +685,123 @@ func (c *Config) OutputReceiver(tenant, receiver string) interface{} {
 	return m
 }
 
-func (c *Config) GetSecretData(selector *v2beta1.SecretKeySelector) (string, error) {
+func (c *Config) GetCredential(credential *v2beta2.Credential) (string, error) {
 
-	if selector == nil {
-		return "", fmt.Errorf("SecretKeySelector is nil")
+	if credential == nil {
+		return "", fmt.Errorf("credential is nil")
 	}
 
-	ns := selector.Namespace
-	if len(ns) == 0 {
-		ns = c.namespace
+	if len(credential.Value) > 0 {
+		return credential.Value, nil
 	}
 
-	secret := v1.Secret{}
-	if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: ns, Name: selector.Name}, &secret); err != nil {
-		return "", err
+	if credential.ValueFrom != nil {
+		if credential.ValueFrom.SecretKeyRef != nil {
+			ns := credential.ValueFrom.SecretKeyRef.Namespace
+			if len(ns) == 0 {
+				ns = c.namespace
+			}
+
+			secret := v1.Secret{}
+			if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: ns, Name: credential.ValueFrom.SecretKeyRef.Name}, &secret); err != nil {
+				return "", err
+			}
+
+			return string(secret.Data[credential.ValueFrom.SecretKeyRef.Key]), nil
+		}
 	}
 
-	return string(secret.Data[selector.Key]), nil
+	return "", fmt.Errorf("no value or valueFrom set")
+}
+
+// GenerateReceivers generate receivers from the given notification config and notification receiver.
+// If the notification config is nil, use the exist config.
+// If the notification config is not nil, the receiver will use the given config,
+// the notification config type must matched the notification receiver type.
+func (c *Config) GenerateReceivers(nr *v2beta2.Receiver, nc *v2beta2.Config) ([]Receiver, error) {
+
+	var receivers []Receiver
+	v := reflect.ValueOf(nr.Spec)
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		if f.IsZero() {
+			continue
+		}
+
+		// create receiver with exist config.
+		receiver := NewReceiver(c, f.Interface())
+		if receiver == nil {
+			continue
+		}
+
+		configSelector := receiver.GetConfigSelector()
+		// If the config is not nil, try to use this config.
+		if nc != nil {
+
+			// Check whether config matchs receiver or not.
+			// If the notification receiver is a global receiver, it needs a default config
+			if c.isGlobalReceiver(nr.Labels) {
+				if !c.isDefaultConfig(nc.Labels) {
+					return nil, fmt.Errorf("receiver %s, need default config", receiver.GetType())
+				}
+			} else if b, _ := c.isTenant(nr.Labels); b {
+				// If the notification receiver is a tenant receiver, it will select config with config selector.
+				// If the config selector of receiver is nil, it needs a default config.
+				if configSelector == nil {
+					if !c.isDefaultConfig(nc.Labels) {
+						return nil, fmt.Errorf("receiver %s needs a default config", receiver.GetType())
+					}
+				} else {
+					// If the config selector of receiver is not nil, it needs a tenant config.
+					labelSelector, _ := metav1.LabelSelectorAsSelector(receiver.GetConfigSelector())
+					if labelSelector.Empty() {
+						return nil, fmt.Errorf("invalid config selector for receiver %s", receiver.GetType())
+					}
+
+					if !labelSelector.Matches(labels.Set(nc.Labels)) {
+						return nil, fmt.Errorf("config not matched receiver %s", receiver.GetType())
+					}
+				}
+			} else {
+				return nil, fmt.Errorf("receiver is neither global nor tenant")
+			}
+
+			_ = receiver.SetConfig(c.getConfigFromCRD(nc, receiver.GetType()))
+		} else {
+			// If the config is nil, it will use the exist config.
+
+			// If the config selector is nil, it will use the exist default config.
+			if configSelector == nil {
+				_ = receiver.SetConfig(c.defaultConfig[receiver.GetType()])
+			}
+		}
+
+		if err := receiver.Validate(); err != nil {
+			return nil, fmt.Errorf("validate receiver %s error, %s", receiver.GetType(), err.Error())
+		}
+
+		receivers = append(receivers, receiver)
+	}
+
+	if receivers == nil || len(receivers) == 0 {
+		return nil, fmt.Errorf("no receivers provided")
+	}
+
+	return receivers, nil
+}
+
+func (c *Config) getConfigFromCRD(config *v2beta2.Config, receiverType string) interface{} {
+
+	v := reflect.ValueOf(config.Spec)
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		if !f.IsZero() {
+			r := NewReceiver(c, f.Interface())
+			if !reflect.ValueOf(r).IsNil() && r.GetType() == receiverType {
+				return r.GetConfig()
+			}
+		}
+	}
+
+	return nil
 }

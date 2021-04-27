@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	wh "github.com/kubesphere/notification-manager/pkg/webhook"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
 )
 
 var (

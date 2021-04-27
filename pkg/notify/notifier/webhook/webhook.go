@@ -6,6 +6,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"net/http"
+	"net/url"
+	"time"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	json "github.com/json-iterator/go"
@@ -14,9 +18,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/mwitkow/go-conntrack"
 	"github.com/prometheus/alertmanager/template"
-	"net/http"
-	"net/url"
-	"time"
 )
 
 const (
@@ -122,7 +123,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 		if w.HttpConfig != nil {
 			if w.HttpConfig.BearerToken != nil {
-				bearer, err := n.notifierCfg.GetSecretData(w.HttpConfig.BearerToken)
+				bearer, err := n.notifierCfg.GetCredential(w.HttpConfig.BearerToken)
 				if err != nil {
 					_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get bearer token error", "error", err.Error())
 					return err
@@ -132,7 +133,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			} else if w.HttpConfig.BasicAuth != nil {
 				pass := ""
 				if w.HttpConfig.BasicAuth.Password != nil {
-					p, err := n.notifierCfg.GetSecretData(w.HttpConfig.BasicAuth.Password)
+					p, err := n.notifierCfg.GetCredential(w.HttpConfig.BasicAuth.Password)
 					if err != nil {
 						_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get password error", "error", err.Error())
 						return err
@@ -196,7 +197,7 @@ func (n *Notifier) getTransport(w *config.Webhook) (http.RoundTripper, error) {
 			// If a CA cert is provided then let's read it in so we can validate the
 			// scrape target's certificate properly.
 			if c.TLSConfig.RootCA != nil {
-				if ca, err := n.notifierCfg.GetSecretData(c.TLSConfig.RootCA); err != nil {
+				if ca, err := n.notifierCfg.GetCredential(c.TLSConfig.RootCA); err != nil {
 					return nil, err
 				} else {
 					caCertPool := x509.NewCertPool()
@@ -218,12 +219,12 @@ func (n *Notifier) getTransport(w *config.Webhook) (http.RoundTripper, error) {
 				} else if c.TLSConfig.Cert == nil && c.TLSConfig.Key != nil {
 					return nil, fmt.Errorf("client key file specified without client cert file")
 				} else if c.TLSConfig.Cert != nil && c.TLSConfig.Key != nil {
-					key, err := n.notifierCfg.GetSecretData(c.TLSConfig.Key)
+					key, err := n.notifierCfg.GetCredential(c.TLSConfig.Key)
 					if err != nil {
 						return nil, err
 					}
 
-					cert, err := n.notifierCfg.GetSecretData(c.TLSConfig.Cert)
+					cert, err := n.notifierCfg.GetCredential(c.TLSConfig.Cert)
 					if err != nil {
 						return nil, err
 					}

@@ -14,18 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2beta1
+package v2beta2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DingTalkApplicationConfig is the configuration of conversation
+// DingTalkApplicationConfig it th configuration of conversation
 type DingTalkApplicationConfig struct {
 	// The key of the application with which to send messages.
-	AppKey *SecretKeySelector `json:"appkey,omitempty"`
+	AppKey *Credential `json:"appkey"`
 	// The key in the secret to be used. Must be a valid secret key.
-	AppSecret *SecretKeySelector `json:"appsecret,omitempty"`
+	AppSecret *Credential `json:"appsecret"`
 }
 
 type DingTalkConfig struct {
@@ -36,16 +36,16 @@ type DingTalkConfig struct {
 
 type ClientCertificate struct {
 	// The client cert file for the targets.
-	Cert *SecretKeySelector `json:"cert,omitempty"`
+	Cert *Credential `json:"cert"`
 	// The client key file for the targets.
-	Key *SecretKeySelector `json:"key,omitempty"`
+	Key *Credential `json:"key"`
 }
 
 // TLSConfig configures the options for TLS connections.
 type TLSConfig struct {
 	// RootCA defines the root certificate authorities
 	// that clients use when verifying server certificates.
-	RootCA *SecretKeySelector `json:"rootCA,omitempty"`
+	RootCA *Credential `json:"rootCA,omitempty"`
 	// The certificate of the client.
 	*ClientCertificate `json:"clientCertificate,omitempty"`
 	// Used to verify the hostname for the targets.
@@ -56,8 +56,8 @@ type TLSConfig struct {
 
 // BasicAuth contains basic HTTP authentication credentials.
 type BasicAuth struct {
-	Username string             `json:"username"`
-	Password *SecretKeySelector `json:"password,omitempty"`
+	Username string      `json:"username"`
+	Password *Credential `json:"password,omitempty"`
 }
 
 // HTTPClientConfig configures an HTTP client.
@@ -65,7 +65,7 @@ type HTTPClientConfig struct {
 	// The HTTP basic authentication credentials for the targets.
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
 	// The bearer token for the targets.
-	BearerToken *SecretKeySelector `json:"bearerToken,omitempty"`
+	BearerToken *Credential `json:"bearerToken,omitempty"`
 	// HTTP proxy server to use to connect to the targets.
 	ProxyURL string `json:"proxyUrl,omitempty"`
 	// TLSConfig to use to connect to the targets.
@@ -90,9 +90,9 @@ type EmailConfig struct {
 	// The identity for PLAIN authentication.
 	AuthIdentify *string `json:"authIdentify,omitempty"`
 	// The secret contains the SMTP password for LOGIN and PLAIN authentications.
-	AuthPassword *SecretKeySelector `json:"authPassword,omitempty"`
+	AuthPassword *Credential `json:"authPassword,omitempty"`
 	// The secret contains the SMTP secret for CRAM-MD5 authentication.
-	AuthSecret *SecretKeySelector `json:"authSecret,omitempty"`
+	AuthSecret *Credential `json:"authSecret,omitempty"`
 	// The default SMTP TLS requirement.
 	RequireTLS *bool      `json:"requireTLS,omitempty"`
 	TLS        *TLSConfig `json:"tls,omitempty"`
@@ -101,7 +101,7 @@ type EmailConfig struct {
 type SlackConfig struct {
 	Labels map[string]string `json:"labels,omitempty"`
 	// The token of user or bot.
-	SlackTokenSecret *SecretKeySelector `json:"slackTokenSecret,omitempty"`
+	SlackTokenSecret *Credential `json:"slackTokenSecret"`
 }
 
 type WebhookConfig struct {
@@ -117,7 +117,7 @@ type WechatConfig struct {
 	// The id of the application which sending message.
 	WechatApiAgentId string `json:"wechatApiAgentId"`
 	// The API key to use when talking to the WeChat API.
-	WechatApiSecret *SecretKeySelector `json:"wechatApiSecret"`
+	WechatApiSecret *Credential `json:"wechatApiSecret"`
 }
 
 //ConfigSpec defines the desired state of Config
@@ -136,8 +136,9 @@ type ConfigStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,shortName=nc,categories=notification-manager
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 
-// Config is the Schema for the configs API
+// Config is the Schema for the dingtalkconfigs API
 type Config struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

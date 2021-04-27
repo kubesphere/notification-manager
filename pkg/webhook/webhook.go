@@ -2,14 +2,15 @@ package webhook
 
 import (
 	"context"
+	"net/http"
+	"time"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	whv1 "github.com/kubesphere/notification-manager/pkg/webhook/v1"
-	"net/http"
-	"time"
 )
 
 type Options struct {
@@ -44,7 +45,8 @@ func New(logger log.Logger, notifierCfg *config.Config, o *Options) *Webhook {
 	h.router.Use(middleware.Recoverer)
 	h.router.Use(middleware.Timeout(2 * webhookTimeout))
 	h.router.Get("/receivers", h.handler.GetReceivers)
-	h.router.Post("/api/v2/alerts", h.handler.CreateNotificationfromAlerts)
+	h.router.Post("/api/v2/alerts", h.handler.CreateNotificationFromAlerts)
+	h.router.Post("/api/v2/verify", h.handler.Verify)
 	h.router.Get("/metrics", h.handler.ServeMetrics)
 	h.router.Get("/-/reload", h.handler.ServeReload)
 	h.router.Get("/-/ready", h.handler.ServeHealthCheck)

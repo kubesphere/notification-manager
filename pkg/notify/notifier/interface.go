@@ -2,6 +2,7 @@ package notifier
 
 import (
 	"context"
+
 	"github.com/prometheus/alertmanager/template"
 )
 

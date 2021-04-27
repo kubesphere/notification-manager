@@ -23,7 +23,7 @@ spec:
   - name: v2beta1
     schema:
       openAPIV3Schema:
-        description: DingTalkConfig is the Schema for the dingtalkconfigs API
+        description: Config is the Schema for the configs API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -299,6 +299,410 @@ spec:
                         type: string
                     required:
                     - key
+                    type: object
+                  wechatApiUrl:
+                    description: The WeChat API URL.
+                    type: string
+                required:
+                - wechatApiAgentId
+                - wechatApiCorpId
+                - wechatApiSecret
+                type: object
+            type: object
+          status:
+            description: ConfigStatus defines the observed state of Config
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      status: {}
+  - name: v2beta2
+    schema:
+      openAPIV3Schema:
+        description: Config is the Schema for the dingtalkconfigs API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ConfigSpec defines the desired state of Config
+            properties:
+              dingtalk:
+                properties:
+                  conversation:
+                    description: Only needed when send alerts to the conversation.
+                    properties:
+                      appkey:
+                        description: The key of the application with which to send
+                          messages.
+                        properties:
+                          value:
+                            type: string
+                          valueFrom:
+                            properties:
+                              secretKeyRef:
+                                description: Selects a key of a secret in the pod's
+                                  namespace
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: Name of the secret.
+                                    type: string
+                                  namespace:
+                                    description: The namespace of the secret, default
+                                      to the `defaultSecretNamespace` of `NotificationManager`
+                                      crd. If the `defaultSecretNamespace` does not
+                                      set, default to the pod's namespace.
+                                    type: string
+                                required:
+                                - key
+                                - name
+                                type: object
+                            type: object
+                        type: object
+                      appsecret:
+                        description: The key in the secret to be used. Must be a valid
+                          secret key.
+                        properties:
+                          value:
+                            type: string
+                          valueFrom:
+                            properties:
+                              secretKeyRef:
+                                description: Selects a key of a secret in the pod's
+                                  namespace
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: Name of the secret.
+                                    type: string
+                                  namespace:
+                                    description: The namespace of the secret, default
+                                      to the `defaultSecretNamespace` of `NotificationManager`
+                                      crd. If the `defaultSecretNamespace` does not
+                                      set, default to the pod's namespace.
+                                    type: string
+                                required:
+                                - key
+                                - name
+                                type: object
+                            type: object
+                        type: object
+                    required:
+                    - appkey
+                    - appsecret
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
+              email:
+                properties:
+                  authIdentify:
+                    description: The identity for PLAIN authentication.
+                    type: string
+                  authPassword:
+                    description: The secret contains the SMTP password for LOGIN and
+                      PLAIN authentications.
+                    properties:
+                      value:
+                        type: string
+                      valueFrom:
+                        properties:
+                          secretKeyRef:
+                            description: Selects a key of a secret in the pod's namespace
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: The namespace of the secret, default
+                                  to the `defaultSecretNamespace` of `NotificationManager`
+                                  crd. If the `defaultSecretNamespace` does not set,
+                                  default to the pod's namespace.
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                        type: object
+                    type: object
+                  authSecret:
+                    description: The secret contains the SMTP secret for CRAM-MD5
+                      authentication.
+                    properties:
+                      value:
+                        type: string
+                      valueFrom:
+                        properties:
+                          secretKeyRef:
+                            description: Selects a key of a secret in the pod's namespace
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: The namespace of the secret, default
+                                  to the `defaultSecretNamespace` of `NotificationManager`
+                                  crd. If the `defaultSecretNamespace` does not set,
+                                  default to the pod's namespace.
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                        type: object
+                    type: object
+                  authUsername:
+                    description: The username for CRAM-MD5, LOGIN and PLAIN authentications.
+                    type: string
+                  from:
+                    description: The sender address.
+                    type: string
+                  hello:
+                    description: The hostname to use when identifying to the SMTP
+                      server.
+                    type: string
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  requireTLS:
+                    description: The default SMTP TLS requirement.
+                    type: boolean
+                  smartHost:
+                    description: The address of the SMTP server.
+                    properties:
+                      host:
+                        type: string
+                      port:
+                        type: integer
+                    required:
+                    - host
+                    - port
+                    type: object
+                  tls:
+                    description: TLSConfig configures the options for TLS connections.
+                    properties:
+                      clientCertificate:
+                        description: The certificate of the client.
+                        properties:
+                          cert:
+                            description: The client cert file for the targets.
+                            properties:
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  secretKeyRef:
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: Name of the secret.
+                                        type: string
+                                      namespace:
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                type: object
+                            type: object
+                          key:
+                            description: The client key file for the targets.
+                            properties:
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  secretKeyRef:
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: Name of the secret.
+                                        type: string
+                                      namespace:
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                type: object
+                            type: object
+                        required:
+                        - cert
+                        - key
+                        type: object
+                      insecureSkipVerify:
+                        description: Disable target certificate validation.
+                        type: boolean
+                      rootCA:
+                        description: RootCA defines the root certificate authorities
+                          that clients use when verifying server certificates.
+                        properties:
+                          value:
+                            type: string
+                          valueFrom:
+                            properties:
+                              secretKeyRef:
+                                description: Selects a key of a secret in the pod's
+                                  namespace
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: Name of the secret.
+                                    type: string
+                                  namespace:
+                                    description: The namespace of the secret, default
+                                      to the `defaultSecretNamespace` of `NotificationManager`
+                                      crd. If the `defaultSecretNamespace` does not
+                                      set, default to the pod's namespace.
+                                    type: string
+                                required:
+                                - key
+                                - name
+                                type: object
+                            type: object
+                        type: object
+                      serverName:
+                        description: Used to verify the hostname for the targets.
+                        type: string
+                    type: object
+                required:
+                - from
+                - smartHost
+                type: object
+              slack:
+                properties:
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  slackTokenSecret:
+                    description: The token of user or bot.
+                    properties:
+                      value:
+                        type: string
+                      valueFrom:
+                        properties:
+                          secretKeyRef:
+                            description: Selects a key of a secret in the pod's namespace
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: The namespace of the secret, default
+                                  to the `defaultSecretNamespace` of `NotificationManager`
+                                  crd. If the `defaultSecretNamespace` does not set,
+                                  default to the pod's namespace.
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                        type: object
+                    type: object
+                required:
+                - slackTokenSecret
+                type: object
+              webhook:
+                properties:
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
+              wechat:
+                properties:
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  wechatApiAgentId:
+                    description: The id of the application which sending message.
+                    type: string
+                  wechatApiCorpId:
+                    description: The corp id for authentication.
+                    type: string
+                  wechatApiSecret:
+                    description: The API key to use when talking to the WeChat API.
+                    properties:
+                      value:
+                        type: string
+                      valueFrom:
+                        properties:
+                          secretKeyRef:
+                            description: Selects a key of a secret in the pod's namespace
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: The namespace of the secret, default
+                                  to the `defaultSecretNamespace` of `NotificationManager`
+                                  crd. If the `defaultSecretNamespace` does not set,
+                                  default to the pod's namespace.
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                        type: object
                     type: object
                   wechatApiUrl:
                     description: The WeChat API URL.

@@ -4,18 +4,19 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	json "github.com/json-iterator/go"
 	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/common/model"
-	"io"
-	"io/ioutil"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"net/http"
-	"net/url"
-	"strings"
 )
 
 func ArrayToString(array []string, sep string) string {
