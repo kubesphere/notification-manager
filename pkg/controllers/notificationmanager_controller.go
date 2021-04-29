@@ -19,29 +19,30 @@ package controllers
 import (
 	"context"
 
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
 	"github.com/go-logr/logr"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
 	notificationManager       = "notification-manager"
+	tenantSidecar             = "tenant-sidecar"
 	defaultPortName           = "webhook"
 	defaultServiceAccountName = "default"
+	kubesphereSidecar         = "kubesphere"
 )
 
 var (
 	ownerKey               = ".metadata.controller"
-	apiGVStr               = v2beta1.GroupVersion.String()
+	apiGVStr               = v2beta2.GroupVersion.String()
 	log                    logr.Logger
 	minReplicas            int32 = 1
 	defaultImage                 = "kubesphere/notification-manager:v1.0.0"
@@ -69,7 +70,7 @@ func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 	ctx := context.Background()
 	log = r.Log.WithValues("NotificationManager Operator", req.NamespacedName)
 
-	var nm v2beta1.NotificationManager
+	var nm v2beta2.NotificationManager
 	if err := r.Get(ctx, req.NamespacedName, &nm); err != nil {
 		log.Error(err, "Unable to get NotificationManager", "Req", req.NamespacedName.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -98,7 +99,7 @@ func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 	return ctrl.Result{}, nil
 }
 
-func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context, nm *v2beta1.NotificationManager) error {
+func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context, nm *v2beta2.NotificationManager) error {
 	nm = nm.DeepCopy()
 	if nm.Spec.PortName == "" {
 		nm.Spec.PortName = defaultPortName
@@ -135,7 +136,7 @@ func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context,
 	return nil
 }
 
-func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployment, nm *v2beta1.NotificationManager) controllerutil.MutateFn {
+func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployment, nm *v2beta2.NotificationManager) controllerutil.MutateFn {
 	return func() error {
 		nm = nm.DeepCopy()
 
@@ -222,24 +223,10 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 			newC.Args = append(newC.Args, nm.Spec.Args...)
 		}
 
-		// Make sure existing Containers match expected Containers
-		for i, c := range deploy.Spec.Template.Spec.Containers {
-			if c.Name == newC.Name {
-				deploy.Spec.Template.Spec.Containers[i].Resources = newC.Resources
-				deploy.Spec.Template.Spec.Containers[i].Image = newC.Image
-				deploy.Spec.Template.Spec.Containers[i].ImagePullPolicy = newC.ImagePullPolicy
-				deploy.Spec.Template.Spec.Containers[i].Ports = newC.Ports
-				deploy.Spec.Template.Spec.Containers[i].Command = newC.Command
-				deploy.Spec.Template.Spec.Containers[i].Env = newC.Env
-				deploy.Spec.Template.Spec.Containers[i].VolumeMounts = newC.VolumeMounts
-				deploy.Spec.Template.Spec.Containers[i].Args = newC.Args
-				break
-			}
-		}
+		deploy.Spec.Template.Spec.Containers = []corev1.Container{newC}
 
-		// Create new Containers if no existing Containers exist
-		if len(deploy.Spec.Template.Spec.Containers) == 0 {
-			deploy.Spec.Template.Spec.Containers = []corev1.Container{newC}
+		if sidecar := r.mutateTenantSidecar(nm); sidecar != nil {
+			deploy.Spec.Template.Spec.Containers = append(deploy.Spec.Template.Spec.Containers, *sidecar)
 		}
 
 		deploy.Spec.Template.Spec.Volumes = []corev1.Volume{
@@ -259,7 +246,40 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 	}
 }
 
-func (r *NotificationManagerReconciler) makeCommonLabels(nm *v2beta1.NotificationManager) *map[string]string {
+func (r *NotificationManagerReconciler) mutateTenantSidecar(nm *v2beta2.NotificationManager) *corev1.Container {
+
+	if nm.Spec.TenantSidecar == nil {
+		return nil
+	}
+
+	sidecar := nm.Spec.TenantSidecar
+	if sidecar.Type == kubesphereSidecar {
+		return r.generateKubesphereSidecar(sidecar)
+	}
+
+	container := &corev1.Container{
+		Name:            tenantSidecar,
+		Image:           sidecar.Image,
+		Command:         sidecar.Command,
+		Args:            sidecar.Args,
+		EnvFrom:         sidecar.EnvFrom,
+		Env:             sidecar.Env,
+		Resources:       sidecar.Resources,
+		VolumeMounts:    sidecar.VolumeMounts,
+		LivenessProbe:   sidecar.LivenessProbe,
+		ReadinessProbe:  sidecar.ReadinessProbe,
+		Lifecycle:       sidecar.Lifecycle,
+		ImagePullPolicy: sidecar.ImagePullPolicy,
+	}
+
+	return container
+}
+
+func (r *NotificationManagerReconciler) generateKubesphereSidecar(_ *v2beta2.Sidecar) *corev1.Container {
+	return nil
+}
+
+func (r *NotificationManagerReconciler) makeCommonLabels(nm *v2beta2.NotificationManager) *map[string]string {
 	return &map[string]string{"app": notificationManager, notificationManager: nm.Name}
 }
 
@@ -297,7 +317,7 @@ func (r *NotificationManagerReconciler) SetupWithManager(mgr ctrl.Manager) error
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v2beta1.NotificationManager{}).
+		For(&v2beta2.NotificationManager{}).
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }

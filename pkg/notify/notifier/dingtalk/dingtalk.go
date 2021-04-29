@@ -14,10 +14,10 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	json "github.com/json-iterator/go"
 	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
 )
 
@@ -185,20 +185,20 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	for _, dingtalk := range n.DingTalk {
 		d := dingtalk
 
-		newData := notifier.Filter(data, d.Selector, n.logger)
+		newData := utils.FilterAlerts(data, d.Selector, n.logger)
 		if len(newData.Alerts) == 0 {
 			continue
 		}
 
 		if d.ChatBot != nil {
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- n.sendToChatBot(ctx, d, notifier.Filter(newData, d.Selector, n.logger))
+				stopCh <- n.sendToChatBot(ctx, d, utils.FilterAlerts(newData, d.Selector, n.logger))
 			})
 		}
 
 		if d.ChatIDs != nil && len(d.ChatIDs) > 0 {
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- n.sendToConversation(ctx, d, notifier.Filter(newData, d.Selector, n.logger))
+				stopCh <- n.sendToConversation(ctx, d, utils.FilterAlerts(newData, d.Selector, n.logger))
 			})
 		}
 	}
@@ -231,7 +231,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 		}
 
 		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(dm); err != nil {
+		if err := utils.JsonEncode(&buf, dm); err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: encode message error", "error", err.Error())
 			return err
 		}
@@ -251,7 +251,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 			p := make(map[string]string)
 			p["timestamp"] = timestamp
 			p["sign"] = sign
-			u, err = notifier.UrlWithParameters(webhook, p)
+			u, err = utils.UrlWithParameters(webhook, p)
 			if err != nil {
 				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: set parameters error", "error", err)
 				return err
@@ -265,14 +265,14 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		body, err := notifier.DoHttpRequest(context.Background(), nil, request)
+		body, err := utils.DoHttpRequest(context.Background(), nil, request)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: do http error", "error", err)
 			return err
 		}
 
 		res := &response{}
-		if err := json.Unmarshal(body, res); err != nil {
+		if err := utils.JsonUnmarshal(body, res); err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: decode response body error", "error", err)
 			return err
 		}
@@ -361,12 +361,12 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 		}
 
 		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(dm); err != nil {
+		if err := utils.JsonEncode(&buf, dm); err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: encode message error", "conversation", chatID, "error", err.Error())
 			return err
 		}
 
-		u, err := notifier.UrlWithPath(URL, "chat/send")
+		u, err := utils.UrlWithPath(URL, "chat/send")
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: set path error", "conversation", chatID, "error", err)
 			return err
@@ -374,7 +374,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 
 		p := make(map[string]string)
 		p["access_token"] = token
-		u, err = notifier.UrlWithParameters(u, p)
+		u, err = utils.UrlWithParameters(u, p)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: set parameters error", "conversation", chatID, "error", err)
 			return err
@@ -387,14 +387,14 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		body, err := notifier.DoHttpRequest(context.Background(), nil, request)
+		body, err := utils.DoHttpRequest(context.Background(), nil, request)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: do http error", "conversation", chatID, "error", err)
 			return err
 		}
 
 		res := &response{}
-		if err := json.Unmarshal(body, res); err != nil {
+		if err := utils.JsonUnmarshal(body, res); err != nil {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: decode response body error", "conversation", chatID, "error", err)
 			return err
 		}
@@ -438,7 +438,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 func (n *Notifier) getToken(ctx context.Context, appkey, appsecret string) (string, error) {
 
 	get := func(ctx context.Context) (string, time.Duration, error) {
-		u, err := notifier.UrlWithPath(URL, "gettoken")
+		u, err := utils.UrlWithPath(URL, "gettoken")
 		if err != nil {
 			return "", 0, err
 		}
@@ -447,7 +447,7 @@ func (n *Notifier) getToken(ctx context.Context, appkey, appsecret string) (stri
 		p["appkey"] = appkey
 		p["appsecret"] = appsecret
 
-		u, err = notifier.UrlWithParameters(u, p)
+		u, err = utils.UrlWithParameters(u, p)
 		if err != nil {
 			return "", 0, err
 		}
@@ -458,13 +458,13 @@ func (n *Notifier) getToken(ctx context.Context, appkey, appsecret string) (stri
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		body, err := notifier.DoHttpRequest(context.Background(), nil, request)
+		body, err := utils.DoHttpRequest(context.Background(), nil, request)
 		if err != nil {
 			return "", 0, err
 		}
 
 		res := &response{}
-		if err := json.Unmarshal(body, res); err != nil {
+		if err := utils.JsonUnmarshal(body, res); err != nil {
 			return "", 0, err
 		}
 

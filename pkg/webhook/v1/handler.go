@@ -9,11 +9,11 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
 )
 
@@ -49,7 +49,7 @@ func (h *HttpHandler) CreateNotificationFromAlerts(w http.ResponseWriter, r *htt
 	// Parse alerts sent through Alertmanager webhook, more detail please refer to
 	// https://github.com/prometheus/alertmanager/blob/master/template/template.go#L231
 	data := template.Data{}
-	if err := jsoniter.NewDecoder(r.Body).Decode(&data); err != nil {
+	if err := utils.JsonDecode(r.Body, &data); err != nil {
 		h.handle(w, &response{http.StatusBadRequest, err.Error()})
 		return
 	}
@@ -210,7 +210,7 @@ func (h *HttpHandler) ServeStatus(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *HttpHandler) handle(w http.ResponseWriter, resp *response) {
-	bytes, _ := jsoniter.Marshal(resp)
+	bytes, _ := utils.JsonMarshal(resp)
 	msg := string(bytes[:])
 	w.WriteHeader(resp.Status)
 	_, _ = io.WriteString(w, msg)
@@ -225,7 +225,7 @@ func (h *HttpHandler) handle(w http.ResponseWriter, resp *response) {
 func (h *HttpHandler) GetReceivers(w http.ResponseWriter, r *http.Request) {
 
 	_ = r.ParseForm()
-	bs, _ := jsoniter.MarshalIndent(h.notifierCfg.OutputReceiver(r.FormValue("tenant"), r.FormValue("type")), "", "  ")
+	bs, _ := utils.JsonMarshalIndent(h.notifierCfg.OutputReceiver(r.FormValue("tenant"), r.FormValue("type")), "", "  ")
 	_, _ = w.Write(bs)
 	return
 }
@@ -233,7 +233,7 @@ func (h *HttpHandler) GetReceivers(w http.ResponseWriter, r *http.Request) {
 func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 
 	m := make(map[string]interface{})
-	if err := jsoniter.NewDecoder(r.Body).Decode(&m); err != nil {
+	if err := utils.JsonDecode(r.Body, &m); err != nil {
 		h.handle(w, &response{http.StatusBadRequest, err.Error()})
 		return
 	}
@@ -244,7 +244,7 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := mapToStruct(m["receiver"].(map[string]interface{}), &nr); err != nil {
+	if err := utils.MapToStruct(m["receiver"].(map[string]interface{}), &nr); err != nil {
 		h.handle(w, &response{http.StatusBadRequest, err.Error()})
 		return
 	}
@@ -252,7 +252,7 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	var nc *v2beta2.Config = nil
 	if _, ok := m["config"]; ok {
 		tmp := v2beta2.Config{}
-		if err := mapToStruct(m["config"].(map[string]interface{}), &tmp); err != nil {
+		if err := utils.MapToStruct(m["config"].(map[string]interface{}), &tmp); err != nil {
 			h.handle(w, &response{http.StatusBadRequest, err.Error()})
 		}
 		nc = &tmp
@@ -304,18 +304,4 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.handle(w, &response{http.StatusOK, "Verify successfully"})
-}
-
-func mapToStruct(mv map[string]interface{}, v interface{}) error {
-	bs, err := jsoniter.Marshal(mv)
-	if err != nil {
-		return err
-	}
-
-	err = jsoniter.Unmarshal(bs, &v)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

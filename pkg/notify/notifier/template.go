@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	json "github.com/json-iterator/go"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/notify"
 	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/alertmanager/types"
@@ -47,7 +47,7 @@ func NewTemplate(paths []string) (*Template, error) {
 	if err != nil {
 		return nil, err
 	}
-	tmpl.ExternalURL, _ = url.Parse("http://kubesphere.io")
+	tmpl.ExternalURL, _ = url.Parse("https://kubesphere.io")
 
 	t.Tmpl = tmpl
 	notifierTemplate = t
@@ -60,15 +60,15 @@ func (t *Template) TempleText(name string, data template.Data, l log.Logger) (st
 	name = t.transform(name)
 
 	ctx := context.Background()
-	ctx = notify.WithGroupLabels(ctx, KvToLabelSet(data.GroupLabels))
+	ctx = notify.WithGroupLabels(ctx, utils.KvToLabelSet(data.GroupLabels))
 	ctx = notify.WithReceiverName(ctx, data.Receiver)
 
 	var as []*types.Alert
 	for _, a := range data.Alerts {
 		as = append(as, &types.Alert{
 			Alert: model.Alert{
-				Labels:       KvToLabelSet(a.Labels),
-				Annotations:  KvToLabelSet(a.Annotations),
+				Labels:       utils.KvToLabelSet(a.Labels),
+				Annotations:  utils.KvToLabelSet(a.Annotations),
 				StartsAt:     a.StartsAt,
 				EndsAt:       a.EndsAt,
 				GeneratorURL: a.GeneratorURL,
@@ -143,10 +143,11 @@ func (t *Template) Split(data template.Data, maxSize int, templateName string, l
 	return messages, nil
 }
 
+// Len return the length of string after serialized.
 // When a string is serialized, the escape character in the string will occupy two bytes because of `\`.
 func Len(s string) int {
 
-	bs, err := json.Marshal(s)
+	bs, err := utils.JsonMarshal(s)
 	if err != nil {
 		return len(s)
 	}

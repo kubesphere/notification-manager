@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	json "github.com/json-iterator/go"
 	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
 )
 
@@ -101,7 +101,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "channel", channel, "used", time.Since(start).String())
 		}()
 
-		newData := notifier.Filter(data, c.Selector, n.logger)
+		newData := utils.FilterAlerts(data, c.Selector, n.logger)
 		if len(newData.Alerts) == 0 {
 			return nil
 		}
@@ -118,7 +118,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}
 
 		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(sr); err != nil {
+		if err := utils.JsonEncode(&buf, sr); err != nil {
 			_ = level.Error(n.logger).Log("msg", "SlackNotifier: encode message error", "channel", channel, "error", err.Error())
 			return err
 		}
@@ -137,14 +137,14 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 		request.Header.Set("Authorization", "Bearer "+token)
 
-		body, err := notifier.DoHttpRequest(ctx, nil, request.WithContext(ctx))
+		body, err := utils.DoHttpRequest(ctx, nil, request.WithContext(ctx))
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "SlackNotifier: do http error", "channel", channel, "error", err)
 			return err
 		}
 
 		var slResp slackResponse
-		if err := json.Unmarshal(body, &slResp); err != nil {
+		if err := utils.JsonUnmarshal(body, &slResp); err != nil {
 			_ = level.Error(n.logger).Log("msg", "SlackNotifier: decode response body error", "channel", channel, "error", err)
 			return err
 		}

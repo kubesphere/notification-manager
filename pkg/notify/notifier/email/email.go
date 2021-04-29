@@ -13,6 +13,7 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/async"
 	nmconfig "github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/alertmanager/notify"
 	"github.com/prometheus/alertmanager/notify/email"
@@ -108,7 +109,7 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 
 		if n.delivery == Bulk {
 			c := n.clone(receiver.EmailConfig)
-			key, err := notifier.Md5key(c)
+			key, err := utils.Md5key(c)
 			if err != nil {
 				_ = level.Error(logger).Log("msg", "EmailNotifier: get notifier error", "error", err.Error())
 				continue
@@ -123,7 +124,7 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 			e.To = append(e.To, receiver.To...)
 			n.email[key] = e
 		} else {
-			key, err := notifier.Md5key(receiver)
+			key, err := utils.Md5key(receiver)
 			if err != nil {
 				_ = level.Error(logger).Log("msg", "EmailNotifier: get notifier error", "error", err.Error())
 				continue
@@ -148,15 +149,15 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}()
 
 		var as []*types.Alert
-		newData := notifier.Filter(data, e.Selector, n.logger)
+		newData := utils.FilterAlerts(data, e.Selector, n.logger)
 		if len(newData.Alerts) == 0 {
 			return nil
 		}
 		for _, a := range newData.Alerts {
 			as = append(as, &types.Alert{
 				Alert: model.Alert{
-					Labels:       notifier.KvToLabelSet(a.Labels),
-					Annotations:  notifier.KvToLabelSet(a.Annotations),
+					Labels:       utils.KvToLabelSet(a.Labels),
+					Annotations:  utils.KvToLabelSet(a.Annotations),
 					StartsAt:     a.StartsAt,
 					EndsAt:       a.EndsAt,
 					GeneratorURL: a.GeneratorURL,
@@ -175,7 +176,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		sender := email.New(emailConfig, n.template.Tmpl, n.logger)
 
 		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
-		ctx = notify.WithGroupLabels(ctx, notifier.KvToLabelSet(data.GroupLabels))
+		ctx = notify.WithGroupLabels(ctx, utils.KvToLabelSet(data.GroupLabels))
 		ctx = notify.WithReceiverName(ctx, data.Receiver)
 		defer cancel()
 

@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	json "github.com/json-iterator/go"
 	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
 )
 
@@ -127,7 +127,7 @@ func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierC
 		}
 
 		newReceiver := receiver.Clone()
-		key, err := notifier.Md5key(newReceiver.WechatConfig)
+		key, err := utils.Md5key(newReceiver.WechatConfig)
 		if err != nil {
 			_ = level.Error(logger).Log("msg", "WechatNotifier: get notifier error", "error", err.Error())
 			continue
@@ -169,9 +169,9 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			Text: weChatMessageContent{
 				Content: msg,
 			},
-			ToUser:  notifier.ArrayToString(w.ToUser, "|"),
-			ToParty: notifier.ArrayToString(w.ToParty, "|"),
-			ToTag:   notifier.ArrayToString(w.ToTag, "|"),
+			ToUser:  utils.ArrayToString(w.ToUser, "|"),
+			ToParty: utils.ArrayToString(w.ToParty, "|"),
+			ToTag:   utils.ArrayToString(w.ToTag, "|"),
 			AgentID: w.WechatConfig.AgentID,
 			Type:    "text",
 			Safe:    "0",
@@ -186,12 +186,12 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			}
 
 			var buf bytes.Buffer
-			if err := json.NewEncoder(&buf).Encode(wechatMsg); err != nil {
+			if err := utils.JsonEncode(&buf, wechatMsg); err != nil {
 				_ = level.Error(n.logger).Log("msg", "WechatNotifier: encode message error", "error", err.Error())
 				return false, err
 			}
 
-			u, err := notifier.UrlWithPath(w.WechatConfig.APIURL, "message/send")
+			u, err := utils.UrlWithPath(w.WechatConfig.APIURL, "message/send")
 			if err != nil {
 				_ = level.Error(n.logger).Log("msg", "WechatNotifier: set path error", "error", err)
 				return false, err
@@ -199,7 +199,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 			parameters := make(map[string]string)
 			parameters["access_token"] = accessToken
-			u, err = notifier.UrlWithParameters(u, parameters)
+			u, err = utils.UrlWithParameters(u, parameters)
 			if err != nil {
 				_ = level.Error(n.logger).Log("msg", "WechatNotifier: set parameters error", "error", err)
 				return false, err
@@ -211,14 +211,14 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			}
 			request.Header.Set("Content-Type", "application/json")
 
-			body, err := notifier.DoHttpRequest(ctx, nil, request)
+			body, err := utils.DoHttpRequest(ctx, nil, request)
 			if err != nil {
 				_ = level.Error(n.logger).Log("msg", "WechatNotifier: do http error", "error", err)
 				return false, err
 			}
 
 			var weResp weChatResponse
-			if err := json.Unmarshal(body, &weResp); err != nil {
+			if err := utils.JsonUnmarshal(body, &weResp); err != nil {
 				_ = level.Error(n.logger).Log("msg", "WechatNotifier: decode response body error", "error", err)
 				return false, err
 			}
@@ -233,9 +233,9 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 				}
 				_ = level.Debug(n.logger).Log("msg", "WechatNotifier: send message",
 					"from", w.WechatConfig.AgentID,
-					"toUser", notifier.ArrayToString(w.ToUser, "|"),
-					"toParty", notifier.ArrayToString(w.ToParty, "|"),
-					"toTag", notifier.ArrayToString(w.ToTag, "|"))
+					"toUser", utils.ArrayToString(w.ToUser, "|"),
+					"toParty", utils.ArrayToString(w.ToParty, "|"),
+					"toTag", utils.ArrayToString(w.ToTag, "|"))
 				return false, nil
 			}
 
@@ -249,9 +249,9 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			_ = level.Error(n.logger).Log("msg", "WechatNotifier: wechat response error",
 				"error code", weResp.ErrorCode, "error message", weResp.ErrorMsg,
 				"from", w.WechatConfig.AgentID,
-				"toUser", notifier.ArrayToString(w.ToUser, "|"),
-				"toParty", notifier.ArrayToString(w.ToParty, "|"),
-				"toTag", notifier.ArrayToString(w.ToTag, "|"))
+				"toUser", utils.ArrayToString(w.ToUser, "|"),
+				"toParty", utils.ArrayToString(w.ToParty, "|"),
+				"toTag", utils.ArrayToString(w.ToTag, "|"))
 			return false, nil
 		}
 
@@ -266,7 +266,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	group := async.NewGroup(ctx)
 	for _, w := range n.wechat {
 
-		newData := notifier.Filter(data, w.Selector, n.logger)
+		newData := utils.FilterAlerts(data, w.Selector, n.logger)
 		if len(newData.Alerts) == 0 {
 			continue
 		}
@@ -308,7 +308,7 @@ func (n *Notifier) getToken(ctx context.Context, w *config.Wechat) (string, erro
 
 	get := func(ctx context.Context) (string, time.Duration, error) {
 		u := w.WechatConfig.APIURL
-		u, err := notifier.UrlWithPath(u, "gettoken")
+		u, err := utils.UrlWithPath(u, "gettoken")
 		if err != nil {
 			return "", 0, err
 		}
@@ -321,7 +321,7 @@ func (n *Notifier) getToken(ctx context.Context, w *config.Wechat) (string, erro
 		parameters := make(map[string]string)
 		parameters["corpsecret"] = apiSecret
 		parameters["corpid"] = w.WechatConfig.CorpID
-		u, err = notifier.UrlWithParameters(u, parameters)
+		u, err = utils.UrlWithParameters(u, parameters)
 		if err != nil {
 			return "", 0, err
 		}
@@ -333,13 +333,13 @@ func (n *Notifier) getToken(ctx context.Context, w *config.Wechat) (string, erro
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		body, err := notifier.DoHttpRequest(ctx, nil, request)
+		body, err := utils.DoHttpRequest(ctx, nil, request)
 		if err != nil {
 			return "", 0, err
 		}
 
 		resp := &weChatResponse{}
-		err = json.Unmarshal(body, resp)
+		err = utils.JsonUnmarshal(body, resp)
 		if err != nil {
 			return "", 0, err
 		}
