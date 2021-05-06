@@ -43,7 +43,7 @@ const (
 	opGet               = "get"
 	nsEnvironment       = "NAMESPACE"
 
-	tenantSidecarURL = "http://localhost:19094/api/v2/tenantFromNs"
+	tenantSidecarURL = "http://localhost:19094/api/v2/tenant"
 )
 
 var (

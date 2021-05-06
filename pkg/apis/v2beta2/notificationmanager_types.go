@@ -53,50 +53,8 @@ type Sidecar struct {
 	// Notification manager built-in sidecar for KubeSphere,
 	// It can be used with set `type` to `kubesphere`.
 	Type string `json:"type" protobuf:"bytes,2,opt,name=type"`
-	// Docker image name.
-	// +optional
-	Image string `json:"image,omitempty" protobuf:"bytes,2,opt,name=image"`
-	// Entrypoint array. Not executed within a shell.
-	// The docker image's ENTRYPOINT is used if this is not provided.
-	// +optional
-	Command []string `json:"command,omitempty" protobuf:"bytes,3,rep,name=command"`
-	// Arguments to the entrypoint.
-	// The docker image's CMD is used if this is not provided.
-	// +optional
-	Args []string `json:"args,omitempty" protobuf:"bytes,4,rep,name=args"`
-	// List of sources to populate environment variables in the container.
-	// The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-	// will be reported as an event when the container is starting. When a key exists in multiple
-	// sources, the value associated with the last source will take precedence.
-	// Values defined by an Env with a duplicate key will take precedence.
-	// +optional
-	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty" protobuf:"bytes,19,rep,name=envFrom"`
-	// List of environment variables to set in the container.
-	// +optional
-	Env []v1.EnvVar `json:"env,omitempty" protobuf:"bytes,7,rep,name=env"`
-	// Compute Resources required by this container.
-	// +optional
-	Resources v1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
-	// Pod volumes to mount into the container's filesystem.
-	// The volumes should be defined in the `spec.volumes`.
-	// +optional
-	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty" protobuf:"bytes,9,rep,name=volumeMounts"`
-	// Periodic probe of container liveness.
-	// Container will be restarted if the probe fails.
-	// +optional
-	LivenessProbe *v1.Probe `json:"livenessProbe,omitempty" protobuf:"bytes,10,opt,name=livenessProbe"`
-	// Periodic probe of container service readiness.
-	// Container will be removed from service endpoints if the probe fails.
-	// +optional
-	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty" protobuf:"bytes,11,opt,name=readinessProbe"`
-	// Actions that the management system should take in response to container lifecycle events.
-	// +optional
-	Lifecycle *v1.Lifecycle `json:"lifecycle,omitempty" protobuf:"bytes,12,opt,name=lifecycle"`
-	// Image pull policy.
-	// One of Always, Never, IfNotPresent.
-	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
-	// +optional
-	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty" protobuf:"bytes,14,opt,name=imagePullPolicy,casttype=PullPolicy"`
+	// Container of sidecar.
+	*v1.Container `json:",inline"`
 }
 
 // NotificationManagerSpec defines the desired state of NotificationManager
@@ -138,7 +96,7 @@ type NotificationManagerSpec struct {
 	// +optional
 	Args []string `json:"args,omitempty"`
 	// TenantSidecar used to manage the tenants which will receive notifications.
-	// It needs to provide the API `/api/v2/tenantFromNs` at port `19094`, this api receives
+	// It needs to provide the API `/api/v2/tenant` at port `19094`, this api receives
 	// a parameter `namespace` and return all tenants which need to receive notifications in this namespace.
 	TenantSidecar *Sidecar `json:"tenantSidecar,omitempty"`
 }

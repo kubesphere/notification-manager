@@ -68,7 +68,7 @@ func httpserver() error {
 	ws.Path("/api/v2").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
-	ws.Route(ws.GET("/tenantFromNs").To(handler))
+	ws.Route(ws.GET("/tenant").To(handler))
 	ws.Route(ws.GET("/readiness").To(readiness))
 	ws.Route(ws.GET("/liveness").To(readiness))
 	ws.Route(ws.GET("/preStop").To(preStop))

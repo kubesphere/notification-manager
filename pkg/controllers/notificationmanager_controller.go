@@ -34,7 +34,6 @@ import (
 
 const (
 	notificationManager       = "notification-manager"
-	tenantSidecar             = "tenant-sidecar"
 	defaultPortName           = "webhook"
 	defaultServiceAccountName = "default"
 	kubesphereSidecar         = "kubesphere"
@@ -257,22 +256,7 @@ func (r *NotificationManagerReconciler) mutateTenantSidecar(nm *v2beta2.Notifica
 		return r.generateKubesphereSidecar(sidecar)
 	}
 
-	container := &corev1.Container{
-		Name:            tenantSidecar,
-		Image:           sidecar.Image,
-		Command:         sidecar.Command,
-		Args:            sidecar.Args,
-		EnvFrom:         sidecar.EnvFrom,
-		Env:             sidecar.Env,
-		Resources:       sidecar.Resources,
-		VolumeMounts:    sidecar.VolumeMounts,
-		LivenessProbe:   sidecar.LivenessProbe,
-		ReadinessProbe:  sidecar.ReadinessProbe,
-		Lifecycle:       sidecar.Lifecycle,
-		ImagePullPolicy: sidecar.ImagePullPolicy,
-	}
-
-	return container
+	return nm.Spec.TenantSidecar.Container
 }
 
 func (r *NotificationManagerReconciler) generateKubesphereSidecar(_ *v2beta2.Sidecar) *corev1.Container {
