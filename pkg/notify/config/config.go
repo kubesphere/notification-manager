@@ -513,8 +513,10 @@ func (c *Config) onNmAdd(obj interface{}) {
 		if nm.Spec.Receivers.Options != nil {
 			p.ReceiverOpts = nm.Spec.Receivers.Options
 		}
-		if nm.Spec.TenantSidecar != nil {
-			p.tenantSidecar = true
+		if nm.Spec.Sidecars != nil {
+			if sidecar, ok := nm.Spec.Sidecars[v2beta2.Tenant]; ok && sidecar != nil {
+				p.tenantSidecar = true
+			}
 		}
 		p.done = make(chan interface{}, 1)
 		c.ch <- p

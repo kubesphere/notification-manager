@@ -247,16 +247,20 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 
 func (r *NotificationManagerReconciler) mutateTenantSidecar(nm *v2beta2.NotificationManager) *corev1.Container {
 
-	if nm.Spec.TenantSidecar == nil {
+	if nm.Spec.Sidecars == nil {
 		return nil
 	}
 
-	sidecar := nm.Spec.TenantSidecar
+	sidecar, ok := nm.Spec.Sidecars[v2beta2.Tenant]
+	if !ok || sidecar == nil {
+		return nil
+	}
+
 	if sidecar.Type == kubesphereSidecar {
 		return r.generateKubesphereSidecar(sidecar)
 	}
 
-	return nm.Spec.TenantSidecar.Container
+	return sidecar.Container
 }
 
 func (r *NotificationManagerReconciler) generateKubesphereSidecar(_ *v2beta2.Sidecar) *corev1.Container {

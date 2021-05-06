@@ -681,10 +681,20 @@ func (in *NotificationManagerSpec) DeepCopyInto(out *NotificationManagerSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.TenantSidecar != nil {
-		in, out := &in.TenantSidecar, &out.TenantSidecar
-		*out = new(Sidecar)
-		(*in).DeepCopyInto(*out)
+	if in.Sidecars != nil {
+		in, out := &in.Sidecars, &out.Sidecars
+		*out = make(map[string]*Sidecar, len(*in))
+		for key, val := range *in {
+			var outVal *Sidecar
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = new(Sidecar)
+				(*in).DeepCopyInto(*out)
+			}
+			(*out)[key] = outVal
+		}
 	}
 }
 

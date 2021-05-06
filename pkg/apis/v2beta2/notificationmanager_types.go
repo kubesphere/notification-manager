@@ -23,6 +23,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	Tenant = "tenant"
+)
+
 // SecretKeySelector selects a key of a Secret.
 type SecretKeySelector struct {
 	// The namespace of the secret, default to the `defaultSecretNamespace` of `NotificationManager` crd.
@@ -95,10 +99,11 @@ type NotificationManagerSpec struct {
 	// The docker image's CMD is used if this is not provided.
 	// +optional
 	Args []string `json:"args,omitempty"`
-	// TenantSidecar used to manage the tenants which will receive notifications.
+	// Sidecar containers. The key is the type of sidecar, known value include: tenant.
+	// Tenant sidecar used to manage the tenants which will receive notifications.
 	// It needs to provide the API `/api/v2/tenant` at port `19094`, this api receives
 	// a parameter `namespace` and return all tenants which need to receive notifications in this namespace.
-	TenantSidecar *Sidecar `json:"tenantSidecar,omitempty"`
+	Sidecars map[string]*Sidecar `json:"sidecars,omitempty"`
 }
 
 type ReceiversSpec struct {
