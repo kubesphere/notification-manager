@@ -11,3 +11,12 @@ resources:
 - auth_proxy_role.yaml
 - auth_proxy_role_binding.yaml
 - auth_proxy_client_clusterrole.yaml
+
+patchesJson6902:
+  # This is for tenant sidecar in kubesphere, if the notification manager not run in the kubesphere,comment out it.
+  - target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRole
+      name: controller-role
+    path: patches/patch.yaml

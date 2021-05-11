@@ -33,10 +33,11 @@ import (
 )
 
 const (
-	notificationManager       = "notification-manager"
-	defaultPortName           = "webhook"
-	defaultServiceAccountName = "default"
-	kubesphereSidecar         = "kubesphere"
+	notificationManager           = "notification-manager"
+	defaultPortName               = "webhook"
+	defaultServiceAccountName     = "default"
+	kubesphereSidecar             = "kubesphere"
+	defaultkubesphereSidecarImage = "kubesphere/kubesphere-sidecar:v3.1.0"
 )
 
 var (
@@ -263,8 +264,35 @@ func (r *NotificationManagerReconciler) mutateTenantSidecar(nm *v2beta2.Notifica
 	return sidecar.Container
 }
 
-func (r *NotificationManagerReconciler) generateKubesphereSidecar(_ *v2beta2.Sidecar) *corev1.Container {
-	return nil
+func (r *NotificationManagerReconciler) generateKubesphereSidecar(sidecar *v2beta2.Sidecar) *corev1.Container {
+
+	container := sidecar.Container
+	if container == nil {
+		container = &corev1.Container{
+			Name:            "tenant-sidecar",
+			ImagePullPolicy: "IfNotPresent",
+		}
+	}
+
+	if container.Image == "" {
+		container.Image = defaultkubesphereSidecarImage
+	}
+
+	if container.Ports == nil || len(container.Ports) == 0 {
+		container.Ports = []corev1.ContainerPort{
+			{
+				Name:          "tenant",
+				ContainerPort: 19094,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		}
+	}
+
+	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+		Name:      "host-time",
+		MountPath: "/etc/localtime",
+	})
+	return container
 }
 
 func (r *NotificationManagerReconciler) makeCommonLabels(nm *v2beta2.NotificationManager) *map[string]string {

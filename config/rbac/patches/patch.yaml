@@ -1,0 +1,12 @@
+# The following role patch is for kubesphere tenant sidecar.
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+      - "*"
+    resources:
+      - "*"
+    verbs:
+      - get
+      - list
+      - watch
