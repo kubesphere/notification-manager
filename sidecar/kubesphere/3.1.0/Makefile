@@ -2,14 +2,14 @@
 # Use of this source code is governed by a Apache license
 # that can be found in the LICENSE file.
 
-IMG ?= kubespheredev/notification-adapter:v0.1.1
+IMG ?= kubespheredev/kubesphere-sidecar:v3.1.0
 AMD64 ?= -amd64
 
 all: docker-build
 
-# Build notification-adapter binary
-notification-adapter:
-	go build -o notification-adapter cmd/main.go
+# Build kubernetes sidecar binary
+kubesphere-sidecar:
+	go build -o kubesphere-sidecar cmd/main.go
 
 # Build the docker image
 docker-build:

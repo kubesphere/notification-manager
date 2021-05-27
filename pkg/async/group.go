@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// A group has several workers, and the group can execute these workers concurrently,
+// Group has several workers, and the group can execute these workers concurrently,
 // wait for the workers to finish within a specified time, and receive the results returned by these workers.
 type Group struct {
 	workers []func(stopCh chan interface{})
@@ -24,7 +24,7 @@ func (g *Group) Add(w func(stopCh chan interface{})) {
 	g.workers = append(g.workers, w)
 }
 
-// Execute all workers concurrently, and wait for all workers to end.
+// Wait execute all workers concurrently, and wait for all workers to end.
 func (g *Group) Wait() []error {
 
 	if g.workers == nil || len(g.workers) == 0 {

@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"reflect"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -27,7 +29,6 @@ import (
 )
 
 const (
-	user                = "User"
 	globalTenantID      = "notification-manager/type/global"
 	defaultConfig       = "notification-manager/type/default"
 	defaultTenantKey    = "user"
@@ -40,8 +41,9 @@ const (
 	opAdd               = "add"
 	opDel               = "delete"
 	opGet               = "get"
-	tenantKeyNamespace  = "namespace"
 	nsEnvironment       = "NAMESPACE"
+
+	tenantSidecarURL = "http://localhost:19094/api/v2/tenant"
 )
 
 var (
@@ -59,6 +61,8 @@ type Config struct {
 	defaultConfig map[string]interface{}
 	// Label key used to distinguish different user
 	tenantKey string
+	// Whether to use sidecar to get tenant list.
+	tenantSidecar bool
 	// Label selector to filter valid global Receiver CR
 	globalReceiverSelector *metav1.LabelSelector
 	// Label selector to filter valid tenant Receiver CR
@@ -88,6 +92,7 @@ type param struct {
 	receiver               Receiver
 	isConfig               bool
 	ReceiverOpts           *v2beta2.Options
+	tenantSidecar          bool
 	done                   chan interface{}
 }
 
@@ -402,6 +407,7 @@ func (c *Config) nmChange(p *param) {
 		c.tenantReceiverSelector = p.tenantReceiverSelector
 		c.globalReceiverSelector = p.globalReceiverSelector
 		c.ReceiverOpts = p.ReceiverOpts
+		c.tenantSidecar = p.tenantSidecar
 		c.nmAdd = true
 	} else if p.op == opDel {
 		c.tenantKey = defaultTenantKey
@@ -414,85 +420,81 @@ func (c *Config) nmChange(p *param) {
 	p.done <- struct{}{}
 }
 
-func (c *Config) tenantIDFromNs(namespace *string) ([]string, error) {
+func (c *Config) tenantIDFromNs(namespace string) ([]string, error) {
 	tenantIDs := make([]string, 0)
-	// Use namespace as TenantID directly if tenantKey is "namespace"
-	if c.tenantKey == tenantKeyNamespace {
-		tenantIDs = append(tenantIDs, *namespace)
+	// Use namespace as TenantID directly if tenantSidecar not provided.
+	if !c.tenantSidecar {
+		tenantIDs = append(tenantIDs, namespace)
 		return tenantIDs, nil
 	}
 
-	// Find User in rolebinding for KubeSphere
-	rbList := rbacv1.RoleBindingList{}
-	if err := c.cache.List(c.ctx, &rbList, client.InNamespace(*namespace)); err != nil {
-		_ = level.Error(c.logger).Log("msg", "Failed to list rolebinding", "err", err)
-		return []string{}, err
+	p := make(map[string]string)
+	p["namespace"] = namespace
+	u, err := utils.UrlWithParameters(tenantSidecarURL, p)
+	if err != nil {
+		return nil, err
 	}
-	for _, rb := range rbList.Items {
-		if rb.Subjects != nil {
-			for _, v := range rb.Subjects {
-				if v.Kind == user {
-					tenantIDs = append(tenantIDs, v.Name)
-				}
+
+	request, err := http.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	body, err := utils.DoHttpRequest(context.Background(), nil, request)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]string, 0)
+	if err := utils.JsonUnmarshal(body, &res); err != nil {
+		return nil, err
+	}
+
+	_ = level.Debug(c.logger).Log("msg", "get tenants from namespace", "namespace", namespace, "tenant", utils.ArrayToString(res, ","))
+
+	return res, nil
+}
+
+func (c *Config) RcvsFromTenantID(tenantID string) []Receiver {
+	p := param{}
+	p.op = opGet
+	p.tenantID = tenantID
+	p.done = make(chan interface{}, 1)
+	c.ch <- &p
+	o := <-p.done
+	rcvs := make([]Receiver, 0)
+	if r, ok := o.(map[string]Receiver); ok {
+		for _, v := range r {
+			if v.Enabled() {
+				rcvs = append(rcvs, v)
 			}
 		}
 	}
-	return tenantIDs, nil
+
+	return rcvs
 }
 
 func (c *Config) RcvsFromNs(namespace *string) []Receiver {
-	rcvs := make([]Receiver, 0)
-	// Return global receiver if namespace is nil, global receiver should receive all notifications
-	if namespace == nil {
-		p := param{}
-		p.op = opGet
-		p.tenantID = globalTenantID
-		p.done = make(chan interface{}, 1)
-		c.ch <- &p
-		o := <-p.done
-		if r, ok := o.(map[string]Receiver); ok {
-			for _, v := range r {
-				if v.Enabled() {
-					rcvs = append(rcvs, v)
-				}
-			}
-		}
-	} else {
-		// Get all global receiver first, global receiver should receive all notifications
-		p := param{}
-		p.op = opGet
-		p.tenantID = globalTenantID
-		p.done = make(chan interface{}, 1)
-		c.ch <- &p
-		o := <-p.done
-		if r, ok := o.(map[string]Receiver); ok {
-			for _, v := range r {
-				if v.Enabled() {
-					rcvs = append(rcvs, v)
-				}
-			}
-		}
 
-		// Get receivers for each tenant if namespace is not nil
-		if tenantIDs, err := c.tenantIDFromNs(namespace); err != nil {
-			_ = level.Error(c.logger).Log("msg", "Unable to find tenantID", "err", err)
-		} else {
-			for _, t := range tenantIDs {
-				p := param{}
-				p.op = opGet
-				p.tenantID = t
-				p.done = make(chan interface{}, 1)
-				c.ch <- &p
-				o := <-p.done
-				if r, ok := o.(map[string]Receiver); ok {
-					for _, v := range r {
-						if v.Enabled() {
-							rcvs = append(rcvs, v)
-						}
-					}
-				}
-			}
-		}
+	// Get all global receiver first, global receiver should receive all notifications.
+	rcvs := c.RcvsFromTenantID(globalTenantID)
+
+	// Return global receiver if namespace is nil.
+	if namespace == nil || len(*namespace) == 0 {
+		return rcvs
+	}
+
+	// Get all tenants which need to receive the notifications in this namespace.
+	tenantIDs, err := c.tenantIDFromNs(*namespace)
+	if err != nil {
+		_ = level.Error(c.logger).Log("msg", "get tenantID error", "err", err, "namespace", *namespace)
+		return rcvs
+	}
+
+	// Get receivers for each tenant.
+	for _, t := range tenantIDs {
+		rcvs = append(rcvs, c.RcvsFromTenantID(t)...)
 	}
 
 	return rcvs
@@ -510,6 +512,11 @@ func (c *Config) onNmAdd(obj interface{}) {
 		p.tenantReceiverSelector = nm.Spec.Receivers.TenantReceiverSelector
 		if nm.Spec.Receivers.Options != nil {
 			p.ReceiverOpts = nm.Spec.Receivers.Options
+		}
+		if nm.Spec.Sidecars != nil {
+			if sidecar, ok := nm.Spec.Sidecars[v2beta2.Tenant]; ok && sidecar != nil {
+				p.tenantSidecar = true
+			}
 		}
 		p.done = make(chan interface{}, 1)
 		c.ch <- p

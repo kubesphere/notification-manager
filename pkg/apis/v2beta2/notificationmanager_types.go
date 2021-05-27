@@ -23,6 +23,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	Tenant = "tenant"
+)
+
 // SecretKeySelector selects a key of a Secret.
 type SecretKeySelector struct {
 	// The namespace of the secret, default to the `defaultSecretNamespace` of `NotificationManager` crd.
@@ -47,6 +51,16 @@ type Credential struct {
 	ValueFrom *ValueSource `json:"valueFrom,omitempty" protobuf:"bytes,3,opt,name=valueFrom"`
 }
 
+// Sidecar defines a sidecar container which will be add to the notification manager deployment pod.
+type Sidecar struct {
+	// The type of sidecar, it can be specified to any value.
+	// Notification manager built-in sidecar for KubeSphere,
+	// It can be used with set `type` to `kubesphere`.
+	Type string `json:"type" protobuf:"bytes,2,opt,name=type"`
+	// Container of sidecar.
+	*v1.Container `json:",inline"`
+}
+
 // NotificationManagerSpec defines the desired state of NotificationManager
 type NotificationManagerSpec struct {
 	// Compute Resources required by container.
@@ -63,7 +77,7 @@ type NotificationManagerSpec struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Pod's scheduling constraints.
 	Affinity *v1.Affinity `json:"affinity,omitempty"`
-	// Pod's tolerations.
+	// Pod's toleration.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// ServiceAccountName is the name of the ServiceAccount to use to run Notification Manager Pods.
 	// ServiceAccount 'default' in notification manager's namespace will be used if not specified.
@@ -83,13 +97,13 @@ type NotificationManagerSpec struct {
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
 	// Arguments to the entrypoint.
 	// The docker image's CMD is used if this is not provided.
-	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
-	// cannot be resolved, the reference in the input string will remain unchanged. The $(VAR_NAME) syntax
-	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
-	// regardless of whether the variable exists or not.
-	// Cannot be updated.
 	// +optional
 	Args []string `json:"args,omitempty"`
+	// Sidecar containers. The key is the type of sidecar, known value include: tenant.
+	// Tenant sidecar used to manage the tenants which will receive notifications.
+	// It needs to provide the API `/api/v2/tenant` at port `19094`, this api receives
+	// a parameter `namespace` and return all tenants which need to receive notifications in this namespace.
+	Sidecars map[string]*Sidecar `json:"sidecars,omitempty"`
 }
 
 type ReceiversSpec struct {
@@ -157,7 +171,7 @@ type WebhookOptions struct {
 	Template string `json:"template,omitempty"`
 }
 
-// The config of flow control.
+// Throttle is the config of flow control.
 type Throttle struct {
 	// The maximum calls in `Unit`.
 	Threshold int           `json:"threshold,omitempty"`

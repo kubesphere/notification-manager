@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
-
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -63,6 +63,7 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(cfg).ToNot(BeNil())
 
 	err = v2beta1.AddToScheme(scheme.Scheme)
+	err = v2beta2.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme

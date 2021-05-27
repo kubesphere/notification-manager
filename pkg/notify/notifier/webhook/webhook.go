@@ -12,10 +12,10 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	json "github.com/json-iterator/go"
 	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/mwitkow/go-conntrack"
 	"github.com/prometheus/alertmanager/template"
 )
@@ -94,7 +94,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "used", time.Since(start).String())
 		}()
 
-		newData := notifier.Filter(data, w.Selector, n.logger)
+		newData := utils.FilterAlerts(data, w.Selector, n.logger)
 		if len(newData.Alerts) == 0 {
 			return nil
 		}
@@ -110,7 +110,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}
 
 		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(value); err != nil {
+		if err := utils.JsonEncode(&buf, value); err != nil {
 			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: encode message error", "error", err.Error())
 			return err
 		}
@@ -156,7 +156,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			Timeout:   n.timeout,
 		}
 
-		_, err = notifier.DoHttpRequest(ctx, client, request)
+		_, err = utils.DoHttpRequest(ctx, client, request)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: do http request error", "error", err.Error())
 			return err

@@ -34,7 +34,7 @@ func GetThrottle() *Throttle {
 	return throttle
 }
 
-// Add, if exist, update
+// Add rateLimiter, if exist, update
 func (t *Throttle) Add(key string, threshold int, unitTime time.Duration, maxWaitTime time.Duration) {
 
 	t.mutex.Lock()
@@ -64,7 +64,7 @@ func (t *Throttle) updateRateLimiter(r *rateLimiter, threshold int, unitTime tim
 	r.maxWaitTime = maxWaitTime
 }
 
-// Add, if exist, do nothing
+// TryAdd rateLimiter, if exist, do nothing
 func (t *Throttle) TryAdd(key string, threshold int, unitTime time.Duration, maxWaitTime time.Duration) {
 
 	t.mutex.Lock()
@@ -93,7 +93,7 @@ func (t *Throttle) Get(url string) *rateLimiter {
 	return r
 }
 
-// This function calculates whether the api calls reaches the flow limit,
+// Allow calculates whether the api calls reaches the flow limit,
 // if not, return true, otherwise wait for the flow limit to be lifted, and return true.
 // The max waiting time is set by `maxWaitTime`, if the actual waiting time is more than `maxWaitTime`, it will not wait, and return false.
 //
