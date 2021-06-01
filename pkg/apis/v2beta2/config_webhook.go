@@ -108,6 +108,52 @@ func (r *Config) validateConfig() error {
 		})
 	}
 
+	if r.Spec.Sms != nil {
+		providers := r.Spec.Sms.Providers
+		defaultProvider := r.Spec.Sms.DefaultProvider
+		if defaultProvider == "aliyun" && providers.Aliyun == nil {
+			err := field.Invalid(field.NewPath("spec").Child("sms").Child("defaultProvider"), "", "cannot find default provider from providers")
+			allErrs = append(allErrs, err)
+		}
+		if defaultProvider == "tencent" && providers.Tencent == nil {
+			err := field.Invalid(field.NewPath("spec").Child("sms").Child("defaultProvider"), "", "cannot find default provider from providers")
+			allErrs = append(allErrs, err)
+		}
+
+		// Sms aliyun provider parameters validation
+		if providers.Aliyun != nil {
+			if providers.Aliyun.AccessKeyId != nil {
+				credentials = append(credentials, map[string]interface{}{
+					"credential": r.Spec.Sms.Providers.Aliyun.AccessKeyId,
+					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("aliyun").Child("accessKeyId"),
+				})
+			}
+			if providers.Aliyun.AccessKeySecret != nil {
+				credentials = append(credentials, map[string]interface{}{
+					"credential": r.Spec.Sms.Providers.Aliyun.AccessKeySecret,
+					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("aliyun").Child("accessKeySecret"),
+				})
+			}
+		}
+
+		// Sms tencent provider parameters validation
+		if providers.Tencent != nil {
+			if providers.Tencent.SecretId != nil {
+				credentials = append(credentials, map[string]interface{}{
+					"credential": r.Spec.Sms.Providers.Aliyun.AccessKeyId,
+					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("tencent").Child("secretId"),
+				})
+			}
+			if providers.Tencent.SecretKey != nil {
+				credentials = append(credentials, map[string]interface{}{
+					"credential": r.Spec.Sms.Providers.Aliyun.AccessKeySecret,
+					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("tencent").Child("secretKey"),
+				})
+			}
+		}
+
+	}
+
 	for _, v := range credentials {
 		err := validateCredential(v["credential"].(*Credential), v["path"].(*field.Path))
 		if err != nil {

@@ -105,7 +105,7 @@ func (r *Receiver) validateReceiver() error {
 		}
 	}
 
-	if r.Spec.DingTalk.Conversation != nil && len(r.Spec.DingTalk.Conversation.ChatIDs) == 0 {
+	if r.Spec.DingTalk != nil && r.Spec.DingTalk.Conversation != nil && len(r.Spec.DingTalk.Conversation.ChatIDs) == 0 {
 		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("dingtalk").Child("conversation").Child("chatids"),
 			"must be specified"))
 	}

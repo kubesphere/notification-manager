@@ -200,6 +200,14 @@ type DingTalkOptions struct {
 	ConversationThrottle *Throttle `json:"conversationThrottle,omitempty"`
 }
 
+type SmsOptions struct {
+	// Notification Sending Timeout
+	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
+	// The name of the template to generate webhook message.
+	// If the global template is not set, it will use default.
+	Template string `json:"template,omitempty"`
+}
+
 type Options struct {
 	Global   *GlobalOptions   `json:"global,omitempty"`
 	Email    *EmailOptions    `json:"email,omitempty"`
@@ -207,6 +215,7 @@ type Options struct {
 	Slack    *SlackOptions    `json:"slack,omitempty"`
 	Webhook  *WebhookOptions  `json:"webhook,omitempty"`
 	DingTalk *DingTalkOptions `json:"dingtalk,omitempty"`
+	Sms      *SmsOptions      `json:"sms,omitempty"`
 }
 
 // NotificationManagerStatus defines the observed state of NotificationManager

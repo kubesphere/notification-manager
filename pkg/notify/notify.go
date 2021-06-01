@@ -10,6 +10,7 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/dingtalk"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/email"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/slack"
+	"github.com/kubesphere/notification-manager/pkg/notify/notifier/sms"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/webhook"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/wechat"
 	"github.com/prometheus/alertmanager/template"
@@ -27,6 +28,7 @@ func init() {
 	Register("Slack", slack.NewSlackNotifier)
 	Register("Webhook", webhook.NewWebhookNotifier)
 	Register("DingTalk", dingtalk.NewDingTalkNotifier)
+	Register("Sms", sms.NewSmsNotifier)
 }
 
 func Register(name string, factory Factory) {

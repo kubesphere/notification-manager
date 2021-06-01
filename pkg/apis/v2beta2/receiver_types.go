@@ -156,6 +156,17 @@ type WechatReceiver struct {
 	ToTag   []string `json:"toTag,omitempty"`
 }
 
+type SmsReceiver struct {
+	// whether the receiver is enabled
+	Enabled *bool `json:"enabled,omitempty"`
+	// SmsConfig to be selected for this receiver
+	SmsConfigSelector *metav1.LabelSelector `json:"smsConfigSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	// Receivers' phone numbers
+	PhoneNumbers []string `json:"phoneNumbers"`
+}
+
 //ReceiverSpec defines the desired state of Receiver
 type ReceiverSpec struct {
 	DingTalk *DingTalkReceiver `json:"dingtalk,omitempty"`
@@ -163,6 +174,7 @@ type ReceiverSpec struct {
 	Slack    *SlackReceiver    `json:"slack,omitempty"`
 	Webhook  *WebhookReceiver  `json:"webhook,omitempty"`
 	Wechat   *WechatReceiver   `json:"wechat,omitempty"`
+	Sms      *SmsReceiver      `json:"sms,omitempty"`
 }
 
 // ReceiverStatus defines the observed state of Receiver

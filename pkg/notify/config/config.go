@@ -38,6 +38,7 @@ const (
 	slack               = "slack"
 	webhook             = "webhook"
 	dingtalk            = "dingtalk"
+	sms                 = "sms"
 	opAdd               = "add"
 	opDel               = "delete"
 	opGet               = "get"

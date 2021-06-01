@@ -120,6 +120,36 @@ type WechatConfig struct {
 	WechatApiSecret *Credential `json:"wechatApiSecret"`
 }
 
+// Sms Aliyun provider parameters
+type AliyunProviderParams struct {
+	SignName        string      `json:"signName"`
+	TemplateCode    string      `json:"templateCode,omitempty"`
+	AccessKeyId     *Credential `json:"accessKeyId"`
+	AccessKeySecret *Credential `json:"accessKeySecret"`
+}
+
+// Sms tencent provider parameters
+type TencentProviderParams struct {
+	Sign        string      `json:"sign"`
+	TemplateID  string      `json:"templateID"`
+	SmsSdkAppid string      `json:"smsSdkAppid"`
+	SecretId    *Credential `json:"secretId"`
+	SecretKey   *Credential `json:"secretKey"`
+}
+
+type Providers struct {
+	Aliyun  *AliyunProviderParams  `json:"aliyun"`
+	Tencent *TencentProviderParams `json:"tencent"`
+}
+
+type SmsConfig struct {
+	// The default sms provider
+	// optional, if not given, use the first availabe ones.
+	DefaultProvider string `json:"defaultProvider,omitempty"`
+	// All sms providers
+	Providers *Providers `json:"providers"`
+}
+
 //ConfigSpec defines the desired state of Config
 type ConfigSpec struct {
 	DingTalk *DingTalkConfig `json:"dingtalk,omitempty"`
@@ -127,6 +157,7 @@ type ConfigSpec struct {
 	Slack    *SlackConfig    `json:"slack,omitempty"`
 	Webhook  *WebhookConfig  `json:"webhook,omitempty"`
 	Wechat   *WechatConfig   `json:"wechat,omitempty"`
+	Sms      *SmsConfig      `json:"sms,omitempty"`
 }
 
 // ConfigStatus defines the observed state of Config
