@@ -15,7 +15,7 @@ Step 3, trigger the alerts with notification deployments.
 A reference configuration is described as followings:
 
 ```
-apiVersion: notification.kubesphere.io/v2beta1
+apiVersion: notification.kubesphere.io/v2beta2
 kind: Config
 metadata:
   labels:
@@ -24,23 +24,49 @@ metadata:
   name: default-sms-config
 spec:
   sms:
-       defaultProvider: "aliyun"
-       providers:
-         aliyun: 
-            signName: xxxx 
-            templateCode: xxx
-            accessKeyId: xxx
-            accessKeySecret: xxx
-         tencent:
-            templateID: xxx
-            smsSdkAppid: xxx
-            sign:xxxx
+    defaultProvider: "aliyun" # optional, if not given, use the first availabe ones.
+    providers:
+      aliyun: 
+        signName: xxxx 
+        templateCode: xxx
+        accessKeyId: 
+          key: aliyun.accessKeyId
+          name: default-sms-secret
+        accessKeySecret:
+          key: aliyun.accessKeySecret
+          name: default-sms-secret
+      tencent:
+        templateID: xxx
+        smsSdkAppid: xxx
+        sign:xxxx
+        secretId:
+          key: tencent.secretId
+          name: default-sms-secret
+        secretKey:
+          key: tencent.secretKey
+          name: default-sms-secret
+```
+```
+apiVersion: v1
+data:
+  aliyun.accessKeyId: xxxx
+  aliyun.accessKeySecret: xxxx
+  tencent.secretId: xxxx
+  tencent.secretKey: xxxx
+kind: Secret
+metadata:
+  labels:
+    app: notification-manager
+  name: default-sms-secret
+  namespace: kubesphere-monitoring-system
+type: Opaque
+EOF
 ```
             
 ### **Design SmsReceiever Crd**
 A reference configuration is described as followings:
-
-apiVersion: notification.kubesphere.io/v2beta1
+```
+apiVersion: notification.kubesphere.io/v2beta2
 kind: Receiver
 metadata:
   labels:
@@ -50,17 +76,17 @@ metadata:
 spec:
   sms:
     enabled: true
-    smsConfigSelector:
-      matchLabels:
-        type: tenant
-        user: user1
+    #smsConfigSelector:
+    #  matchLabels:
+    #    type: tenant
+    #    user: user1
     alertSelector:
       matchLabels:
         alerttype: auditing
     phoneNumbers:
     - 13612344321
     - 13812344321
-    
+ ```   
 ### **How to trigger the alerts**
 The different SMS service providers provide different method to send message. Therefore. the websocket server will be abstracted into common interfaces.
 
