@@ -157,3 +157,10 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 	return group.Wait()
 }
+
+func stringValue(a *string) string {
+	if a == nil {
+		return ""
+	}
+	return *a
+}

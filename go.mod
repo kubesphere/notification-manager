@@ -20,6 +20,8 @@ require (
 	github.com/prometheus/common v0.7.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.173
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v0.0.0-20210607011527-308b51a97427
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
 	golang.org/x/text v0.3.2
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6

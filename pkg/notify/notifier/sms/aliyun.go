@@ -35,18 +35,19 @@ func NewAliyunProvider(c *config.Config, providers *v2beta2.Providers, phoneNumb
 func (a *AliyunNotifier) MakeRequest(ctx context.Context, messages string) error {
 	accessKeyId, err := a.NotifierCfg.GetCredential(a.AccessKeyId)
 	if err != nil {
-		return fmt.Errorf("cannot get accessKeyId: %s", err.Error())
+		return fmt.Errorf("[Aliyun  SendSms] cannot get accessKeyId: %s", err.Error())
 	}
 	accessKeySecret, err := a.NotifierCfg.GetCredential(a.AccessKeySecret)
 	if err != nil {
-		return fmt.Errorf("cannot get accessKeySecret")
+		return fmt.Errorf("[Aliyun  SendSms] cannot get accessKeySecret: %s", err.Error())
 	}
 	config := &openapi.Config{}
 	config.AccessKeyId = &accessKeyId
 	config.AccessKeySecret = &accessKeySecret
 	client, err := dysmsapi.NewClient(config)
 	if err != nil {
-		return fmt.Errorf("cannot make a client with accessKeyId:%s,accessKeySecret:%s", accessKeyId, accessKeySecret)
+		return fmt.Errorf("[Aliyun  SendSms] cannot make a client with accessKeyId:%s,accessKeySecret:%s",
+			a.AccessKeyId.ValueFrom.SecretKeyRef.Name, a.AccessKeySecret.ValueFrom.SecretKeyRef.Name)
 	}
 
 	templateParam := `{"code":"` + messages + `"}`
@@ -58,19 +59,12 @@ func (a *AliyunNotifier) MakeRequest(ctx context.Context, messages string) error
 	}
 	sendResp, err := client.SendSms(sendReq)
 	if err != nil {
-		return err
+		return fmt.Errorf("[Aliyun  SendSms] An API error has returned: %s", err.Error())
 	}
 
 	if stringValue(sendResp.Body.Code) != "OK" {
-		return fmt.Errorf(stringValue(sendResp.Body.Message))
+		return fmt.Errorf("[Aliyun  SendSms] Send failed: %s", fmt.Errorf(stringValue(sendResp.Body.Message)))
 	}
 
 	return nil
-}
-
-func stringValue(a *string) string {
-	if a == nil {
-		return ""
-	}
-	return *a
 }

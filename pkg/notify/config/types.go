@@ -816,7 +816,7 @@ func (s *Sms) Validate() error {
 
 	for _, phoneNumber := range s.PhoneNumbers {
 		if verifyPhoneFormat(phoneNumber) {
-			return fmt.Errorf("%s of `phoneNumbers` may be illegal, pls check it", phoneNumber)
+			return fmt.Errorf("phoneNumber:%s may be illegal, pls check it", phoneNumber)
 		}
 	}
 

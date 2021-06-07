@@ -19,6 +19,7 @@ var availableFactoryFuncs = map[string]ProviderFactory{}
 // register providers here
 func init() {
 	Register("aliyun", NewAliyunProvider)
+	Register("tencent", NewTencentProvider)
 }
 
 func Register(name string, p ProviderFactory) {
