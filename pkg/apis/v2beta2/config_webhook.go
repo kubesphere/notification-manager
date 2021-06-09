@@ -140,13 +140,13 @@ func (r *Config) validateConfig() error {
 		if providers.Tencent != nil {
 			if providers.Tencent.SecretId != nil {
 				credentials = append(credentials, map[string]interface{}{
-					"credential": r.Spec.Sms.Providers.Aliyun.AccessKeyId,
+					"credential": r.Spec.Sms.Providers.Tencent.SecretId,
 					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("tencent").Child("secretId"),
 				})
 			}
 			if providers.Tencent.SecretKey != nil {
 				credentials = append(credentials, map[string]interface{}{
-					"credential": r.Spec.Sms.Providers.Aliyun.AccessKeySecret,
+					"credential": r.Spec.Sms.Providers.Tencent.SecretKey,
 					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("tencent").Child("secretKey"),
 				})
 			}

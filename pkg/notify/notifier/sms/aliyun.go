@@ -11,6 +11,10 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 )
 
+const (
+	aliyunMaxPhoneNums = 1000
+)
+
 type AliyunNotifier struct {
 	SignName        string
 	NotifierCfg     *config.Config
@@ -21,14 +25,14 @@ type AliyunNotifier struct {
 }
 
 func NewAliyunProvider(c *config.Config, providers *v2beta2.Providers, phoneNumbers []string) Provider {
-	phoneNum := strings.Join(phoneNumbers, ",")
+	phoneNums := handleAliyunPhoneNums(phoneNumbers)
 	return &AliyunNotifier{
 		SignName:        providers.Aliyun.SignName,
 		NotifierCfg:     c,
 		TemplateCode:    providers.Aliyun.TemplateCode,
 		AccessKeyId:     providers.Aliyun.AccessKeyId,
 		AccessKeySecret: providers.Aliyun.AccessKeySecret,
-		PhoneNums:       phoneNum,
+		PhoneNums:       phoneNums,
 	}
 }
 
@@ -51,20 +55,27 @@ func (a *AliyunNotifier) MakeRequest(ctx context.Context, messages string) error
 	}
 
 	templateParam := `{"code":"` + messages + `"}`
-	sendReq := &dysmsapi.SendSmsRequest{
+	req := &dysmsapi.SendSmsRequest{
 		PhoneNumbers:  &a.PhoneNums,
 		SignName:      &a.SignName,
 		TemplateCode:  &a.TemplateCode,
 		TemplateParam: &templateParam,
 	}
-	sendResp, err := client.SendSms(sendReq)
+	resp, err := client.SendSms(req)
 	if err != nil {
-		return fmt.Errorf("[Aliyun  SendSms] An API error has returned: %s", err.Error())
+		return fmt.Errorf("[Aliyun  SendSms] An API error occurs: %s", err.Error())
 	}
 
-	if stringValue(sendResp.Body.Code) != "OK" {
-		return fmt.Errorf("[Aliyun  SendSms] Send failed: %s", fmt.Errorf(stringValue(sendResp.Body.Message)))
+	if stringValue(resp.Body.Code) != "OK" {
+		return fmt.Errorf("[Aliyun  SendSms] Send failed: %s", fmt.Errorf(stringValue(resp.Body.Message)))
 	}
 
 	return nil
+}
+
+func handleAliyunPhoneNums(phoneNumbers []string) string {
+	if len(phoneNumbers) > aliyunMaxPhoneNums {
+		phoneNumbers = phoneNumbers[:aliyunMaxPhoneNums]
+	}
+	return strings.Join(phoneNumbers, ",")
 }

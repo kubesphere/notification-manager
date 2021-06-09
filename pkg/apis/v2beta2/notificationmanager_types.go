@@ -203,7 +203,7 @@ type DingTalkOptions struct {
 type SmsOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
-	// The name of the template to generate webhook message.
+	// The name of the template to generate sms message.
 	// If the global template is not set, it will use default.
 	Template string `json:"template,omitempty"`
 }

@@ -110,7 +110,7 @@ func getOpType(obj interface{}) string {
 		return webhook
 	case *v2beta2.WechatReceiver, *v2beta2.WechatConfig:
 		return wechat
-	case *v2beta2.SmsReceiver, **v2beta2.SmsReceiver:
+	case *v2beta2.SmsReceiver, *v2beta2.SmsConfig:
 		return sms
 	default:
 		return ""
@@ -816,7 +816,7 @@ func (s *Sms) Validate() error {
 
 	for _, phoneNumber := range s.PhoneNumbers {
 		if verifyPhoneFormat(phoneNumber) {
-			return fmt.Errorf("phoneNumber:%s may be illegal, pls check it", phoneNumber)
+			return fmt.Errorf("phoneNumber:%s is not a valid phone number, pls check it", phoneNumber)
 		}
 	}
 
@@ -890,7 +890,7 @@ func NewSmsReceiver(c *Config, sr *v2beta2.SmsReceiver) Receiver {
 }
 
 func verifyPhoneFormat(phoneNumber string) bool {
-	regular := "^((13[0-9])|(14[5,7])|(15[0-3,5-9])|(17[0,3,5-8])|(18[0-9])|166|198|199|(147))\\d{8}$"
+	regular := `(\+)?[\d*\s*]+`
 
 	reg := regexp.MustCompile(regular)
 	return reg.MatchString(phoneNumber)

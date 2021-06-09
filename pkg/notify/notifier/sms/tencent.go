@@ -14,6 +14,10 @@ import (
 	smsApi "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20190711"
 )
 
+const (
+	tencentMaxPhoneNums = 200
+)
+
 type TencentNotifier struct {
 	Sign        string
 	NotifierCfg *config.Config
@@ -49,23 +53,23 @@ func (t *TencentNotifier) MakeRequest(ctx context.Context, messages string) erro
 	credential := common.NewCredential(secretId, secretKey)
 	client, _ := smsApi.NewClient(credential, regions.Guangzhou, profile.NewClientProfile())
 
-	request := smsApi.NewSendSmsRequest()
-	request.SmsSdkAppid = common.StringPtr(t.SmsSdkAppid)
-	request.Sign = common.StringPtr(t.Sign)
-	// request.SenderId = common.StringPtr("xxx")
-	// request.SessionContext = common.StringPtr("xxx")
-	// request.ExtendCode = common.StringPtr("0")
-	request.TemplateParamSet = common.StringPtrs([]string{messages})
-	request.TemplateID = common.StringPtr(t.TemplateID)
-	request.PhoneNumberSet = common.StringPtrs(t.PhoneNums)
+	req := smsApi.NewSendSmsRequest()
+	req.SmsSdkAppid = common.StringPtr(t.SmsSdkAppid)
+	req.Sign = common.StringPtr(t.Sign)
+	// req.SenderId = common.StringPtr("xxx")
+	// req.SessionContext = common.StringPtr("xxx")
+	// req.ExtendCode = common.StringPtr("0")
+	req.TemplateParamSet = common.StringPtrs([]string{messages})
+	req.TemplateID = common.StringPtr(t.TemplateID)
+	req.PhoneNumberSet = common.StringPtrs(t.PhoneNums)
 
-	response, err := client.SendSms(request)
+	resp, err := client.SendSms(req)
 
 	if err != nil {
-		return fmt.Errorf("[Tencent SendSms] An API error has returned: %s", err.Error())
+		return fmt.Errorf("[Tencent SendSms] An API error occurs: %s", err.Error())
 	}
 
-	sendStatusSet := response.Response.SendStatusSet
+	sendStatusSet := resp.Response.SendStatusSet
 	failedPhoneNums := make([]string, 0)
 	if len(sendStatusSet) != 0 {
 		for _, sendStatus := range sendStatusSet {
@@ -83,13 +87,16 @@ func (t *TencentNotifier) MakeRequest(ctx context.Context, messages string) erro
 
 }
 
-func handleTencentPhoneNum(phoneNumber []string) []string {
-	tencentPhoneNum := make([]string, 0)
-	for _, p := range phoneNumber {
+func handleTencentPhoneNum(phoneNumbers []string) []string {
+	if len(phoneNumbers) > tencentMaxPhoneNums {
+		phoneNumbers = phoneNumbers[:tencentMaxPhoneNums]
+	}
+	tencentPhoneNums := make([]string, 0)
+	for _, p := range phoneNumbers {
 		if ok := strings.HasPrefix(p, "+86"); !ok {
 			p = fmt.Sprintf("+86%s", p)
 		}
-		tencentPhoneNum = append(tencentPhoneNum, p)
+		tencentPhoneNums = append(tencentPhoneNums, p)
 	}
-	return tencentPhoneNum
+	return tencentPhoneNums
 }

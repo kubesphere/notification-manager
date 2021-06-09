@@ -121,7 +121,7 @@ type WechatConfig struct {
 }
 
 // Sms Aliyun provider parameters
-type AliyunProviderParams struct {
+type AliyunSMS struct {
 	SignName        string      `json:"signName"`
 	TemplateCode    string      `json:"templateCode,omitempty"`
 	AccessKeyId     *Credential `json:"accessKeyId"`
@@ -129,7 +129,7 @@ type AliyunProviderParams struct {
 }
 
 // Sms tencent provider parameters
-type TencentProviderParams struct {
+type TencentSMS struct {
 	Sign        string      `json:"sign"`
 	TemplateID  string      `json:"templateID"`
 	SmsSdkAppid string      `json:"smsSdkAppid"`
@@ -138,13 +138,12 @@ type TencentProviderParams struct {
 }
 
 type Providers struct {
-	Aliyun  *AliyunProviderParams  `json:"aliyun"`
-	Tencent *TencentProviderParams `json:"tencent"`
+	Aliyun  *AliyunSMS  `json:"aliyun,omitempty"`
+	Tencent *TencentSMS `json:"tencent,omitempty"`
 }
 
 type SmsConfig struct {
-	// The default sms provider
-	// optional, if not given, use the first availabe ones.
+	// The default sms provider, optional, use the first provider if not set
 	DefaultProvider string `json:"defaultProvider,omitempty"`
 	// All sms providers
 	Providers *Providers `json:"providers"`
