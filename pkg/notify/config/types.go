@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
@@ -83,6 +84,10 @@ func NewReceiver(c *Config, obj interface{}) Receiver {
 		return NewWechatReceiver(c, obj.(*v2beta2.WechatReceiver))
 	case *v2beta2.WechatConfig:
 		return NewWechatConfig(obj.(*v2beta2.WechatConfig))
+	case *v2beta2.SmsReceiver:
+		return NewSmsReceiver(c, obj.(*v2beta2.SmsReceiver))
+	case *v2beta2.SmsConfig:
+		return NewSmsConfig(obj.(*v2beta2.SmsConfig))
 	default:
 		return nil
 	}
@@ -105,6 +110,8 @@ func getOpType(obj interface{}) string {
 		return webhook
 	case *v2beta2.WechatReceiver, *v2beta2.WechatConfig:
 		return wechat
+	case *v2beta2.SmsReceiver, *v2beta2.SmsConfig:
+		return sms
 	default:
 		return ""
 	}
@@ -705,7 +712,7 @@ func listConfigs(c *Config, selector *metav1.LabelSelector) []v2beta2.Config {
 	configList := v2beta2.ConfigList{}
 	configSel, _ := metav1.LabelSelectorAsSelector(selector)
 	if err := c.cache.List(c.ctx, &configList, client.MatchingLabelsSelector{Selector: configSel}); client.IgnoreNotFound(err) != nil {
-		_ = level.Error(c.logger).Log("msg", "Unable to list DingTalkConfig", "err", err)
+		_ = level.Error(c.logger).Log("msg", "Unable to list Config", "err", err)
 		return nil
 	}
 
@@ -741,4 +748,150 @@ func validateCredential(c *v2beta2.Credential) error {
 	}
 
 	return nil
+}
+
+type Sms struct {
+	PhoneNumbers []string
+	SmsConfig    *SmsConfig
+	Selector     *metav1.LabelSelector
+	*common
+}
+
+type SmsConfig struct {
+	// The default sms provider
+	// optional, if not given, use the first availabe ones.
+	DefaultProvider string `json:"defaultProvider,omitempty"`
+	// All sms providers
+	Providers *v2beta2.Providers `json:"providers"`
+}
+
+// Sms service
+func NewSmsConfig(sc *v2beta2.SmsConfig) Receiver {
+	s := &Sms{
+		common: &common{
+			receiverType: sms,
+		},
+	}
+
+	s.generateConfig(sc)
+	return s
+}
+
+func (s *Sms) generateConfig(sc *v2beta2.SmsConfig) {
+
+	if s == nil {
+		return
+	}
+
+	s.SmsConfig = &SmsConfig{
+		DefaultProvider: sc.DefaultProvider,
+		Providers:       sc.Providers,
+	}
+}
+
+func (s *Sms) GetConfig() interface{} {
+	return s.SmsConfig
+}
+
+func (s *Sms) SetConfig(obj interface{}) error {
+
+	if obj == nil {
+		s.SmsConfig = nil
+		return nil
+	}
+
+	c, ok := obj.(*SmsConfig)
+	if !ok {
+		return errors.New("set sms config error, wrong config type")
+	}
+
+	s.SmsConfig = c
+	return nil
+}
+
+func (s *Sms) Validate() error {
+	if len(s.PhoneNumbers) == 0 {
+		return fmt.Errorf("`phoneNumbers` must not be empty")
+	}
+
+	for _, phoneNumber := range s.PhoneNumbers {
+		if verifyPhoneFormat(phoneNumber) {
+			return fmt.Errorf("phoneNumber:%s is not a valid phone number, pls check it", phoneNumber)
+		}
+	}
+
+	providers := s.SmsConfig.Providers
+	defaultProvider := s.SmsConfig.DefaultProvider
+	if defaultProvider == "aliyun" && providers.Aliyun == nil {
+		return errors.New("cannot find default provider:aliyun from providers")
+	}
+	if defaultProvider == "tencent" && providers.Tencent == nil {
+		return errors.New("cannot find default provider:tencent from providers")
+	}
+
+	// Sms aliyun provider parameters validation
+	if providers.Aliyun != nil {
+		if providers.Aliyun.AccessKeyId != nil {
+			if err := validateCredential(providers.Aliyun.AccessKeyId); err != nil {
+				return fmt.Errorf("Aliyun provider parameters:accessKeyId error, %s", err.Error())
+			}
+		}
+		if providers.Aliyun.AccessKeySecret != nil {
+			if err := validateCredential(providers.Aliyun.AccessKeySecret); err != nil {
+				return fmt.Errorf("Aliyun provider parameters:accessKeySecret error, %s", err.Error())
+			}
+		}
+	}
+
+	// Sms tencent provider parameters validation
+	if providers.Tencent != nil {
+		if providers.Tencent.SecretId != nil {
+			if err := validateCredential(providers.Tencent.SecretId); err != nil {
+				return fmt.Errorf("Tencent provider parameters:secretId error, %s", err.Error())
+			}
+		}
+		if providers.Tencent.SecretKey != nil {
+			if err := validateCredential(providers.Tencent.SecretKey); err != nil {
+				return fmt.Errorf("Tencent provider parameters:secretKey error, %s", err.Error())
+			}
+		}
+	}
+
+	return nil
+}
+
+func NewSmsReceiver(c *Config, sr *v2beta2.SmsReceiver) Receiver {
+	s := &Sms{
+		common: &common{
+			enabled:        sr.Enabled,
+			receiverType:   sms,
+			configSelector: sr.SmsConfigSelector,
+		},
+		PhoneNumbers: sr.PhoneNumbers,
+		Selector:     sr.AlertSelector,
+	}
+
+	if sr.SmsConfigSelector == nil {
+		sr.SmsConfigSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{"type": "default"},
+		}
+	}
+
+	configs := listConfigs(c, sr.SmsConfigSelector)
+
+	for _, item := range configs {
+		s.generateConfig(item.Spec.Sms)
+		if s.SmsConfig != nil {
+			break
+		}
+	}
+
+	return s
+}
+
+func verifyPhoneFormat(phoneNumber string) bool {
+	regular := `(\+)?[\d*\s*]+`
+
+	reg := regexp.MustCompile(regular)
+	return reg.MatchString(phoneNumber)
 }

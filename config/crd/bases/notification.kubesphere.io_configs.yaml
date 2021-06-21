@@ -656,6 +656,163 @@ spec:
                 required:
                 - slackTokenSecret
                 type: object
+              sms:
+                properties:
+                  defaultProvider:
+                    description: The default sms provider, optional, use the first
+                      provider if not set
+                    type: string
+                  providers:
+                    description: All sms providers
+                    properties:
+                      aliyun:
+                        description: Sms Aliyun provider parameters
+                        properties:
+                          accessKeyId:
+                            properties:
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  secretKeyRef:
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: Name of the secret.
+                                        type: string
+                                      namespace:
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                type: object
+                            type: object
+                          accessKeySecret:
+                            properties:
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  secretKeyRef:
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: Name of the secret.
+                                        type: string
+                                      namespace:
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                type: object
+                            type: object
+                          signName:
+                            type: string
+                          templateCode:
+                            type: string
+                        required:
+                        - accessKeyId
+                        - accessKeySecret
+                        - signName
+                        type: object
+                      tencent:
+                        description: Sms tencent provider parameters
+                        properties:
+                          secretId:
+                            properties:
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  secretKeyRef:
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: Name of the secret.
+                                        type: string
+                                      namespace:
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                type: object
+                            type: object
+                          secretKey:
+                            properties:
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  secretKeyRef:
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: Name of the secret.
+                                        type: string
+                                      namespace:
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                type: object
+                            type: object
+                          sign:
+                            type: string
+                          smsSdkAppid:
+                            type: string
+                          templateID:
+                            type: string
+                        required:
+                        - secretId
+                        - secretKey
+                        - sign
+                        - smsSdkAppid
+                        - templateID
+                        type: object
+                    type: object
+                required:
+                - providers
+                type: object
               webhook:
                 properties:
                   labels:

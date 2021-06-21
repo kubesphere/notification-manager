@@ -1,0 +1,71 @@
+---
+apiVersion: notification.kubesphere.io/v2beta2
+kind: Receiver
+metadata:
+  labels:
+    app: notification-manager
+    type: global
+  name: global-sms-receiver
+spec:
+  sms:
+    enabled: true
+    phoneNumbers:
+    - "13612344321"
+
+---
+apiVersion: notification.kubesphere.io/v2beta2
+kind: Config
+metadata:
+  labels:
+    app: notification-manager
+    type: default
+  name: default-sms-config
+spec:
+  sms:
+    defaultProvider: "tencent"
+    providers:
+      aliyun: 
+        signName: xxxx 
+        templateCode: xxx
+        accessKeyId: 
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: aliyun.accessKeyId
+              name: default-sms-secret
+        accessKeySecret:
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: aliyun.accessKeySecret
+              name: default-sms-secret
+      tencent:
+        templateID: xxx
+        smsSdkAppid: xxx
+        sign: xxxx
+        secretId:
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: tencent.secretId
+              name: default-sms-secret
+        secretKey:
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: tencent.secretKey
+              name: default-sms-secret
+
+---
+apiVersion: v1
+data:
+  aliyun.accessKeyId: eHh4eA==
+  aliyun.accessKeySecret: eHh4eA==
+  tencent.secretId: eHh4eA==
+  tencent.secretKey: eHh4eA==
+kind: Secret
+metadata:
+  labels:
+    app: notification-manager
+  name: default-sms-secret
+type: Opaque
