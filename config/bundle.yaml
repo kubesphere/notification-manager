@@ -6093,11 +6093,11 @@ spec:
             cpu: 100m
             memory: 20Mi
         volumeMounts:
-        - mountPath: /etc/localtime
-          name: host-time
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+        - mountPath: /etc/localtime
+          name: host-time
       - args:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
@@ -6111,14 +6111,14 @@ spec:
       serviceAccountName: notification-manager-sa
       terminationGracePeriodSeconds: 10
       volumes:
-      - hostPath:
-          path: /etc/localtime
-          type: ""
-        name: host-time
       - name: cert
         secret:
           defaultMode: 420
           secretName: notification-manager-webhook-server-cert
+      - hostPath:
+          path: /etc/localtime
+          type: ""
+        name: host-time
 ---
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
