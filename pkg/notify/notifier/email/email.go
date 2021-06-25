@@ -322,7 +322,6 @@ func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error
 		}
 
 		ec.TLSConfig = tlsConfig
-		ec.RequireTLS = &e.EmailConfig.RequireTLS
 	}
 
 	return ec, nil
