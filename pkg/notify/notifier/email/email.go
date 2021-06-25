@@ -244,6 +244,7 @@ func (n *Notifier) clone(ec *nmconfig.EmailConfig) *nmconfig.EmailConfig {
 		AuthPassword: ec.AuthPassword,
 		AuthSecret:   ec.AuthSecret,
 		RequireTLS:   ec.RequireTLS,
+		TLS:          ec.TLS,
 	}
 }
 
@@ -321,8 +322,7 @@ func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error
 		}
 
 		ec.TLSConfig = tlsConfig
-		requireTLS := true
-		ec.RequireTLS = &requireTLS
+		ec.RequireTLS = &e.EmailConfig.RequireTLS
 	}
 
 	return ec, nil
