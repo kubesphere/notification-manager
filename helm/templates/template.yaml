@@ -22,6 +22,27 @@ data:
     {{ "{{- end }}" }}
     {{ "{{- end }}" }}
 
+    {{ "{{ define \"nm.markdown.subject\" }}{{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}s{{ end }} for {{ range .GroupLabels.SortedPairs }} {{ .Name }}={{ .Value }} {{ end }}" }}
+    {{ "{{- end }}" }}
+
+    {{ "{{ define \"__nm_alert_list_markdown\" }}{{ range . }}### Labels:" }}
+    {{ "{{ range .Labels.SortedPairs }}{{ if ne .Name \"runbook_url\" }}- {{ .Name }} = {{ .Value }}{{ end }}" }}
+    {{ "{{ end }}### Annotations:" }}
+    {{ "{{ range .Annotations.SortedPairs }}{{ if ne .Name \"runbook_url\"}}- {{ .Name }} = {{ .Value }}{{ end }}" }}
+    {{ "{{ end }}" }}
+    {{ "{{ end }}{{ end }}" }}
+
+    {{ "{{ define \"nm.default.markdown\" }}{{ template \"nm.markdown.subject\" . }}" }}
+    {{ "{{ if gt (len .Alerts.Firing) 0 -}}" }}
+    {{ "## <font color=#CD0000>Alerts Firing:</font>" }}
+    {{ "{{ template \"__nm_alert_list_markdown\" .Alerts.Firing }}" }}
+    {{ "{{- end }}" }}
+    {{ "{{ if gt (len .Alerts.Resolved) 0 -}}" }}
+    {{ "## <font color=#00CD00>Alerts Resolved:</font>" }}
+    {{ "{{ template \"__nm_alert_list_markdown\" .Alerts.Resolved }}" }}
+    {{ "{{- end }}" }}
+    {{ "{{- end }}" }}
+
     {{ "{{ define \"nm.default.html\" }}" }}
     {{ "  <html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns=\"http://www.w3.org/1999/xhtml\" style=\"font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;\">" }}
     {{ "  <head style=\"font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;\">" }}

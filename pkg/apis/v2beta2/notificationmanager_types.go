@@ -188,6 +188,8 @@ type DingTalkOptions struct {
 	// The name of the template to generate DingTalk message.
 	// If the global template is not set, it will use default.
 	Template string `json:"template,omitempty"`
+	// message type: text or markdown
+	MsgType string `json:"msgType,omitempty"`
 	// The time of token expired.
 	TokenExpires time.Duration `json:"tokenExpires,omitempty"`
 	// The maximum message size that can be sent to conversation in a request.

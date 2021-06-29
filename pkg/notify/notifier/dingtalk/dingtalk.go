@@ -25,6 +25,7 @@ const (
 	URL                          = "https://oapi.dingtalk.com/"
 	DefaultSendTimeout           = time.Second * 3
 	DefaultTemplate              = `{{ template "nm.default.text" . }}`
+	MarkDownTemplate             = `{{ template "nm.default.markdown" . }}`
 	ConversationMessageMaxSize   = 5000
 	ChatbotMessageMaxSize        = 19960
 	DefaultExpires               = time.Hour * 2
@@ -42,6 +43,7 @@ type Notifier struct {
 	logger                     log.Logger
 	template                   *notifier.Template
 	templateName               string
+	msgType                    string
 	throttle                   *Throttle
 	ats                        *notifier.AccessTokenService
 	tokenExpires               time.Duration
@@ -59,10 +61,26 @@ type dingtalkMessageContent struct {
 	Content string `json:"content"`
 }
 
+type at struct {
+	AtMobiles []string `yaml:"atMobiles,omitempty" json:"atMobiles,omitempty"`
+}
+
 type dingtalkMessage struct {
 	Text dingtalkMessageContent `yaml:"text,omitempty" json:"text,omitempty"`
 	ID   string                 `yaml:"chatid,omitempty" json:"chatid,omitempty"`
 	Type string                 `yaml:"msgtype,omitempty" json:"msgtype,omitempty"`
+	At   at                     `yaml:"at,omitempty" json:"at,omitempty"`
+}
+
+type dingtalkMarkdown struct {
+	Title string `json:"title"`
+	Text  string `json:"text"`
+}
+
+type dingtalkMarkdownMessage struct {
+	Markdown dingtalkMarkdown `yaml:"markdown,omitempty" json:"markdown,omitempty"`
+	Type     string           `yaml:"msgtype,omitempty" json:"msgtype,omitempty"`
+	At       at               `yaml:"at,omitempty" json:"at,omitempty"`
 }
 
 type response struct {
@@ -92,6 +110,7 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 		logger:                     logger,
 		template:                   tmpl,
 		templateName:               DefaultTemplate,
+		msgType:                    "text",
 		throttle:                   GetThrottle(),
 		ats:                        notifier.GetAccessTokenService(),
 		tokenExpires:               DefaultExpires,
@@ -111,6 +130,11 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 
 		if d.NotificationTimeout != nil {
 			n.timeout = time.Second * time.Duration(*d.NotificationTimeout)
+		}
+
+		if len(d.MsgType) > 0 && strings.Compare("markdown", d.MsgType) == 0 {
+			n.msgType = "markdown"
+			n.templateName = MarkDownTemplate
 		}
 
 		if len(d.Template) > 0 {
@@ -217,23 +241,49 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 	}
 
 	send := func(msg string) error {
-
+		// get the phones, start
+		atPhones := []string{}
+		for k, v := range msg {
+			if strings.Compare(string(v), "@") == 0 {
+				atPhones = append(atPhones, msg[k+1:k+12])
+			}
+		}
+		// end
 		start := time.Now()
 		defer func() {
 			_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot", "used", time.Since(start).String())
 		}()
 
-		dm := dingtalkMessage{
-			Type: "text",
-			Text: dingtalkMessageContent{
-				Content: msg,
-			},
-		}
-
 		var buf bytes.Buffer
-		if err := utils.JsonEncode(&buf, dm); err != nil {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: encode message error", "error", err.Error())
-			return err
+		if strings.Compare("markdown", n.msgType) == 0 {
+			dm := dingtalkMarkdownMessage{
+				Type: "markdown",
+				Markdown: dingtalkMarkdown{
+					Title: "Alert Notice",
+					Text:  msg,
+				},
+				At: at{
+					AtMobiles: atPhones,
+				},
+			}
+			if err := utils.JsonEncode(&buf, dm); err != nil {
+				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: encode markdown message error", "error", err.Error())
+				return err
+			}
+		} else {
+			dm := dingtalkMessage{
+				Type: "text",
+				Text: dingtalkMessageContent{
+					Content: msg,
+				},
+				At: at{
+					AtMobiles: atPhones,
+				},
+			}
+			if err := utils.JsonEncode(&buf, dm); err != nil {
+				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: encode text message error", "error", err.Error())
+				return err
+			}
 		}
 
 		secret := ""
