@@ -79,6 +79,7 @@ type dingtalkMarkdown struct {
 
 type dingtalkMarkdownMessage struct {
 	Markdown dingtalkMarkdown `yaml:"markdown,omitempty" json:"markdown,omitempty"`
+	ID       string           `yaml:"chatid,omitempty" json:"chatid,omitempty"`
 	Type     string           `yaml:"msgtype,omitempty" json:"msgtype,omitempty"`
 	At       at               `yaml:"at,omitempty" json:"at,omitempty"`
 }
@@ -412,6 +413,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 					Title: "Alert Notice",
 					Text:  msg,
 				},
+				ID: chatID,
 			}
 			if err := utils.JsonEncode(&buf, dm); err != nil {
 				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: encode markdown message error", "conversation", chatID, "error", err.Error())
