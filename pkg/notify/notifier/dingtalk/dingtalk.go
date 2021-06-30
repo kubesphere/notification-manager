@@ -43,6 +43,7 @@ type Notifier struct {
 	logger                     log.Logger
 	template                   *notifier.Template
 	templateName               string
+	tmplType                   string
 	throttle                   *Throttle
 	ats                        *notifier.AccessTokenService
 	tokenExpires               time.Duration
@@ -109,6 +110,7 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 		logger:                     logger,
 		template:                   tmpl,
 		templateName:               DefaultTemplate,
+		tmplType:                   "text",
 		throttle:                   GetThrottle(),
 		ats:                        notifier.GetAccessTokenService(),
 		tokenExpires:               DefaultExpires,
@@ -134,6 +136,11 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 			n.templateName = d.Template
 		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
 			n.templateName = opts.Global.Template
+		}
+
+		if len(d.TmplType) > 0 && strings.Compare("markdown", d.TmplType) == 0 {
+			n.tmplType = d.TmplType
+			n.templateName = MarkdownTemplate
 		}
 
 		if d.TokenExpires != 0 {
@@ -248,7 +255,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 		}()
 
 		var buf bytes.Buffer
-		if strings.Compare("markdown", d.MsgType) == 0 {
+		if strings.Compare("markdown", d.TmplType) == 0 || (len(d.TmplType) == 0 && strings.Compare("markdown", n.tmplType) == 0) {
 			templateName = MarkdownTemplate
 			dm := dingtalkMarkdownMessage{
 				Type: "markdown",
@@ -383,7 +390,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appsecret error", "error", err)
 		return []error{err}
 	}
-
+	var templateName string
 	send := func(chatID, msg string) error {
 
 		start := time.Now()
@@ -396,19 +403,33 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 			_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get token error", "conversation", chatID, "error", err)
 			return err
 		}
-
-		dm := dingtalkMessage{
-			Text: dingtalkMessageContent{
-				Content: msg,
-			},
-			Type: "text",
-			ID:   chatID,
-		}
-
 		var buf bytes.Buffer
-		if err := utils.JsonEncode(&buf, dm); err != nil {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: encode message error", "conversation", chatID, "error", err.Error())
-			return err
+		if strings.Compare("markdown", d.TmplType) == 0 || (len(d.TmplType) == 0 && strings.Compare("markdown", n.tmplType) == 0) {
+			templateName = MarkdownTemplate
+			dm := dingtalkMarkdownMessage{
+				Type: "markdown",
+				Markdown: dingtalkMarkdown{
+					Title: "Alert Notice",
+					Text:  msg,
+				},
+			}
+			if err := utils.JsonEncode(&buf, dm); err != nil {
+				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: encode markdown message error", "conversation", chatID, "error", err.Error())
+				return err
+			}
+		} else {
+			templateName = DefaultTemplate
+			dm := dingtalkMessage{
+				Text: dingtalkMessageContent{
+					Content: msg,
+				},
+				Type: "text",
+				ID:   chatID,
+			}
+			if err := utils.JsonEncode(&buf, dm); err != nil {
+				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: encode text message error", "conversation", chatID, "error", err.Error())
+				return err
+			}
 		}
 
 		u, err := utils.UrlWithPath(URL, "chat/send")
@@ -454,7 +475,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 		return nil
 	}
 
-	messages, err := n.template.Split(data, n.conversationMessageMaxSize, n.templateName, n.logger)
+	messages, err := n.template.Split(data, n.conversationMessageMaxSize, templateName, n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: split message error", "error", err.Error())
 		return nil

@@ -122,7 +122,7 @@ type DingTalk struct {
 	ChatBot        *DingTalkChatBot
 	DingTalkConfig *DingTalkConfig
 	Selector       *metav1.LabelSelector
-	MsgType        string
+	TmplType       string
 	*common
 }
 
@@ -147,12 +147,10 @@ func NewDingTalkReceiver(c *Config, dr *v2beta2.DingTalkReceiver) Receiver {
 			configSelector: dr.DingTalkConfigSelector,
 		},
 		Selector: dr.AlertSelector,
-		// default message type : text
-		MsgType: "text",
 	}
 
-	if dr.MsgType != nil {
-		d.MsgType = *dr.MsgType
+	if dr.TmplType != nil {
+		d.TmplType = *dr.TmplType
 	}
 
 	if dr.Conversation != nil {
