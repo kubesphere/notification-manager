@@ -19,7 +19,7 @@ package v2beta2
 import (
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -188,6 +188,8 @@ type DingTalkOptions struct {
 	// The name of the template to generate DingTalk message.
 	// If the global template is not set, it will use default.
 	Template string `json:"template,omitempty"`
+	// template type: text or markdown, default type is text
+	TmplType string `json:"tmplType,omitempty"`
 	// The time of token expired.
 	TokenExpires time.Duration `json:"tokenExpires,omitempty"`
 	// The maximum message size that can be sent to conversation in a request.

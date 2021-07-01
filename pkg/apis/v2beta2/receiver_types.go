@@ -48,6 +48,8 @@ type DingTalkReceiver struct {
 	ChatBot *DingTalkChatBot `json:"chatbot,omitempty"`
 	// The conversation which message will send to.
 	Conversation *DingTalkConversation `json:"conversation,omitempty"`
+	// template type: text or markdown
+	TmplType *string `json:"tmplType,omitempty"`
 }
 
 type EmailReceiver struct {
