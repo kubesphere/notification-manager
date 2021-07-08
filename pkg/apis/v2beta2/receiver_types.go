@@ -30,6 +30,12 @@ type DingTalkChatBot struct {
 
 	// Secret of ChatBot, you can get it after enabled Additional Signature of ChatBot.
 	Secret *Credential `json:"secret,omitempty"`
+	// The phone numbers of the users which will be @.
+	AtMobiles []string `json:"atMobiles,omitempty"`
+	// The users who will be @.
+	AtUsers []string `json:"atUsers,omitempty"`
+	// Whether @everyone.
+	AtAll bool `json:"atAll,omitempty"`
 }
 
 // DingTalkConversation of conversation
@@ -48,6 +54,11 @@ type DingTalkReceiver struct {
 	ChatBot *DingTalkChatBot `json:"chatbot,omitempty"`
 	// The conversation which message will send to.
 	Conversation *DingTalkConversation `json:"conversation,omitempty"`
+	// The name of the template to generate DingTalk message.
+	// If the global template is not set, it will use default.
+	Template *string `json:"template,omitempty"`
+	// The name of the template to generate markdown title
+	TitleTemplate *string `json:"titleTemplate,omitempty"`
 	// template type: text or markdown
 	TmplType *string `json:"tmplType,omitempty"`
 }
@@ -61,6 +72,13 @@ type EmailReceiver struct {
 	EmailConfigSelector *metav1.LabelSelector `json:"emailConfigSelector,omitempty"`
 	// Selector to filter alerts.
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	// The name of the template to generate DingTalk message.
+	// If the global template is not set, it will use default.
+	Template *string `json:"template,omitempty"`
+	// The name of the template to generate email subject
+	SubjectTemplate *string `json:"subjectTemplate,omitempty"`
+	// template type: text or html, default type is html
+	TmplType *string `json:"tmplType,omitempty"`
 }
 
 type SlackReceiver struct {
@@ -72,6 +90,9 @@ type SlackReceiver struct {
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	// The channel or user to send notifications to.
 	Channels []string `json:"channels"`
+	// The name of the template to generate DingTalk message.
+	// If the global template is not set, it will use default.
+	Template *string `json:"template,omitempty"`
 }
 
 // ServiceReference holds a reference to Service.legacy.k8s.io
@@ -143,6 +164,9 @@ type WebhookReceiver struct {
 	Service *ServiceReference `json:"service,omitempty"`
 
 	HTTPConfig *HTTPClientConfig `json:"httpConfig,omitempty"`
+	// The name of the template to generate DingTalk message.
+	// If the global template is not set, it will use default.
+	Template *string `json:"template,omitempty"`
 }
 
 type WechatReceiver struct {
@@ -156,6 +180,11 @@ type WechatReceiver struct {
 	ToUser  []string `json:"toUser,omitempty"`
 	ToParty []string `json:"toParty,omitempty"`
 	ToTag   []string `json:"toTag,omitempty"`
+	// The name of the template to generate DingTalk message.
+	// If the global template is not set, it will use default.
+	Template *string `json:"template,omitempty"`
+	// template type: text or markdown, default type is text
+	TmplType *string `json:"tmplType,omitempty"`
 }
 
 type SmsReceiver struct {
@@ -167,6 +196,9 @@ type SmsReceiver struct {
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	// Receivers' phone numbers
 	PhoneNumbers []string `json:"phoneNumbers"`
+	// The name of the template to generate DingTalk message.
+	// If the global template is not set, it will use default.
+	Template *string `json:"template,omitempty"`
 }
 
 //ReceiverSpec defines the desired state of Receiver

@@ -12,6 +12,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	HTML     = "html"
+	Text     = "text"
+	Markdown = "markdown"
+	Aliyun   = "aliyun"
+	Tencent  = "tencent"
+)
+
 type Receiver interface {
 	Enabled() bool
 	UseDefault() bool
@@ -122,6 +130,8 @@ type DingTalk struct {
 	ChatBot        *DingTalkChatBot
 	DingTalkConfig *DingTalkConfig
 	Selector       *metav1.LabelSelector
+	Template       string
+	TitleTemplate  string
 	TmplType       string
 	*common
 }
@@ -133,9 +143,12 @@ type DingTalkConfig struct {
 
 // DingTalkChatBot is the configuration of ChatBot
 type DingTalkChatBot struct {
-	Webhook  *v2beta2.Credential
-	Keywords []string
-	Secret   *v2beta2.Credential
+	Webhook   *v2beta2.Credential
+	Keywords  []string
+	Secret    *v2beta2.Credential
+	AtMobiles []string
+	AtUsers   []string
+	AtAll     bool
 }
 
 func NewDingTalkReceiver(c *Config, dr *v2beta2.DingTalkReceiver) Receiver {
@@ -149,6 +162,14 @@ func NewDingTalkReceiver(c *Config, dr *v2beta2.DingTalkReceiver) Receiver {
 		Selector: dr.AlertSelector,
 	}
 
+	if dr.Template != nil {
+		d.Template = *dr.Template
+	}
+
+	if dr.TitleTemplate != nil {
+		d.TitleTemplate = *dr.TitleTemplate
+	}
+
 	if dr.TmplType != nil {
 		d.TmplType = *dr.TmplType
 	}
@@ -159,9 +180,12 @@ func NewDingTalkReceiver(c *Config, dr *v2beta2.DingTalkReceiver) Receiver {
 
 	if dr.ChatBot != nil {
 		d.ChatBot = &DingTalkChatBot{
-			Webhook:  dr.ChatBot.Webhook,
-			Keywords: dr.ChatBot.Keywords,
-			Secret:   dr.ChatBot.Secret,
+			Webhook:   dr.ChatBot.Webhook,
+			Keywords:  dr.ChatBot.Keywords,
+			Secret:    dr.ChatBot.Secret,
+			AtMobiles: dr.ChatBot.AtMobiles,
+			AtUsers:   dr.ChatBot.AtUsers,
+			AtAll:     dr.ChatBot.AtAll,
 		}
 	}
 
@@ -236,6 +260,10 @@ func (d *DingTalk) SetConfig(obj interface{}) error {
 
 func (d *DingTalk) Validate() error {
 
+	if d.TmplType != "" && d.TmplType != Text && d.TmplType != Markdown {
+		return fmt.Errorf("dingtalk tmplType must be one of: `text` or `markdown`")
+	}
+
 	if d.ChatBot == nil && (d.ChatIDs == nil || len(d.ChatIDs) == 0) {
 		return fmt.Errorf("%s", "must specify one of: `chatbot` or `chatIDs`")
 	}
@@ -270,9 +298,12 @@ func (d *DingTalk) Validate() error {
 }
 
 type Email struct {
-	To          []string
-	EmailConfig *EmailConfig
-	Selector    *metav1.LabelSelector
+	Template        string
+	SubjectTemplate string
+	TmplType        string
+	To              []string
+	EmailConfig     *EmailConfig
+	Selector        *metav1.LabelSelector
 	*common
 }
 
@@ -297,6 +328,18 @@ func NewEmailReceiver(c *Config, er *v2beta2.EmailReceiver) Receiver {
 		},
 		To:       er.To,
 		Selector: er.AlertSelector,
+	}
+
+	if er.Template != nil {
+		e.Template = *er.Template
+	}
+
+	if er.SubjectTemplate != nil {
+		e.SubjectTemplate = *er.SubjectTemplate
+	}
+
+	if er.TmplType != nil {
+		e.TmplType = *er.TmplType
 	}
 
 	configs := listConfigs(c, er.EmailConfigSelector)
@@ -362,10 +405,14 @@ func (e *Email) generateConfig(ec *v2beta2.EmailConfig) {
 	return
 }
 
-func NewEmail(to []string) *Email {
+func NewEmail(e *Email) *Email {
 	return &Email{
-		To:     to,
-		common: &common{},
+		Template:        e.Template,
+		TmplType:        e.TmplType,
+		SubjectTemplate: e.SubjectTemplate,
+		Selector:        e.Selector,
+		To:              e.To,
+		common:          &common{},
 	}
 }
 
@@ -391,6 +438,10 @@ func (e *Email) SetConfig(obj interface{}) error {
 
 func (e *Email) Validate() error {
 
+	if e.TmplType != "" && e.TmplType != Text && e.TmplType != HTML {
+		return fmt.Errorf("email tmplType must be one of: `text` or `html`")
+	}
+
 	if e.To == nil || len(e.To) == 0 {
 		return fmt.Errorf("email receivers is nil")
 	}
@@ -403,6 +454,7 @@ func (e *Email) Validate() error {
 }
 
 type Slack struct {
+	Template string
 	// The channel or user to send notifications to.
 	Channels    []string
 	SlackConfig *SlackConfig
@@ -424,6 +476,10 @@ func NewSlackReceiver(c *Config, sr *v2beta2.SlackReceiver) Receiver {
 		},
 		Channels: sr.Channels,
 		Selector: sr.AlertSelector,
+	}
+
+	if sr.Template != nil {
+		s.Template = *sr.Template
 	}
 
 	configs := listConfigs(c, sr.SlackConfigSelector)
@@ -503,6 +559,7 @@ func (s *Slack) Validate() error {
 }
 
 type Webhook struct {
+	Template string
 	// `url` gives the location of the webhook, in standard URL form.
 	URL           string
 	HttpConfig    *v2beta2.HTTPClientConfig
@@ -523,6 +580,10 @@ func NewWebhookReceiver(_ *Config, wr *v2beta2.WebhookReceiver) Receiver {
 		},
 		Selector:   wr.AlertSelector,
 		HttpConfig: wr.HTTPConfig,
+	}
+
+	if wr.Template != nil {
+		w.Template = *wr.Template
 	}
 
 	if wr.URL != nil {
@@ -585,6 +646,8 @@ func (w *Webhook) Validate() error {
 }
 
 type Wechat struct {
+	Template     string
+	TmplType     string
 	ToUser       []string
 	ToParty      []string
 	ToTag        []string
@@ -611,6 +674,14 @@ func NewWechatReceiver(c *Config, wr *v2beta2.WechatReceiver) Receiver {
 		ToParty:  wr.ToParty,
 		ToTag:    wr.ToTag,
 		Selector: wr.AlertSelector,
+	}
+
+	if wr.Template != nil {
+		w.Template = *wr.Template
+	}
+
+	if wr.TmplType != nil {
+		w.TmplType = *wr.TmplType
 	}
 
 	configs := listConfigs(c, wr.WechatConfigSelector)
@@ -678,6 +749,10 @@ func (w *Wechat) Validate() error {
 		return fmt.Errorf("must specify one of: `toUser`, `toParty` or `toTag`")
 	}
 
+	if w.TmplType != "" && w.TmplType != Text && w.TmplType != Markdown {
+		return fmt.Errorf("wechat tmplType must be one of: `text` or `markdown`")
+	}
+
 	if w.WechatConfig == nil {
 		return fmt.Errorf("config is nil")
 	}
@@ -707,9 +782,11 @@ func (w *Wechat) Clone() *Wechat {
 			APIURL:    w.WechatConfig.APIURL,
 			AgentID:   w.WechatConfig.AgentID,
 		},
-		ToUser:  w.ToUser,
-		ToParty: w.ToParty,
-		ToTag:   w.ToTag,
+		ToUser:   w.ToUser,
+		ToParty:  w.ToParty,
+		ToTag:    w.ToTag,
+		TmplType: w.TmplType,
+		Template: w.Template,
 	}
 }
 
@@ -756,6 +833,7 @@ func validateCredential(c *v2beta2.Credential) error {
 }
 
 type Sms struct {
+	Template     string
 	PhoneNumbers []string
 	SmsConfig    *SmsConfig
 	Selector     *metav1.LabelSelector
@@ -764,13 +842,12 @@ type Sms struct {
 
 type SmsConfig struct {
 	// The default sms provider
-	// optional, if not given, use the first availabe ones.
+	// optional, if not given, use the first available ones.
 	DefaultProvider string `json:"defaultProvider,omitempty"`
 	// All sms providers
 	Providers *v2beta2.Providers `json:"providers"`
 }
 
-// Sms service
 func NewSmsConfig(sc *v2beta2.SmsConfig) Receiver {
 	s := &Sms{
 		common: &common{
@@ -827,10 +904,10 @@ func (s *Sms) Validate() error {
 
 	providers := s.SmsConfig.Providers
 	defaultProvider := s.SmsConfig.DefaultProvider
-	if defaultProvider == "aliyun" && providers.Aliyun == nil {
+	if defaultProvider == Aliyun && providers.Aliyun == nil {
 		return errors.New("cannot find default provider:aliyun from providers")
 	}
-	if defaultProvider == "tencent" && providers.Tencent == nil {
+	if defaultProvider == Tencent && providers.Tencent == nil {
 		return errors.New("cannot find default provider:tencent from providers")
 	}
 
@@ -838,12 +915,12 @@ func (s *Sms) Validate() error {
 	if providers.Aliyun != nil {
 		if providers.Aliyun.AccessKeyId != nil {
 			if err := validateCredential(providers.Aliyun.AccessKeyId); err != nil {
-				return fmt.Errorf("Aliyun provider parameters:accessKeyId error, %s", err.Error())
+				return fmt.Errorf("aliyun provider parameters:accessKeyId error, %s", err.Error())
 			}
 		}
 		if providers.Aliyun.AccessKeySecret != nil {
 			if err := validateCredential(providers.Aliyun.AccessKeySecret); err != nil {
-				return fmt.Errorf("Aliyun provider parameters:accessKeySecret error, %s", err.Error())
+				return fmt.Errorf("aliyun provider parameters:accessKeySecret error, %s", err.Error())
 			}
 		}
 	}
@@ -852,12 +929,12 @@ func (s *Sms) Validate() error {
 	if providers.Tencent != nil {
 		if providers.Tencent.SecretId != nil {
 			if err := validateCredential(providers.Tencent.SecretId); err != nil {
-				return fmt.Errorf("Tencent provider parameters:secretId error, %s", err.Error())
+				return fmt.Errorf("tencent provider parameters:secretId error, %s", err.Error())
 			}
 		}
 		if providers.Tencent.SecretKey != nil {
 			if err := validateCredential(providers.Tencent.SecretKey); err != nil {
-				return fmt.Errorf("Tencent provider parameters:secretKey error, %s", err.Error())
+				return fmt.Errorf("tencent provider parameters:secretKey error, %s", err.Error())
 			}
 		}
 	}
@@ -874,6 +951,10 @@ func NewSmsReceiver(c *Config, sr *v2beta2.SmsReceiver) Receiver {
 		},
 		PhoneNumbers: sr.PhoneNumbers,
 		Selector:     sr.AlertSelector,
+	}
+
+	if sr.Template != nil {
+		s.Template = *sr.Template
 	}
 
 	if sr.SmsConfigSelector == nil {

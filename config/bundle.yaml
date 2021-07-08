@@ -2787,6 +2787,12 @@ spec:
                           template:
                             description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
                             type: string
+                          titleTemplate:
+                            description: The name of the template to generate markdown title
+                            type: string
+                          tmplType:
+                            description: 'template type: text or markdown, default type is text'
+                            type: string
                           tokenExpires:
                             description: The time of token expired.
                             format: int64
@@ -2795,7 +2801,7 @@ spec:
                       email:
                         properties:
                           deliveryType:
-                            description: Type of sending email, bulk or single
+                            description: Deprecated
                             type: string
                           maxEmailReceivers:
                             description: The maximum size of receivers in one email.
@@ -2809,6 +2815,9 @@ spec:
                             type: string
                           template:
                             description: The name of the template to generate email message. If the global template is not set, it will use default.
+                            type: string
+                          tmplType:
+                            description: 'template type: text or html, default type is html'
                             type: string
                         type: object
                       global:
@@ -2866,6 +2875,9 @@ spec:
                             type: integer
                           template:
                             description: The name of the template to generate wechat message.
+                            type: string
+                          tmplType:
+                            description: 'template type: text or markdown, default type is text'
                             type: string
                           tokenExpires:
                             description: The time of token expired.
@@ -5174,6 +5186,19 @@ spec:
                   chatbot:
                     description: Be careful, a ChatBot only can send 20 message per minute.
                     properties:
+                      atAll:
+                        description: Whether @everyone.
+                        type: boolean
+                      atMobiles:
+                        description: The phone numbers of the users which will be @.
+                        items:
+                          type: string
+                        type: array
+                      atUsers:
+                        description: The users who will be @.
+                        items:
+                          type: string
+                        type: array
                       keywords:
                         description: Custom keywords of ChatBot
                         items:
@@ -5275,6 +5300,15 @@ spec:
                   enabled:
                     description: whether the receiver is enabled
                     type: boolean
+                  template:
+                    description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
+                    type: string
+                  titleTemplate:
+                    description: The name of the template to generate markdown title
+                    type: string
+                  tmplType:
+                    description: 'template type: text or markdown'
+                    type: string
                 type: object
               email:
                 properties:
@@ -5341,6 +5375,15 @@ spec:
                   enabled:
                     description: whether the receiver is enabled
                     type: boolean
+                  subjectTemplate:
+                    description: The name of the template to generate email subject
+                    type: string
+                  template:
+                    description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
+                    type: string
+                  tmplType:
+                    description: 'template type: text or html, default type is html'
+                    type: string
                   to:
                     description: Receivers' email addresses
                     items:
@@ -5419,6 +5462,9 @@ spec:
                         description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
+                  template:
+                    description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
+                    type: string
                 required:
                 - channels
                 type: object
@@ -5492,6 +5538,9 @@ spec:
                         description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
+                  template:
+                    description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
+                    type: string
                 required:
                 - phoneNumbers
                 type: object
@@ -5709,6 +5758,9 @@ spec:
                     - name
                     - namespace
                     type: object
+                  template:
+                    description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
+                    type: string
                   url:
                     description: "`url` gives the location of the webhook, in standard URL form (`scheme://host:port/path`). Exactly one of `url` or `service` must be specified. \n The `host` should not refer to a service running in the cluster; use the `service` field instead. The host might be resolved via external DNS in some api servers (e.g., `kube-apiserver` cannot resolve in-cluster DNS as that would be a layering violation). `host` may also be an IP address. \n Please note that using `localhost` or `127.0.0.1` as a `host` is risky unless you take great care to run this webhook on all hosts which run an apiserver which might need to make calls to this webhook. Such installs are likely to be non-portable, i.e., not easy to turn up in a new cluster. \n A path is optional, and if present may be any string permissible in a URL. You may use the path to pass an arbitrary string to the webhook, for example, a cluster identifier. \n Attempting to use a user or basic auth e.g. \"user:password@\" is not allowed. Fragments (\"#...\") and query parameters (\"?...\") are not allowed, either."
                     type: string
@@ -5778,6 +5830,12 @@ spec:
                   enabled:
                     description: whether the receiver is enabled
                     type: boolean
+                  template:
+                    description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
+                    type: string
+                  tmplType:
+                    description: 'template type: text or markdown, default type is text'
+                    type: string
                   toParty:
                     items:
                       type: string

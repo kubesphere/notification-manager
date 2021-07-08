@@ -17,25 +17,27 @@ import (
 )
 
 const (
-	DefaultApiURL      = "https://qyapi.weixin.qq.com/cgi-bin/"
-	DefaultSendTimeout = time.Second * 3
-	ToUserBatchSize    = 1000
-	ToPartyBatchSize   = 100
-	ToTagBatchSize     = 100
-	AccessTokenInvalid = 42001
-	DefaultTemplate    = `{{ template "nm.default.text" . }}`
-	MessageMaxSize     = 2048
-	DefaultExpires     = time.Hour * 2
+	DefaultApiURL           = "https://qyapi.weixin.qq.com/cgi-bin/"
+	DefaultSendTimeout      = time.Second * 3
+	ToUserBatchSize         = 1000
+	ToPartyBatchSize        = 100
+	ToTagBatchSize          = 100
+	AccessTokenInvalid      = 42001
+	DefaultTextTemplate     = `{{ template "nm.default.text" . }}`
+	DefaultMarkdownTemplate = `{{ template "nm.default.markdown" . }}`
+	MessageMaxSize          = 2048
+	DefaultExpires          = time.Hour * 2
 )
 
 type Notifier struct {
 	notifierCfg    *config.Config
-	wechat         map[string]*config.Wechat
+	wechat         []*config.Wechat
 	accessToken    string
 	timeout        time.Duration
 	logger         log.Logger
 	template       *notifier.Template
 	templateName   string
+	tmplType       string
 	ats            *notifier.AccessTokenService
 	messageMaxSize int
 	tokenExpires   time.Duration
@@ -46,13 +48,14 @@ type weChatMessageContent struct {
 }
 
 type weChatMessage struct {
-	Text    weChatMessageContent `yaml:"text,omitempty" json:"text,omitempty"`
-	ToUser  string               `yaml:"touser,omitempty" json:"touser,omitempty"`
-	ToParty string               `yaml:"toparty,omitempty" json:"toparty,omitempty"`
-	ToTag   string               `yaml:"totag,omitempty" json:"totag,omitempty"`
-	AgentID string               `yaml:"agentid,omitempty" json:"agentid,omitempty"`
-	Safe    string               `yaml:"safe,omitempty" json:"safe,omitempty"`
-	Type    string               `yaml:"msgtype,omitempty" json:"msgtype,omitempty"`
+	Text     weChatMessageContent `yaml:"text,omitempty" json:"text,omitempty"`
+	Markdown weChatMessageContent `yaml:"markdown,omitempty" json:"markdown,omitempty"`
+	ToUser   string               `yaml:"touser,omitempty" json:"touser,omitempty"`
+	ToParty  string               `yaml:"toparty,omitempty" json:"toparty,omitempty"`
+	ToTag    string               `yaml:"totag,omitempty" json:"totag,omitempty"`
+	AgentID  string               `yaml:"agentid,omitempty" json:"agentid,omitempty"`
+	Safe     string               `yaml:"safe,omitempty" json:"safe,omitempty"`
+	Type     string               `yaml:"msgtype,omitempty" json:"msgtype,omitempty"`
 }
 
 type weChatResponse struct {
@@ -79,14 +82,17 @@ func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierC
 
 	n := &Notifier{
 		notifierCfg:    notifierCfg,
-		wechat:         make(map[string]*config.Wechat),
 		logger:         logger,
 		timeout:        DefaultSendTimeout,
 		template:       tmpl,
-		templateName:   DefaultTemplate,
+		tmplType:       config.Text,
 		ats:            notifier.GetAccessTokenService(),
 		messageMaxSize: MessageMaxSize,
 		tokenExpires:   DefaultExpires,
+	}
+
+	if opts != nil && opts.Global != nil && len(opts.Global.Template) > 0 {
+		n.templateName = opts.Global.Template
 	}
 
 	if opts != nil && opts.Wechat != nil {
@@ -97,8 +103,10 @@ func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierC
 
 		if len(opts.Wechat.Template) > 0 {
 			n.templateName = opts.Wechat.Template
-		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
-			n.templateName = opts.Global.Template
+		}
+
+		if len(opts.Wechat.TmplType) > 0 {
+			n.tmplType = opts.Wechat.TmplType
 		}
 
 		if opts.Wechat.MessageMaxSize > 0 {
@@ -126,31 +134,23 @@ func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierC
 			receiver.WechatConfig.APIURL = DefaultApiURL
 		}
 
-		newReceiver := receiver.Clone()
-		key, err := utils.Md5key(newReceiver.WechatConfig)
-		if err != nil {
-			_ = level.Error(logger).Log("msg", "WechatNotifier: get notifier error", "error", err.Error())
-			continue
+		if receiver.TmplType == "" {
+			receiver.TmplType = n.tmplType
 		}
 
-		w, ok := n.wechat[key]
-		if !ok {
-			w = newReceiver
-		} else {
-			if newReceiver.ToUser != nil && len(newReceiver.ToUser) > 0 {
-				w.ToUser = append(w.ToUser, newReceiver.ToUser...)
-			}
-
-			if newReceiver.ToParty != nil && len(newReceiver.ToParty) > 0 {
-				w.ToParty = append(w.ToUser, newReceiver.ToParty...)
-			}
-
-			if newReceiver.ToTag != nil && len(newReceiver.ToTag) > 0 {
-				w.ToTag = append(w.ToUser, newReceiver.ToTag...)
+		if receiver.Template == "" {
+			if n.templateName != "" {
+				receiver.Template = n.templateName
+			} else {
+				if receiver.TmplType == config.Markdown {
+					receiver.Template = DefaultMarkdownTemplate
+				} else if receiver.TmplType == config.Text {
+					receiver.Template = DefaultTextTemplate
+				}
 			}
 		}
 
-		n.wechat[key] = w
+		n.wechat = append(n.wechat, receiver.Clone())
 	}
 
 	return n
@@ -166,15 +166,22 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}()
 
 		wechatMsg := &weChatMessage{
-			Text: weChatMessageContent{
-				Content: msg,
-			},
 			ToUser:  utils.ArrayToString(w.ToUser, "|"),
 			ToParty: utils.ArrayToString(w.ToParty, "|"),
 			ToTag:   utils.ArrayToString(w.ToTag, "|"),
 			AgentID: w.WechatConfig.AgentID,
-			Type:    "text",
 			Safe:    "0",
+		}
+		if w.TmplType == config.Markdown {
+			wechatMsg.Type = config.Markdown
+			wechatMsg.Markdown.Content = msg
+		} else if w.TmplType == config.Text {
+			wechatMsg.Type = config.Text
+			wechatMsg.Text.Content = msg
+		} else {
+			err := fmt.Errorf("unkown message type, %s", w.TmplType)
+			_ = level.Error(n.logger).Log("msg", "WechatNotifier: unkown message type", "error", err.Error())
+			return err
 		}
 
 		sendMessage := func() (bool, error) {
@@ -271,7 +278,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			continue
 		}
 
-		messages, err := n.template.Split(newData, MessageMaxSize, n.templateName, n.logger)
+		messages, _, err := n.template.Split(newData, MessageMaxSize, w.Template, "", n.logger)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "WechatNotifier: split message error", "error", err.Error())
 			return nil
@@ -292,8 +299,8 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			nw.ToParty = batch(toParty, &ps, ToPartyBatchSize)
 			nw.ToTag = batch(toTag, &ts, ToTagBatchSize)
 
-			for _, m := range messages {
-				msg := m
+			for index := range messages {
+				msg := messages[index]
 				group.Add(func(stopCh chan interface{}) {
 					stopCh <- send(nw, msg)
 				})

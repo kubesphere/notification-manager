@@ -105,14 +105,32 @@ func (r *Receiver) validateReceiver() error {
 		}
 	}
 
-	if r.Spec.DingTalk != nil && r.Spec.DingTalk.Conversation != nil && len(r.Spec.DingTalk.Conversation.ChatIDs) == 0 {
-		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("dingtalk").Child("conversation").Child("chatids"),
-			"must be specified"))
+	if r.Spec.DingTalk != nil {
+		if r.Spec.DingTalk.Conversation != nil && len(r.Spec.DingTalk.Conversation.ChatIDs) == 0 {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("dingtalk").Child("conversation").Child("chatids"),
+				"must be specified"))
+		}
+
+		if r.Spec.DingTalk.TmplType != nil {
+			if *r.Spec.DingTalk.TmplType != "text" && *r.Spec.DingTalk.TmplType != "markdown" {
+				allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("dingtalk").Child("tmplType"),
+					"must be one of: `text` or `markdown`"))
+			}
+		}
 	}
 
-	if r.Spec.Email != nil && len(r.Spec.Email.To) == 0 {
-		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("email").Child("to"),
-			"must be specified"))
+	if r.Spec.Email != nil {
+		if len(r.Spec.Email.To) == 0 {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("email").Child("to"),
+				"must be specified"))
+		}
+
+		if r.Spec.Email.TmplType != nil {
+			if *r.Spec.Email.TmplType != "text" && *r.Spec.Email.TmplType != "html" {
+				allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("email").Child("tmplType"),
+					"must be one of: `text` or `html`"))
+			}
+		}
 	}
 
 	if r.Spec.Slack != nil && len(r.Spec.Slack.Channels) == 0 {
@@ -137,6 +155,13 @@ func (r *Receiver) validateReceiver() error {
 			(wechat.ToTag == nil || len(wechat.ToTag) == 0) {
 			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("wechat"), "",
 				"must specify one of: `toUser`, `toParty` or `toTag`"))
+		}
+
+		if wechat.TmplType != nil {
+			if *wechat.TmplType != "text" && *wechat.TmplType != "markdown" {
+				allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("wechat").Child("tmplType"),
+					"must be one of: `text` or `html`"))
+			}
 		}
 	}
 

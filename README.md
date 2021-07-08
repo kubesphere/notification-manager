@@ -98,7 +98,6 @@ spec:
         - /etc/notification-manager/template
       email:
         notificationTimeout: 5
-        deliveryType: bulk
         maxEmailReceivers: 200
       wechat:
         notificationTimeout: 5
@@ -538,12 +537,18 @@ spec:
 
 ### Customize template
 
-You can customize the message format by customizing the template. You need to create a template file include the template that you customized, and mount it to `NotificationManager`. Then you can change the template to the template which you defined.
+You can customize the notifications by customizing the template. You need to create a template file include the template that you customized, and mount it to `NotificationManager`. Then you can change the template to the template which you defined.
 
-It can set a global template, or set a template for each type of receivers. If the template of the receiver does not set, it will use the global template. If the global template does not set too, it will use the default template. The default template looks like below:
+It can set a global template, or set a template for each type of receivers, or set a template for each receiver, or use default template.  
+The priority of these templates is:
 
-```shell
-cat <<EOF | kubectl apply -f -
+```
+default template < global template < template for each type of receivers < receiver template
+```
+
+To set a global template:
+
+```yaml
 apiVersion: notification.kubesphere.io/v2beta1
 kind: NotificationManager
 metadata:
@@ -552,27 +557,100 @@ spec:
   receivers:
     options:
       global:
-        template: nm.default.text
+        template: <template>
+```
+
+To set template for each type of receivers:
+
+```yaml
+apiVersion: notification.kubesphere.io/v2beta1
+kind: NotificationManager
+metadata:
+  name: notification-manager
+spec:
+  receivers:
+    options:
       email:
-        subjectTemplate:  nm.default.text
-        template: nm.default.html
+        subjectTemplate:  <subject-template>
+        template: <template>
       wechat:
-        template: nm.default.text
+        template: <template>
       slack:
-        template: nm.default.text
+        template: <template>
       webhook:
-        template: webhook.default.message
+        template: <template>
       dingtalk:
-        template: nm.default.text
-  volumeMounts:
-  - mountPath: /etc/notification-manager/
-    name: template
-  volumes:
-  - configMap:
-      defaultMode: 420
-      name: template
-    name: template
-EOF
+        template: <template>
+      sms:
+        template: <template>
+```
+
+> The email receiver can set template for text and template for subject.
+
+To set receiver template:
+
+```yaml
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Receiver
+metadata:
+  labels:
+    app: notification-manager
+    type: global
+  name: global-email-receiver
+spec:
+  email:
+    subjectTemplate:  <subject-template>
+    template: <template>
+```
+
+The dingtalk and wechat support two message formats: `text` and `markdown`, the email supports two message formats: `html` and `text`
+You can set a global message format for dingtalk, wechat, or email, or set a message format for each dingtalk receiver, wechat receiver, or email receiver.
+The priority of these message format is:
+
+```
+default message format < global message format < receiver message format
+```
+
+
+To set a global message format:
+
+```yaml
+apiVersion: notification.kubesphere.io/v2beta1
+kind: NotificationManager
+metadata:
+  name: notification-manager
+spec:
+  receivers:
+    options:
+      email:
+        tmplType: html
+      wechat:
+        tmplType: markdown
+      dingtalk:
+        tmplType: markdown
+        titleTemplate: <title-template>
+```
+
+> When the message format of dingtalk is `markdown`, you can set the message format of title for dingtalk.
+
+To set receiver message format:
+
+```yaml
+apiVersion: notification.kubesphere.io/v2beta1
+kind: Receiver
+metadata:
+  labels:
+    app: notification-manager
+    type: global
+  name: global-email-receiver
+spec:
+  email:
+    tmplType: html
+  wechat:
+    tmplType: markdown
+  dingtalk:
+    tmplType: markdown
+    titleTemplate: <title-template>
 ```
 
 Here is the template `nm.default.text`. For more information about templates, you can see [here](https://prometheus.io/docs/alerting/latest/notifications/).

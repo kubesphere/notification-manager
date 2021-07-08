@@ -19,7 +19,7 @@ package v2beta2
 import (
 	"time"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -133,7 +133,7 @@ type GlobalOptions struct {
 type EmailOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
-	// Type of sending email, bulk or single
+	// Deprecated
 	DeliveryType string `json:"deliveryType,omitempty"`
 	// The maximum size of receivers in one email.
 	MaxEmailReceivers int `json:"maxEmailReceivers,omitempty"`
@@ -142,6 +142,8 @@ type EmailOptions struct {
 	Template string `json:"template,omitempty"`
 	// The name of the template to generate email subject
 	SubjectTemplate string `json:"subjectTemplate,omitempty"`
+	// template type: text or html, default type is html
+	TmplType string `json:"tmplType,omitempty"`
 }
 
 type WechatOptions struct {
@@ -149,6 +151,8 @@ type WechatOptions struct {
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
 	// The name of the template to generate wechat message.
 	Template string `json:"template,omitempty"`
+	// template type: text or markdown, default type is text
+	TmplType string `json:"tmplType,omitempty"`
 	// The maximum message size that can be sent in a request.
 	MessageMaxSize int `json:"messageMaxSize,omitempty"`
 	// The time of token expired.
@@ -188,6 +192,8 @@ type DingTalkOptions struct {
 	// The name of the template to generate DingTalk message.
 	// If the global template is not set, it will use default.
 	Template string `json:"template,omitempty"`
+	// The name of the template to generate markdown title
+	TitleTemplate string `json:"titleTemplate,omitempty"`
 	// template type: text or markdown, default type is text
 	TmplType string `json:"tmplType,omitempty"`
 	// The time of token expired.

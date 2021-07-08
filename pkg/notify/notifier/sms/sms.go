@@ -48,6 +48,10 @@ func NewSmsNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg 
 		templateName: DefaultTemplate,
 	}
 
+	if opts != nil && opts.Global != nil && len(opts.Global.Template) > 0 {
+		n.templateName = opts.Global.Template
+	}
+
 	if opts != nil && opts.Sms != nil {
 
 		if opts.Sms.NotificationTimeout != nil {
@@ -56,8 +60,6 @@ func NewSmsNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg 
 
 		if len(opts.Sms.Template) > 0 {
 			n.templateName = opts.Sms.Template
-		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
-			n.templateName = opts.Global.Template
 		}
 	}
 
@@ -70,6 +72,10 @@ func NewSmsNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg 
 		if receiver.SmsConfig == nil {
 			_ = level.Warn(logger).Log("msg", "SmsNotifier: ignore receiver because of empty config")
 			continue
+		}
+
+		if receiver.Template == "" {
+			receiver.Template = n.templateName
 		}
 
 		n.smss = append(n.smss, receiver)
@@ -92,7 +98,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return nil
 		}
 
-		msg, err := n.template.TempleText(n.templateName, newData, n.logger)
+		msg, err := n.template.TempleText(s.Template, newData, n.logger)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "SmsNotifier: generate message error", "error", err.Error())
 			return err

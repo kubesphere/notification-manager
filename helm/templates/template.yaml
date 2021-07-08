@@ -8,8 +8,7 @@ data:
     {{ "{{ range .Labels.SortedPairs }}{{ if ne .Name \"runbook_url\" }}- {{ .Name }} = {{ .Value }}{{ end }}" }}
     {{ "{{ end }}Annotations:" }}
     {{ "{{ range .Annotations.SortedPairs }}{{ if ne .Name \"runbook_url\"}}- {{ .Name }} = {{ .Value }}{{ end }}" }}
-    {{ "{{ end }}" }}
-    {{ "{{ end }}{{ end }}" }}
+    {{ "{{ end }}{{ end }}{{ end }}" }}
 
     {{ "{{ define \"nm.default.text\" }}{{ template \"nm.default.subject\" . }}" }}
     {{ "{{ if gt (len .Alerts.Firing) 0 -}}" }}
@@ -22,17 +21,13 @@ data:
     {{ "{{- end }}" }}
     {{ "{{- end }}" }}
 
-    {{ "{{ define \"nm.markdown.subject\" }}{{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}s{{ end }} for {{ range .GroupLabels.SortedPairs }} {{ .Name }}={{ .Value }} {{ end }}" }}
-    {{ "{{- end }}" }}
-
-    {{ "{{ define \"__nm_alert_list_markdown\" }}{{ range . }}### Labels:" }}
+    {{ "{{ define \"__nm_alert_list_markdown\" }}# {{ range . }}### Labels:" }}
     {{ "{{ range .Labels.SortedPairs }}{{ if ne .Name \"runbook_url\" }}- {{ .Name }} = {{ .Value }}{{ end }}" }}
     {{ "{{ end }}### Annotations:" }}
     {{ "{{ range .Annotations.SortedPairs }}{{ if ne .Name \"runbook_url\"}}- {{ .Name }} = {{ .Value }}{{ end }}" }}
-    {{ "{{ end }}" }}
-    {{ "{{ end }}{{ end }}" }}
+    {{ "{{ end }}{{ end }}{{ end }}" }}
 
-    {{ "{{ define \"nm.default.markdown\" }}{{ template \"nm.markdown.subject\" . }}" }}
+    {{ "{{ define \"nm.default.markdown\" }}# {{ template \"nm.default.subject\" . }}" }}
     {{ "{{ if gt (len .Alerts.Firing) 0 -}}" }}
     {{ "## <font color=#CD0000>Alerts Firing:</font>" }}
     {{ "{{ template \"__nm_alert_list_markdown\" .Alerts.Firing }}" }}
