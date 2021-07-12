@@ -127,7 +127,7 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 		conversationMaxWaitTime:    DefaultConversationUnit,
 	}
 
-	if opts != nil && opts.Global != nil && len(opts.Global.Template) > 0 {
+	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
 		n.templateName = opts.Global.Template
 	}
 
@@ -139,15 +139,15 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 			n.timeout = time.Second * time.Duration(*d.NotificationTimeout)
 		}
 
-		if len(d.Template) > 0 {
+		if !utils.StringIsNil(d.Template) {
 			n.templateName = d.Template
 		}
 
-		if len(d.TitleTemplate) > 0 {
+		if !utils.StringIsNil(d.TitleTemplate) {
 			n.titleTemplateName = d.TitleTemplate
 		}
 
-		if len(d.TmplType) > 0 {
+		if !utils.StringIsNil(d.TmplType) {
 			n.tmplType = d.TmplType
 		}
 
@@ -206,11 +206,11 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 		//}
 
 		// If the template type of receiver is not set, use the global template type.
-		if receiver.TmplType == "" {
+		if utils.StringIsNil(receiver.TmplType) {
 			receiver.TmplType = n.tmplType
 		}
 
-		if receiver.Template == "" {
+		if utils.StringIsNil(receiver.Template) {
 			if n.templateName != "" {
 				receiver.Template = n.templateName
 			} else {
@@ -222,7 +222,7 @@ func NewDingTalkNotifier(logger log.Logger, receivers []config.Receiver, notifie
 			}
 		}
 
-		if receiver.TitleTemplate == "" && receiver.TmplType == config.Markdown {
+		if utils.StringIsNil(receiver.TitleTemplate) && receiver.TmplType == config.Markdown {
 			receiver.TitleTemplate = n.titleTemplateName
 		}
 
@@ -312,7 +312,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 		}
 
 		u := webhook
-		if len(secret) > 0 {
+		if !utils.StringIsNil(secret) {
 			timestamp, sign := calcSign(secret)
 			p := make(map[string]string)
 			p["timestamp"] = timestamp

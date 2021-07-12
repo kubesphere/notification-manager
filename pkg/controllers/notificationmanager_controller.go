@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 
+	"github.com/kubesphere/notification-manager/pkg/utils"
+
 	"github.com/go-logr/logr"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	appsv1 "k8s.io/api/apps/v1"
@@ -101,7 +103,7 @@ func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 
 func (r *NotificationManagerReconciler) createDeploymentSvc(ctx context.Context, nm *v2beta2.NotificationManager) error {
 	nm = nm.DeepCopy()
-	if nm.Spec.PortName == "" {
+	if utils.StringIsNil(nm.Spec.PortName) {
 		nm.Spec.PortName = defaultPortName
 	}
 
@@ -140,7 +142,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 	return func() error {
 		nm = nm.DeepCopy()
 
-		if nm.Spec.Image == nil || nm.Spec.Image != nil && *nm.Spec.Image == "" {
+		if nm.Spec.Image == nil || nm.Spec.Image != nil && utils.StringIsNil(*nm.Spec.Image) {
 			nm.Spec.Image = &defaultImage
 		}
 
@@ -152,11 +154,11 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 			nm.Spec.Replicas = &minReplicas
 		}
 
-		if nm.Spec.PortName == "" {
+		if utils.StringIsNil(nm.Spec.PortName) {
 			nm.Spec.PortName = defaultPortName
 		}
 
-		if nm.Spec.ServiceAccountName == "" {
+		if utils.StringIsNil(nm.Spec.ServiceAccountName) {
 			nm.Spec.ServiceAccountName = defaultServiceAccountName
 		}
 
@@ -195,7 +197,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 			},
 		}
 
-		if nm.Spec.DefaultSecretNamespace == "" {
+		if utils.StringIsNil(nm.Spec.DefaultSecretNamespace) {
 			newC.Env = []corev1.EnvVar{
 				{
 					Name: "NAMESPACE",
@@ -274,7 +276,7 @@ func (r *NotificationManagerReconciler) generateKubesphereSidecar(sidecar *v2bet
 		}
 	}
 
-	if container.Image == "" {
+	if utils.StringIsNil(container.Image) {
 		container.Image = defaultkubesphereSidecarImage
 	}
 

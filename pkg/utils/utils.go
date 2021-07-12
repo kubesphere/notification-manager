@@ -14,6 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
+func StringIsNil(s string) bool {
+	return s == ""
+}
+
 func ArrayToString(array []string, sep string) string {
 
 	if array == nil || len(array) == 0 {

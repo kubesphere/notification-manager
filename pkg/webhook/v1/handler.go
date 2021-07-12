@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -238,27 +239,7 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nr := v2beta2.Receiver{}
-	if _, ok := m["receiver"]; !ok {
-		h.handle(w, &response{http.StatusBadRequest, "receiver is nil"})
-		return
-	}
-
-	if err := utils.MapToStruct(m["receiver"].(map[string]interface{}), &nr); err != nil {
-		h.handle(w, &response{http.StatusBadRequest, err.Error()})
-		return
-	}
-
-	var nc *v2beta2.Config = nil
-	if _, ok := m["config"]; ok {
-		tmp := v2beta2.Config{}
-		if err := utils.MapToStruct(m["config"].(map[string]interface{}), &tmp); err != nil {
-			h.handle(w, &response{http.StatusBadRequest, err.Error()})
-		}
-		nc = &tmp
-	}
-
-	receivers, err := h.notifierCfg.GenerateReceivers(&nr, nc)
+	receivers, err := h.getReceiversFromRequest(m)
 	if err != nil {
 		h.handle(w, &response{http.StatusBadRequest, err.Error()})
 		return
@@ -289,6 +270,83 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		ExternalURL:       "kubesphere.io",
 	}
 
+	if msg := h.send(receivers, d); msg != "" {
+		h.handle(w, &response{http.StatusBadRequest, msg})
+		return
+	}
+
+	h.handle(w, &response{http.StatusOK, "Verify successfully"})
+}
+
+func (h *HttpHandler) Alert(w http.ResponseWriter, r *http.Request) {
+
+	m := make(map[string]interface{})
+	if err := utils.JsonDecode(r.Body, &m); err != nil {
+		h.handle(w, &response{http.StatusBadRequest, err.Error()})
+		return
+	}
+
+	receivers, err := h.getReceiversFromRequest(m)
+	if err != nil {
+		h.handle(w, &response{http.StatusBadRequest, err.Error()})
+		return
+	}
+
+	d := template.Data{}
+	alert, ok := m["alert"]
+	if !ok {
+		h.handle(w, &response{http.StatusBadRequest, "alert is nil"})
+		return
+	}
+
+	bs, err := utils.JsonMarshal(alert)
+	if err != nil {
+		h.handle(w, &response{http.StatusBadRequest, err.Error()})
+		return
+	}
+
+	if err := utils.JsonUnmarshal(bs, &d); err != nil {
+		h.handle(w, &response{http.StatusBadRequest, err.Error()})
+		return
+	}
+
+	if msg := h.send(receivers, d); msg != "" {
+		h.handle(w, &response{http.StatusBadRequest, msg})
+		return
+	}
+
+	h.handle(w, &response{http.StatusOK, "Send alerts successfully"})
+}
+
+func (h *HttpHandler) getReceiversFromRequest(m map[string]interface{}) ([]config.Receiver, error) {
+
+	nr := v2beta2.Receiver{}
+	if _, ok := m["receiver"]; !ok {
+		return nil, fmt.Errorf("receiver is nil")
+	}
+
+	if err := utils.MapToStruct(m["receiver"].(map[string]interface{}), &nr); err != nil {
+		return nil, err
+	}
+
+	var nc *v2beta2.Config = nil
+	if _, ok := m["config"]; ok {
+		tmp := v2beta2.Config{}
+		if err := utils.MapToStruct(m["config"].(map[string]interface{}), &tmp); err != nil {
+			return nil, err
+		}
+		nc = &tmp
+	}
+
+	receivers, err := h.notifierCfg.GenerateReceivers(&nr, nc)
+	if err != nil {
+		return nil, err
+	}
+
+	return receivers, nil
+}
+
+func (h *HttpHandler) send(receivers []config.Receiver, d template.Data) string {
 	n := notify.NewNotification(h.logger, receivers, h.notifierCfg, d)
 	ctx, cancel := context.WithTimeout(context.Background(), h.wkrTimeout)
 	defer cancel()
@@ -299,9 +357,8 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 			msg += err.Error() + ", "
 		}
 		msg = strings.TrimSuffix(msg, ", ")
-		h.handle(w, &response{http.StatusBadRequest, msg})
-		return
+		return msg
 	}
 
-	h.handle(w, &response{http.StatusOK, "Verify successfully"})
+	return ""
 }

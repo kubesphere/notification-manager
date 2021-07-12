@@ -48,7 +48,7 @@ func NewSmsNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg 
 		templateName: DefaultTemplate,
 	}
 
-	if opts != nil && opts.Global != nil && len(opts.Global.Template) > 0 {
+	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
 		n.templateName = opts.Global.Template
 	}
 
@@ -58,7 +58,7 @@ func NewSmsNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg 
 			n.timeout = time.Second * time.Duration(*opts.Sms.NotificationTimeout)
 		}
 
-		if len(opts.Sms.Template) > 0 {
+		if !utils.StringIsNil(opts.Sms.Template) {
 			n.templateName = opts.Sms.Template
 		}
 	}
@@ -74,7 +74,7 @@ func NewSmsNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg 
 			continue
 		}
 
-		if receiver.Template == "" {
+		if utils.StringIsNil(receiver.Template) {
 			receiver.Template = n.templateName
 		}
 

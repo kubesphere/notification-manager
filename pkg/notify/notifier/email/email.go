@@ -70,7 +70,7 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 		tmplType:            nmconfig.HTML,
 	}
 
-	if opts != nil && opts.Global != nil && len(opts.Global.Template) > 0 {
+	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
 		n.templateName = opts.Global.Template
 	}
 
@@ -83,15 +83,15 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 			n.maxEmailReceivers = opts.Email.MaxEmailReceivers
 		}
 
-		if len(opts.Email.Template) > 0 {
+		if !utils.StringIsNil(opts.Email.Template) {
 			n.templateName = opts.Email.Template
 		}
 
-		if len(opts.Email.TmplType) > 0 {
+		if !utils.StringIsNil(opts.Email.TmplType) {
 			n.tmplType = opts.Email.TmplType
 		}
 
-		if len(opts.Email.SubjectTemplate) > 0 {
+		if !utils.StringIsNil(opts.Email.SubjectTemplate) {
 			n.subjectTemplateName = opts.Email.SubjectTemplate
 		}
 	}
@@ -107,11 +107,11 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 			continue
 		}
 
-		if receiver.TmplType == "" {
+		if utils.StringIsNil(receiver.TmplType) {
 			receiver.TmplType = n.tmplType
 		}
 
-		if receiver.Template == "" {
+		if utils.StringIsNil(receiver.Template) {
 			if n.templateName != "" {
 				receiver.Template = n.templateName
 			} else {
@@ -123,7 +123,7 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 			}
 		}
 
-		if receiver.SubjectTemplate == "" {
+		if utils.StringIsNil(receiver.SubjectTemplate) {
 			receiver.SubjectTemplate = n.subjectTemplateName
 		}
 
