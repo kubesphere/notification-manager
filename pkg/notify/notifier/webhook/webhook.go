@@ -55,6 +55,10 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 		templateName: DefaultTemplate,
 	}
 
+	if opts != nil && opts.Global != nil && len(opts.Global.Template) > 0 {
+		n.templateName = opts.Global.Template
+	}
+
 	if opts != nil && opts.Webhook != nil {
 
 		if opts.Webhook.NotificationTimeout != nil {
@@ -63,8 +67,6 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 
 		if len(opts.Webhook.Template) > 0 {
 			n.templateName = opts.Webhook.Template
-		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
-			n.templateName = opts.Global.Template
 		}
 	}
 
@@ -78,6 +80,10 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 		//	_ = level.Warn(logger).Log("msg", "WebhookNotifier: ignore receiver because of empty config")
 		//	continue
 		//}
+
+		if receiver.Template == "" {
+			receiver.Template = n.templateName
+		}
 
 		n.webhooks = append(n.webhooks, receiver)
 	}
@@ -99,8 +105,8 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return nil
 		}
 		var value interface{} = newData
-		if n.templateName != DefaultTemplate {
-			msg, err := n.template.TempleText(n.templateName, newData, n.logger)
+		if w.Template != DefaultTemplate {
+			msg, err := n.template.TempleText(w.Template, newData, n.logger)
 			if err != nil {
 				_ = level.Error(n.logger).Log("msg", "WebhookNotifier: generate message error", "error", err.Error())
 				return err

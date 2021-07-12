@@ -85,8 +85,25 @@ func (t *Template) TempleText(name string, data template.Data, l log.Logger) (st
 	}
 
 	s := text(name)
+	if s == "" {
+		return s, fmt.Errorf("template '%s' error or not exist", name)
+	}
 
-	return strings.TrimRight(s, "\n"), nil
+	return cleanSuffix(s), nil
+}
+
+// Delete all `space`, `LF`, `CR` at the end of string.
+func cleanSuffix(s string) string {
+	for {
+		l := len(s)
+		if byte(s[l-1]) == 10 || byte(s[l-1]) == 13 || byte(s[l-1]) == 32 {
+			s = s[:l-1]
+		} else {
+			break
+		}
+	}
+
+	return s
 }
 
 func (t *Template) transform(name string) string {
@@ -101,23 +118,34 @@ func (t *Template) transform(name string) string {
 	return fmt.Sprintf("{{ template \"%s\" . }}", name)
 }
 
-func (t *Template) Split(data template.Data, maxSize int, templateName string, l log.Logger) ([]string, error) {
+func (t *Template) Split(data template.Data, maxSize int, templateName string, subjectTemplateName string, l log.Logger) ([]string, []string, error) {
 	d := template.Data{
 		Receiver:    data.Receiver,
 		GroupLabels: data.GroupLabels,
 	}
 	var messages []string
+	var subjects []string
 	lastMsg := ""
+	lastSubject := ""
 	for i := 0; i < len(data.Alerts); i++ {
 
 		d.Alerts = append(d.Alerts, data.Alerts[i])
 		msg, err := t.TempleText(templateName, d, l)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+
+		subject := ""
+		if subjectTemplateName != "" {
+			subject, err = t.TempleText(templateName, d, l)
+			if err != nil {
+				return nil, nil, err
+			}
 		}
 
 		if Len(msg) < maxSize {
 			lastMsg = msg
+			lastSubject = subject
 			continue
 		}
 
@@ -126,21 +154,25 @@ func (t *Template) Split(data template.Data, maxSize int, templateName string, l
 			_ = level.Error(l).Log("msg", "alert is too large, drop it")
 			d.Alerts = nil
 			lastMsg = ""
+			lastSubject = ""
 			continue
 		}
 
 		messages = append(messages, lastMsg)
+		subjects = append(subjects, subject)
 
 		d.Alerts = nil
 		i = i - 1
 		lastMsg = ""
+		lastSubject = ""
 	}
 
 	if len(lastMsg) > 0 {
 		messages = append(messages, lastMsg)
+		subjects = append(subjects, lastSubject)
 	}
 
-	return messages, nil
+	return messages, subjects, nil
 }
 
 // Len return the length of string after serialized.

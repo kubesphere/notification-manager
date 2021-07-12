@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-kit/kit/log"
@@ -24,21 +23,22 @@ import (
 )
 
 const (
-	Bulk                    = "Bulk"
 	MaxEmailReceivers       = math.MaxInt32
 	DefaultSendTimeout      = time.Second * 3
-	DefaultTemplate         = `{{ template "nm.default.html" . }}`
+	DefaultHTMLTemplate     = `{{ template "nm.default.html" . }}`
+	DefaultTextTemplate     = `{{ template "nm.default.text" . }}`
 	DefaultTSubjectTemplate = `{{ template "nm.default.subject" . }}`
 )
 
 type Notifier struct {
 	notifierCfg *nmconfig.Config
-	email       map[string]*nmconfig.Email
+	email       []*nmconfig.Email
 	template    *notifier.Template
 	// The name of template to generate email message.
 	templateName string
 	// The name of template to generate email subject.
 	subjectTemplateName string
+	tmplType            string
 	timeout             time.Duration
 	logger              log.Logger
 	// Email delivery type, single or bulk.
@@ -62,14 +62,16 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 
 	n := &Notifier{
 		notifierCfg:         notifierCfg,
-		email:               make(map[string]*nmconfig.Email),
 		logger:              logger,
 		timeout:             DefaultSendTimeout,
-		delivery:            Bulk,
 		maxEmailReceivers:   MaxEmailReceivers,
 		template:            tmpl,
-		templateName:        DefaultTemplate,
 		subjectTemplateName: DefaultTSubjectTemplate,
+		tmplType:            nmconfig.HTML,
+	}
+
+	if opts != nil && opts.Global != nil && len(opts.Global.Template) > 0 {
+		n.templateName = opts.Global.Template
 	}
 
 	if opts != nil && opts.Email != nil {
@@ -81,14 +83,12 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 			n.maxEmailReceivers = opts.Email.MaxEmailReceivers
 		}
 
-		if len(opts.Email.DeliveryType) > 0 {
-			n.delivery = opts.Email.DeliveryType
-		}
-
 		if len(opts.Email.Template) > 0 {
 			n.templateName = opts.Email.Template
-		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
-			n.templateName = opts.Global.Template
+		}
+
+		if len(opts.Email.TmplType) > 0 {
+			n.tmplType = opts.Email.TmplType
 		}
 
 		if len(opts.Email.SubjectTemplate) > 0 {
@@ -107,33 +107,29 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 			continue
 		}
 
-		if n.delivery == Bulk {
-			c := n.clone(receiver.EmailConfig)
-			key, err := utils.Md5key(c)
-			if err != nil {
-				_ = level.Error(logger).Log("msg", "EmailNotifier: get notifier error", "error", err.Error())
-				continue
-			}
-
-			e, ok := n.email[key]
-			if !ok {
-				e = nmconfig.NewEmail(nil)
-				_ = e.SetConfig(c)
-			}
-
-			e.To = append(e.To, receiver.To...)
-			n.email[key] = e
-		} else {
-			key, err := utils.Md5key(receiver)
-			if err != nil {
-				_ = level.Error(logger).Log("msg", "EmailNotifier: get notifier error", "error", err.Error())
-				continue
-			}
-
-			e := nmconfig.NewEmail(receiver.To)
-			_ = e.SetConfig(n.clone(receiver.EmailConfig))
-			n.email[key] = e
+		if receiver.TmplType == "" {
+			receiver.TmplType = n.tmplType
 		}
+
+		if receiver.Template == "" {
+			if n.templateName != "" {
+				receiver.Template = n.templateName
+			} else {
+				if receiver.TmplType == nmconfig.HTML {
+					receiver.Template = DefaultHTMLTemplate
+				} else if receiver.TmplType == nmconfig.Text {
+					receiver.Template = DefaultTextTemplate
+				}
+			}
+		}
+
+		if receiver.SubjectTemplate == "" {
+			receiver.SubjectTemplate = n.subjectTemplateName
+		}
+
+		e := nmconfig.NewEmail(receiver)
+		_ = e.SetConfig(n.clone(receiver.EmailConfig))
+		n.email = append(n.email, e)
 	}
 
 	return n
@@ -170,9 +166,21 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			_ = level.Error(n.logger).Log("msg", "EmailNotifier: get email config error", "error", err.Error())
 			return err
 		}
+
 		emailConfig.To = to
-		emailConfig.HTML = n.templateName
-		emailConfig.Headers["Subject"] = n.subjectTemplateName
+
+		if e.TmplType == nmconfig.Text {
+			emailConfig.Text = e.Template
+		} else if e.TmplType == nmconfig.HTML {
+			emailConfig.HTML = e.Template
+		} else {
+			err = fmt.Errorf("unkown message type, %s", e.TmplType)
+			_ = level.Error(n.logger).Log("msg", "EmailNotifier: get email config error", "error", err.Error())
+			return err
+		}
+
+		emailConfig.HTML = e.Template
+		emailConfig.Headers["Subject"] = e.SubjectTemplate
 		sender := email.New(emailConfig, n.template.Tmpl, n.logger)
 
 		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
@@ -191,38 +199,11 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 	group := async.NewGroup(ctx)
 	for _, e := range n.email {
-		if n.delivery == Bulk {
-			size := 0
-			for {
-				if size >= len(e.To) {
-					break
-				}
-
-				var sub []string
-				if size+n.maxEmailReceivers > len(e.To) {
-					sub = e.To[size:]
-				} else {
-					sub = e.To[size : size+n.maxEmailReceivers]
-				}
-
-				size += n.maxEmailReceivers
-
-				to := ""
-				for _, t := range sub {
-					to += fmt.Sprintf("%s,", t)
-				}
-				to = strings.TrimSuffix(to, ",")
-				group.Add(func(stopCh chan interface{}) {
-					stopCh <- sendEmail(e, to)
-				})
-			}
-		} else {
-			for _, t := range e.To {
-				to := t
-				group.Add(func(stopCh chan interface{}) {
-					stopCh <- sendEmail(e, to)
-				})
-			}
+		for _, t := range e.To {
+			to := t
+			group.Add(func(stopCh chan interface{}) {
+				stopCh <- sendEmail(e, to)
+			})
 		}
 	}
 

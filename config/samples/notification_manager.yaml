@@ -32,7 +32,6 @@ spec:
         - /etc/notification-manager/template
       email:
         notificationTimeout: 5
-        deliveryType: bulk
       slack:
         notificationTimeout: 5
       wechat:

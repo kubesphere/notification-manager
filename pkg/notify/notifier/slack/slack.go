@@ -62,16 +62,18 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 		templateName: DefaultTemplate,
 	}
 
+	if opts != nil && opts.Global != nil && len(opts.Global.Template) > 0 {
+		n.templateName = opts.Global.Template
+	}
+
 	if opts != nil && opts.Slack != nil {
 
 		if opts.Slack.NotificationTimeout != nil {
 			n.timeout = time.Second * time.Duration(*opts.Slack.NotificationTimeout)
 		}
 
-		if len(opts.Slack.Template) > 0 {
+		if opts.Slack.Template == "" {
 			n.templateName = opts.Slack.Template
-		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
-			n.templateName = opts.Global.Template
 		}
 	}
 
@@ -84,6 +86,10 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 		if receiver.SlackConfig == nil {
 			_ = level.Warn(logger).Log("msg", "SlackNotifier: ignore receiver because of empty config")
 			continue
+		}
+
+		if receiver.Template == "" {
+			receiver.Template = n.templateName
 		}
 
 		n.slack = append(n.slack, receiver)
@@ -106,7 +112,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return nil
 		}
 
-		msg, err := n.template.TempleText(n.templateName, newData, n.logger)
+		msg, err := n.template.TempleText(c.Template, newData, n.logger)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "SlackNotifier: generate message error", "channel", channel, "error", err.Error())
 			return err

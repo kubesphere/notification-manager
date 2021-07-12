@@ -3103,6 +3103,14 @@ spec:
                               message. If the global template is not set, it will
                               use default.
                             type: string
+                          titleTemplate:
+                            description: The name of the template to generate markdown
+                              title
+                            type: string
+                          tmplType:
+                            description: 'template type: text or markdown, default
+                              type is text'
+                            type: string
                           tokenExpires:
                             description: The time of token expired.
                             format: int64
@@ -3111,7 +3119,7 @@ spec:
                       email:
                         properties:
                           deliveryType:
-                            description: Type of sending email, bulk or single
+                            description: Deprecated
                             type: string
                           maxEmailReceivers:
                             description: The maximum size of receivers in one email.
@@ -3128,6 +3136,10 @@ spec:
                             description: The name of the template to generate email
                               message. If the global template is not set, it will
                               use default.
+                            type: string
+                          tmplType:
+                            description: 'template type: text or html, default type
+                              is html'
                             type: string
                         type: object
                       global:
@@ -3196,6 +3208,10 @@ spec:
                           template:
                             description: The name of the template to generate wechat
                               message.
+                            type: string
+                          tmplType:
+                            description: 'template type: text or markdown, default
+                              type is text'
                             type: string
                           tokenExpires:
                             description: The time of token expired.

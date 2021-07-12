@@ -62,7 +62,6 @@ notificationmanager:
         notificationTimeout: 5
       email:
         notificationTimeout: 5
-        deliveryType: bulk
       global:
         templateFile:
           - /etc/notification-manager/template
