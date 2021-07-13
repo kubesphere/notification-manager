@@ -62,7 +62,7 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 		templateName: DefaultTemplate,
 	}
 
-	if opts != nil && opts.Global != nil && len(opts.Global.Template) > 0 {
+	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
 		n.templateName = opts.Global.Template
 	}
 
@@ -72,7 +72,7 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 			n.timeout = time.Second * time.Duration(*opts.Slack.NotificationTimeout)
 		}
 
-		if opts.Slack.Template == "" {
+		if !utils.StringIsNil(opts.Slack.Template) {
 			n.templateName = opts.Slack.Template
 		}
 	}
@@ -88,7 +88,7 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 			continue
 		}
 
-		if receiver.Template == "" {
+		if utils.StringIsNil(receiver.Template) {
 			receiver.Template = n.templateName
 		}
 

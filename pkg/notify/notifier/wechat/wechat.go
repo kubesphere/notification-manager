@@ -91,7 +91,7 @@ func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierC
 		tokenExpires:   DefaultExpires,
 	}
 
-	if opts != nil && opts.Global != nil && len(opts.Global.Template) > 0 {
+	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
 		n.templateName = opts.Global.Template
 	}
 
@@ -101,11 +101,11 @@ func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierC
 			n.timeout = time.Second * time.Duration(*opts.Wechat.NotificationTimeout)
 		}
 
-		if len(opts.Wechat.Template) > 0 {
+		if !utils.StringIsNil(opts.Wechat.Template) {
 			n.templateName = opts.Wechat.Template
 		}
 
-		if len(opts.Wechat.TmplType) > 0 {
+		if !utils.StringIsNil(opts.Wechat.TmplType) {
 			n.tmplType = opts.Wechat.TmplType
 		}
 
@@ -130,15 +130,15 @@ func NewWechatNotifier(logger log.Logger, receivers []config.Receiver, notifierC
 			continue
 		}
 
-		if len(receiver.WechatConfig.APIURL) == 0 {
+		if utils.StringIsNil(receiver.WechatConfig.APIURL) {
 			receiver.WechatConfig.APIURL = DefaultApiURL
 		}
 
-		if receiver.TmplType == "" {
+		if utils.StringIsNil(receiver.TmplType) {
 			receiver.TmplType = n.tmplType
 		}
 
-		if receiver.Template == "" {
+		if utils.StringIsNil(receiver.Template) {
 			if n.templateName != "" {
 				receiver.Template = n.templateName
 			} else {

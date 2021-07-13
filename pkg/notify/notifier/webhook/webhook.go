@@ -55,7 +55,7 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 		templateName: DefaultTemplate,
 	}
 
-	if opts != nil && opts.Global != nil && len(opts.Global.Template) > 0 {
+	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
 		n.templateName = opts.Global.Template
 	}
 
@@ -65,7 +65,7 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 			n.timeout = time.Second * time.Duration(*opts.Webhook.NotificationTimeout)
 		}
 
-		if len(opts.Webhook.Template) > 0 {
+		if !utils.StringIsNil(opts.Webhook.Template) {
 			n.templateName = opts.Webhook.Template
 		}
 	}
@@ -81,7 +81,7 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 		//	continue
 		//}
 
-		if receiver.Template == "" {
+		if utils.StringIsNil(receiver.Template) {
 			receiver.Template = n.templateName
 		}
 
@@ -214,7 +214,7 @@ func (n *Notifier) getTransport(w *config.Webhook) (http.RoundTripper, error) {
 				}
 			}
 
-			if len(c.TLSConfig.ServerName) > 0 {
+			if !utils.StringIsNil(c.TLSConfig.ServerName) {
 				tlsConfig.ServerName = c.TLSConfig.ServerName
 			}
 
@@ -246,7 +246,7 @@ func (n *Notifier) getTransport(w *config.Webhook) (http.RoundTripper, error) {
 			transport.TLSClientConfig = tlsConfig
 		}
 
-		if len(c.ProxyURL) > 0 {
+		if !utils.StringIsNil(c.ProxyURL) {
 			var proxy func(*http.Request) (*url.URL, error)
 			if u, err := url.Parse(c.ProxyURL); err != nil {
 				return nil, err

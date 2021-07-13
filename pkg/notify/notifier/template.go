@@ -85,7 +85,7 @@ func (t *Template) TempleText(name string, data template.Data, l log.Logger) (st
 	}
 
 	s := text(name)
-	if s == "" {
+	if utils.StringIsNil(s) {
 		return s, fmt.Errorf("template '%s' error or not exist", name)
 	}
 
