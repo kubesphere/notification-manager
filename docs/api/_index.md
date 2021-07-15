@@ -13,7 +13,7 @@ The Notification Manager Deployment exposes an HTTP API for receiving alerts, se
 
 > Post /api/v2/alerts
 
-This API used to send alerts to Notification manager. Notification manager will receive alerts after this API called, and then send notifications to the receivers which defined in the cluster. 
+This API is used to send alerts to Notification Manager. Notification Manager will then send notifications to the receivers defined in the cluster.
 
 Request:
 
@@ -77,13 +77,13 @@ Response:
 }
 ```
 
-> The `Status` is `200` only means the notification manager had received the alerts successfully, not means the notifications had sent successfully.
+> Status code `200` means Notification Manager has received the alerts and begins to send notifications, it doesn't mean the notifications have been sent successfully.
 
 ## Send notifications
 
 > Post /api/v2/notifications
 
-This API used to send notifications to receivers directly.
+This API is used to send notifications directly.
 
 Request:
 
@@ -181,9 +181,9 @@ Request:
 }
 ```
 
-- `config`: Config for the `receiver`. If `config` is nil, the `receiver` will use the config which defined in the cluster. If the `config` is not nil, the config type must match the receiver type.
-- `receiver`: Receiver who will receive notifications. It must not be nil.
-- `alert`: Alerts which will be sent to receiver.
+- `config`: The corresponding config for the `receiver`. If `config` is not set, the `receiver` will use the default config defined in the cluster. If the `config` is set, the config type must match the receiver type.
+- `receiver`: Receiver that receives notifications. It must be set.
+- `alert`: Alerts that will be sent to the receiver.
 
 Response:
 
@@ -250,8 +250,8 @@ Request:
 }
 ```
 
-- `config`: Config for the `receiver`. If `config` is nil, the `receiver` will use the config which defined in the cluster. If the `config` is not nil, the config type must match the receiver type.
-- `receiver`: Receiver who will receive notifications. It must not be nil.
+- `config`: The corresponding config for the `receiver`. If `config` is not set, the `receiver` will use the default config defined in the cluster. If the `config` is set, the config type must match the receiver type.
+- `receiver`: Receiver that receives notifications. It must be set.
 
 Response:
 
