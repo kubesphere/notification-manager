@@ -16,7 +16,7 @@ operator:
     operator:
       image:
         repo: kubesphere/notification-manager-operator
-        tag: v1.0.0
+        tag: v1.2.0
         pullPolicy: IfNotPresent
       resources:
         limits:
