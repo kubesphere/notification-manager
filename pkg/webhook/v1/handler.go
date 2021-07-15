@@ -278,7 +278,7 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	h.handle(w, &response{http.StatusOK, "Verify successfully"})
 }
 
-func (h *HttpHandler) Alert(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) Notification(w http.ResponseWriter, r *http.Request) {
 
 	m := make(map[string]interface{})
 	if err := utils.JsonDecode(r.Body, &m); err != nil {

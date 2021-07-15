@@ -773,3 +773,7 @@ make build
 # Push built docker images to docker registry
 make push
 ```
+
+## Documentation
+
+- [API documentation](./docs/api/_index.md).
