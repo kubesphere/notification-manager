@@ -22,6 +22,17 @@ Notification Manager could receive webhook notifications from Alertmanager and t
 
 ![Notification Manager](docs/images/notification-manager.png)
 
+### Config Alertmanager to send alerts to Notification Manager
+Notification Manager uses port `19093` and API path `/api/v2/alerts` to receive alerts sent from Alertmanager.
+To receive Alertmanager alerts, add webhook config like below to the `receivers` section of Alertmanager configuration file:
+
+```shell
+    "receivers":
+     - "name": "notification-manager"
+       "webhook_configs":
+       - "url": "http://notification-manager-svc.kubesphere-monitoring-system.svc:19093/api/v2/alerts"
+```
+
 ## CustomResourceDefinitions
 Notification Manager uses the following CRDs to define the desired alerts/notifications webhook and receiver configs:
 - NotificationManager: Defines the desired alerts/notification webhook deployment. The Notification Manager Operator ensures a deployment meeting the resource requirements is running.
@@ -676,17 +687,6 @@ Here is the template `nm.default.text`. For more information about templates, yo
     {{ template "__nm_alert_list" .Alerts.Resolved }}
     {{- end }}
     {{- end }}
-```
-
-### Config Prometheus Alertmanager to send alerts to Notification Manager
-Notification Manager use port `19093` and API path `/api/v2/alerts` to receive alerts sending from Prometheus Alertmanager.
-To receive Alertmanager alerts, add webhook config like below to the `receivers` section of Alertmanager configuration file:
-
-```shell
-    "receivers":
-     - "name": "notification-manager"
-       "webhook_configs":
-       - "url": "http://notification-manager-svc.kubesphere-monitoring-system.svc:19093/api/v2/alerts"
 ```
 
 ## Update
