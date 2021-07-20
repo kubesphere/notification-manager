@@ -1,4 +1,3 @@
----
 apiVersion: notification.kubesphere.io/v2beta2
 kind: Receiver
 metadata:
@@ -9,9 +8,7 @@ metadata:
 spec:
   sms:
     enabled: true
-    phoneNumbers:
-    - "13612344321"
-
+    phoneNumbers: ["13612344321"]
 ---
 apiVersion: notification.kubesphere.io/v2beta2
 kind: Config
@@ -22,8 +19,26 @@ metadata:
   name: default-sms-config
 spec:
   sms:
-    defaultProvider: "tencent"
+    defaultProvider: huawei
     providers:
+      huawei:
+        url: https://rtcsms.cn-north-1.myhuaweicloud.com:10743/sms/batchSendSms/v1
+        signature: xxx
+        templateId: xxx
+        templateParas: xxx
+        sender: kubesphere
+        appSecret:
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: huawei.appSecret
+              name: default-sms-secret
+        appKey:
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: huawei.appKey
+              name: default-sms-secret
       aliyun: 
         signName: xxxx 
         templateCode: xxx
@@ -63,6 +78,8 @@ data:
   aliyun.accessKeySecret: eHh4eA==
   tencent.secretId: eHh4eA==
   tencent.secretKey: eHh4eA==
+  huawei.appKey: eHh4eA==
+  huawei.appSecret: eHh4eA==
 kind: Secret
 metadata:
   labels:

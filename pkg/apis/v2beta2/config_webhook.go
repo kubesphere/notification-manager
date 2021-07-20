@@ -119,6 +119,10 @@ func (r *Config) validateConfig() error {
 			err := field.Invalid(field.NewPath("spec").Child("sms").Child("defaultProvider"), "", "cannot find default provider from providers")
 			allErrs = append(allErrs, err)
 		}
+		if defaultProvider == "huawei" && providers.Huawei == nil {
+			err := field.Invalid(field.NewPath("spec").Child("sms").Child("defaultProvider"), "", "cannot find default provider from providers")
+			allErrs = append(allErrs, err)
+		}
 
 		// Sms aliyun provider parameters validation
 		if providers.Aliyun != nil {
@@ -148,6 +152,22 @@ func (r *Config) validateConfig() error {
 				credentials = append(credentials, map[string]interface{}{
 					"credential": r.Spec.Sms.Providers.Tencent.SecretKey,
 					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("tencent").Child("secretKey"),
+				})
+			}
+		}
+
+		// Sms huawei provider parameters validation
+		if providers.Huawei != nil {
+			if providers.Huawei.AppKey != nil {
+				credentials = append(credentials, map[string]interface{}{
+					"credential": r.Spec.Sms.Providers.Tencent.SecretId,
+					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("huawei").Child("appKey"),
+				})
+			}
+			if providers.Huawei.AppSecret != nil {
+				credentials = append(credentials, map[string]interface{}{
+					"credential": r.Spec.Sms.Providers.Tencent.SecretKey,
+					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("huawei").Child("appSecret"),
 				})
 			}
 		}

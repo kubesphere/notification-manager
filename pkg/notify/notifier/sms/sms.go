@@ -2,6 +2,8 @@ package sms
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"time"
 
 	"github.com/go-kit/kit/log"
@@ -144,4 +146,10 @@ func stringValue(a *string) string {
 		return ""
 	}
 	return *a
+}
+
+func getSha256Code(s string) string {
+	h := sha256.New()
+	h.Write([]byte(s))
+	return fmt.Sprintf("%x", h.Sum(nil))
 }

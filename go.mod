@@ -10,6 +10,7 @@ require (
 	github.com/go-kit/kit v0.9.0
 	github.com/go-logr/logr v0.1.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/json-iterator/go v1.1.10
 	github.com/modern-go/reflect2 v1.0.1
 	github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223
