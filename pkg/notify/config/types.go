@@ -939,6 +939,20 @@ func (s *Sms) Validate() error {
 		}
 	}
 
+	// Sms huawei provider parameters validation
+	if providers.Huawei != nil {
+		if providers.Huawei.AppKey != nil {
+			if err := validateCredential(providers.Huawei.AppKey); err != nil {
+				return fmt.Errorf("huawei provider parameters:appkey error, %s", err.Error())
+			}
+		}
+		if providers.Huawei.AppSecret != nil {
+			if err := validateCredential(providers.Huawei.AppSecret); err != nil {
+				return fmt.Errorf("huawei provider parameters:appSecret error, %s", err.Error())
+			}
+		}
+	}
+
 	return nil
 }
 

@@ -196,7 +196,7 @@ type SmsReceiver struct {
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	// Receivers' phone numbers
 	PhoneNumbers []string `json:"phoneNumbers"`
-	// The name of the template to generate DingTalk message.
+	// The name of the template to generate Sms message.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
 }

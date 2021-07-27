@@ -735,6 +735,85 @@ spec:
                         - accessKeySecret
                         - signName
                         type: object
+                      huawei:
+                        description: Sms huawei provider parameters
+                        properties:
+                          appKey:
+                            properties:
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  secretKeyRef:
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: Name of the secret.
+                                        type: string
+                                      namespace:
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                type: object
+                            type: object
+                          appSecret:
+                            properties:
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  secretKeyRef:
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: Name of the secret.
+                                        type: string
+                                      namespace:
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                type: object
+                            type: object
+                          sender:
+                            type: string
+                          signature:
+                            type: string
+                          templateId:
+                            type: string
+                          templateParas:
+                            type: string
+                          url:
+                            type: string
+                        required:
+                        - appKey
+                        - appSecret
+                        - sender
+                        - signature
+                        - templateId
+                        - templateParas
+                        type: object
                       tencent:
                         description: Sms tencent provider parameters
                         properties:

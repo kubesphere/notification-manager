@@ -1320,7 +1320,7 @@ spec:
                         type: object
                     type: object
                   template:
-                    description: The name of the template to generate DingTalk message.
+                    description: The name of the template to generate Sms message.
                       If the global template is not set, it will use default.
                     type: string
                 required:
