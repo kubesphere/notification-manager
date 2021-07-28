@@ -121,7 +121,7 @@ func buildWSSEHeader(appKey string, appSecret string) string {
 
 // Note here, the keys corresponding to the return values are alertname,alerttype,severity,message,summary.
 // Pls make your custom SMS template containing five placeholders, you can create an SMS template in Huawei Cloud's SMS console.
-// i.e: Reviced notifications: alertname:${TEXT}, alerttype:${TEXT}, serverity:${TEXT}, message:${TEXT}, summary:${TEXT}
+// i.e: Received notifications: alertname:${TEXT}, alerttype:${TEXT}, serverity:${TEXT}, message:${TEXT}, summary:${TEXT}
 func generateParams(messages string) []string {
 	messagePat := `alertname=(?P<alertname>.*?)\s+(?s).*alerttype\s?=\s?(?P<alerttype>[a-zA-Z]+)\s+(?s).*severity\s?=\s?(?P<severity>[a-zA-Z]+)\s+(?s).*message\s?=\s?(?P<message>.*?)\s+(?s).*summary\s?=\s?(?P<summary>.*[^\"])`
 	re := regexp.MustCompile(messagePat)
