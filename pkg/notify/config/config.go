@@ -36,6 +36,7 @@ const (
 	email               = "email"
 	wechat              = "wechat"
 	slack               = "slack"
+	pushover            = "pushover"
 	webhook             = "webhook"
 	dingtalk            = "dingtalk"
 	sms                 = "sms"

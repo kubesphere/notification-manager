@@ -201,6 +201,20 @@ type SmsReceiver struct {
 	Template *string `json:"template,omitempty"`
 }
 
+type PushoverReceiver struct {
+	// whether the receiver is enabled
+	Enabled *bool `json:"enabled,omitempty"`
+	// PushoverConfig to be selected for this receiver
+	PushoverConfigSelector *metav1.LabelSelector `json:"pushoverConfigSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	// The users (Pushover User Keys) to send notifications to.
+	UserKeys []string `json:"userKeys"`
+	// The name of the template to generate DingTalk message.
+	// If the global template is not set, it will use default.
+	Template *string `json:"template,omitempty"`
+}
+
 //ReceiverSpec defines the desired state of Receiver
 type ReceiverSpec struct {
 	DingTalk *DingTalkReceiver `json:"dingtalk,omitempty"`
@@ -209,6 +223,7 @@ type ReceiverSpec struct {
 	Webhook  *WebhookReceiver  `json:"webhook,omitempty"`
 	Wechat   *WechatReceiver   `json:"wechat,omitempty"`
 	Sms      *SmsReceiver      `json:"sms,omitempty"`
+	Pushover *PushoverReceiver `json:"pushover,omitempty"`
 }
 
 // ReceiverStatus defines the observed state of Receiver

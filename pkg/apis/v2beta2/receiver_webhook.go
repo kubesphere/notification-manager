@@ -17,6 +17,9 @@ limitations under the License.
 package v2beta2
 
 import (
+	"fmt"
+	"regexp"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -161,6 +164,22 @@ func (r *Receiver) validateReceiver() error {
 			if *wechat.TmplType != "text" && *wechat.TmplType != "markdown" {
 				allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("wechat").Child("tmplType"),
 					"must be one of: `text` or `html`"))
+			}
+		}
+	}
+
+	if r.Spec.Pushover != nil {
+		if len(r.Spec.Pushover.UserKeys) == 0 {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("userKeys"),
+				"must be specified"))
+		} else {
+			// User Keys must match the regex
+			tokenRegex := regexp.MustCompile(`^[A-Za-z0-9]{30}$`)
+			for _, key := range r.Spec.Pushover.UserKeys {
+				if !tokenRegex.MatchString(key) {
+					allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("userKeys"),
+						fmt.Sprintf("found invalid Pushover User Key: %s", key)))
+				}
 			}
 		}
 	}
