@@ -87,23 +87,3 @@ func FilterAlerts(data template.Data, selector *v1.LabelSelector, logger log.Log
 
 	return newData
 }
-
-// SplitAlerts splits input data into a slice of data,
-// and each of them only contains one Alert (data.Alerts only contains 1 element).
-// This function serves to break a long message into several short messages.
-func SplitAlerts(data template.Data) []template.Data {
-
-	splitData := make([]template.Data, len(data.Alerts))
-	for i := 0; i < len(splitData); i++ {
-		splitData[i] = template.Data{
-			Alerts:            template.Alerts{data.Alerts[i]},
-			Receiver:          data.Receiver,
-			Status:            data.Status,
-			GroupLabels:       data.GroupLabels,
-			CommonLabels:      data.CommonLabels,
-			CommonAnnotations: data.CommonAnnotations,
-			ExternalURL:       data.ExternalURL,
-		}
-	}
-	return splitData
-}
