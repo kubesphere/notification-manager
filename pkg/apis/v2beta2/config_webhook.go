@@ -174,6 +174,13 @@ func (r *Config) validateConfig() error {
 
 	}
 
+	if r.Spec.Pushover != nil {
+		credentials = append(credentials, map[string]interface{}{
+			"credential": r.Spec.Pushover.PushoverTokenSecret,
+			"path":       field.NewPath("spec").Child("pushover").Child("pushoverTokenSecret"),
+		})
+	}
+
 	for _, v := range credentials {
 		err := validateCredential(v["credential"].(*Credential), v["path"].(*field.Path))
 		if err != nil {

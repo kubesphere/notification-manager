@@ -160,6 +160,12 @@ type SmsConfig struct {
 	Providers *Providers `json:"providers"`
 }
 
+type PushoverConfig struct {
+	Labels map[string]string `json:"labels,omitempty"`
+	// The token of a pushover application.
+	PushoverTokenSecret *Credential `json:"pushoverTokenSecret"`
+}
+
 //ConfigSpec defines the desired state of Config
 type ConfigSpec struct {
 	DingTalk *DingTalkConfig `json:"dingtalk,omitempty"`
@@ -168,6 +174,7 @@ type ConfigSpec struct {
 	Webhook  *WebhookConfig  `json:"webhook,omitempty"`
 	Wechat   *WechatConfig   `json:"wechat,omitempty"`
 	Sms      *SmsConfig      `json:"sms,omitempty"`
+	Pushover *PushoverConfig `json:"pushover,omitempty"`
 }
 
 // ConfigStatus defines the observed state of Config
