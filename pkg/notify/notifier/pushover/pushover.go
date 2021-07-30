@@ -18,6 +18,7 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -70,6 +71,10 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 		client:       http.Client{Timeout: DefaultSendTimeout},
 	}
 
+	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
+		n.templateName = opts.Global.Template
+	}
+
 	if opts != nil && opts.Pushover != nil {
 
 		if opts.Pushover.NotificationTimeout != nil {
@@ -77,10 +82,8 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 			n.client.Timeout = n.timeout
 		}
 
-		if len(opts.Pushover.Template) > 0 {
+		if !utils.StringIsNil(opts.Pushover.Template) {
 			n.templateName = opts.Pushover.Template
-		} else if opts.Global != nil && len(opts.Global.Template) > 0 {
-			n.templateName = opts.Global.Template
 		}
 	}
 
@@ -93,6 +96,10 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 		if receiver.PushoverConfig == nil {
 			_ = level.Warn(logger).Log("msg", "PushoverNotifier: ignore receiver because of empty config")
 			continue
+		}
+
+		if utils.StringIsNil(receiver.Template) {
+			receiver.Template = n.templateName
 		}
 
 		n.pushover = append(n.pushover, receiver)
@@ -124,89 +131,99 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}
 
 		// split new data along with its Alerts to ensure each message is small enough to fit the Pushover's message length limit
-		messages, _, err := n.template.Split(filteredData, MessageMaxLength, n.templateName, "", n.logger)
+		messages, _, err := n.template.Split(filteredData, MessageMaxLength, c.Template, "", n.logger)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "PushoverNotifier: split alerts error", "userKey", userKey, "error", err.Error())
 			return err
 		}
-		for _, msg := range messages {
-			// construct pushover message struct as request parameters, and validate it
-			pm := newPushoverMessage(token, userKey, msg)
-			err, warnings := pm.validate()
-			if err != nil {
-				_ = level.Error(n.logger).Log("msg", "PushoverNotifier: invalid pushover message", "userKey", userKey, "error", err.Error())
-				return err
-			}
-			if len(warnings) > 0 {
-				_ = level.Warn(n.logger).Log("msg", "PushoverNotifier: warnings about the message", "userKey", userKey, "warnings", strings.Join(warnings, "; "))
-			}
-			pReq := &pushoverRequest{pm}
 
-			// JSON encoding
-			var buf bytes.Buffer
-			if err := utils.JsonEncode(&buf, pReq); err != nil {
-				_ = level.Error(n.logger).Log("msg", "PushoverNotifier: encode message error", "userKey", userKey, "error", err.Error())
-				return err
-			}
+		// send messages in parallel with errgroup
+		g := new(errgroup.Group)
+		for _, message := range messages {
+			msg := message
+			g.Go(func() error {
+				// construct pushover message struct as request parameters, and validate it
+				pm := newPushoverMessage(token, userKey, msg)
+				err, warnings := pm.validate()
+				if err != nil {
+					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: invalid pushover message", "userKey", userKey, "error", err.Error())
+					return err
+				}
+				if len(warnings) > 0 {
+					_ = level.Warn(n.logger).Log("msg", "PushoverNotifier: warnings about the message", "userKey", userKey, "warnings", strings.Join(warnings, "; "))
+				}
+				pReq := &pushoverRequest{pm}
 
-			// build a JSON request with context
-			request, err := http.NewRequestWithContext(ctx, http.MethodPost, URL, &buf)
-			if err != nil {
-				_ = level.Error(n.logger).Log("msg", "PushoverNotifier: encode http request error", "userKey", userKey, "error", err.Error())
-				return err
-			}
-			request.Header.Set("Content-Type", "application/json")
+				// JSON encoding
+				var buf bytes.Buffer
+				if err := utils.JsonEncode(&buf, pReq); err != nil {
+					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: encode message error", "userKey", userKey, "error", err.Error())
+					return err
+				}
 
-			// send the request
-			response, err := n.client.Do(request)
-			if err != nil {
-				_ = level.Error(n.logger).Log("msg", "PushoverNotifier: do http error", "userKey", userKey, "error", err.Error())
-				return err
-			}
+				// build a JSON request with context
+				request, err := http.NewRequestWithContext(context.Background(), http.MethodPost, URL, &buf)
+				if err != nil {
+					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: encode http request error", "userKey", userKey, "error", err.Error())
+					return err
+				}
+				request.Header.Set("Content-Type", "application/json")
 
-			defer func() {
-				_, _ = io.Copy(ioutil.Discard, response.Body)
-				_ = response.Body.Close()
-			}()
+				// send the request
+				response, err := n.client.Do(request)
+				if err != nil {
+					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: do http error", "userKey", userKey, "error", err.Error())
+					return err
+				}
 
-			// check status code, but not return error if it is not 2xx, since we will do this later
-			if response.StatusCode != http.StatusOK {
-				_ = level.Error(n.logger).Log("msg", "PushoverNotifier: got non-2xx response", "userKey", userKey, "StatusCode", response.StatusCode)
-			}
+				defer func() {
+					_, _ = io.Copy(ioutil.Discard, response.Body)
+					_ = response.Body.Close()
+				}()
 
-			// check if the remaining number of messages that can be sent is low
-			PoRemainingMsg, err := strconv.Atoi(response.Header.Get("X-Limit-App-Remaining"))
-			if err != nil {
-				_ = level.Error(n.logger).Log("msg", "PushoverNotifier: get response headers error", "userKey", userKey, "error", err.Error())
-				return err
-			}
-			if PoRemainingMsg < PoMsgLimitAlert {
-				_ = level.Warn(n.logger).Log("msg", "PushoverNotifier: you are approaching Pushover app's message limits", "userKey", userKey, "warnings", fmt.Sprintf("remaining %d message for this period", PoRemainingMsg))
-			}
+				// check status code, but not return error if it is not 2xx, since we will do this later
+				if response.StatusCode != http.StatusOK {
+					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: got non-2xx response", "userKey", userKey, "StatusCode", response.StatusCode)
+				}
 
-			// decode the response
-			body, err := ioutil.ReadAll(response.Body)
-			if err != nil {
-				_ = level.Error(n.logger).Log("msg", "PushoverNotifier: read response error", "userKey", userKey, "error", err.Error())
-				return err
-			}
+				// check if the remaining number of messages that can be sent is low
+				PoRemainingMsg, err := strconv.Atoi(response.Header.Get("X-Limit-App-Remaining"))
+				if err != nil {
+					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: get response headers error", "userKey", userKey, "error", err.Error())
+					return err
+				}
+				if PoRemainingMsg < PoMsgLimitAlert {
+					_ = level.Warn(n.logger).Log("msg", "PushoverNotifier: you are approaching Pushover app's message limits", "userKey", userKey, "warnings", fmt.Sprintf("remaining %d message for this period", PoRemainingMsg))
+				}
 
-			var pResp pushoverResponse
-			if err := utils.JsonUnmarshal(body, &pResp); err != nil {
-				_ = level.Error(n.logger).Log("msg", "PushoverNotifier: decode response body error", "userKey", userKey, "error", err.Error())
-				return err
-			}
+				// decode the response
+				body, err := ioutil.ReadAll(response.Body)
+				if err != nil {
+					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: read response error", "userKey", userKey, "error", err.Error())
+					return err
+				}
 
-			// handle errors if any
-			if pResp.Status != 1 {
-				errStr := strings.Join(pResp.Errors, "; ")
-				_ = level.Error(n.logger).Log("msg", "PushoverNotifier: pushover error", "userKey", userKey, "error", errStr)
-				return fmt.Errorf(errStr)
-			}
+				var pResp pushoverResponse
+				if err := utils.JsonUnmarshal(body, &pResp); err != nil {
+					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: decode response body error", "userKey", userKey, "error", err.Error())
+					return err
+				}
 
-			_ = level.Debug(n.logger).Log("msg", "PushoverNotifier: sent message", "userKey", userKey)
+				// handle errors if any
+				if pResp.Status != 1 {
+					errStr := strings.Join(pResp.Errors, "; ")
+					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: pushover error", "userKey", userKey, "error", errStr)
+					return fmt.Errorf(errStr)
+				}
+
+				_ = level.Debug(n.logger).Log("msg", "PushoverNotifier: sent message", "userKey", userKey)
+				return nil
+			})
 		}
-
+		if err := g.Wait(); err != nil {
+			_ = level.Error(n.logger).Log("msg", "PushoverNotifier: an error occurred in a goroutine when sending a message", "userKey", userKey, "error", err.Error())
+			return err
+		}
 		return nil
 	}
 

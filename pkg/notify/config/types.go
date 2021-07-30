@@ -797,6 +797,7 @@ func (w *Wechat) Clone() *Wechat {
 }
 
 type Pushover struct {
+	Template string
 	// The users (Pushover User Keys) to send notifications to.
 	UserKeys       []string
 	PushoverConfig *PushoverConfig
@@ -821,6 +822,10 @@ func NewPushoverReceiver(c *Config, pr *v2beta2.PushoverReceiver) Receiver {
 		Selector: pr.AlertSelector,
 		// User keys are 30 characters long, case-sensitive, and may contain the character set [A-Za-z0-9].
 		userKeyRegex: regexp.MustCompile(`^[A-Za-z0-9]{30}$`),
+	}
+
+	if pr.Template != nil {
+		p.Template = *pr.Template
 	}
 
 	configs := listConfigs(c, pr.PushoverConfigSelector)
