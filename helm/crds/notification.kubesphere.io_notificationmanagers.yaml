@@ -869,18 +869,6 @@ spec:
                               type: string
                             type: array
                         type: object
-                      pushover:
-                        properties:
-                          notificationTimeout:
-                            description: Notification Sending Timeout
-                            format: int32
-                            type: integer
-                          template:
-                            description: The name of the template to generate pushover
-                              message. If the global template is not set, it will
-                              use default.
-                            type: string
-                        type: object
                       slack:
                         properties:
                           notificationTimeout:

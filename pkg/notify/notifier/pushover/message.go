@@ -93,6 +93,10 @@ func newPushoverMessage(token string, userKey string, message string) pushoverMe
 	return pushoverMessage{Token: token, UserKey: userKey, Message: message, Sound: "pushover"}
 }
 
+func newPushoverMessageExtend(token, userKey, message, title, sound string, devices []string) pushoverMessage {
+	return pushoverMessage{Token: token, UserKey: userKey, Message: message, Sound: sound, Title: title, Device: strings.Join(devices, ",")}
+}
+
 func (p *pushoverMessage) validate() (err error, warns []string) {
 	// Validate the application API token.
 	if !tokenRegex.MatchString(p.Token) {

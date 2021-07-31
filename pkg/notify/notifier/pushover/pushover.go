@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -109,9 +110,9 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	send := func(userKey string, c *config.Pushover) error {
+	send := func(profile *v2beta2.PushoverUserProfile, c *config.Pushover) error {
 
-		start := time.Now()
+		start, userKey := time.Now(), *profile.UserKey
 		defer func() {
 			_ = level.Debug(n.logger).Log("msg", "PushoverNotifier: send message", "userKey", userKey, "used", time.Since(start).String())
 		}()
@@ -139,7 +140,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		// send messages
 		for _, msg := range messages {
 			// construct pushover message struct as request parameters, and validate it
-			pm := newPushoverMessage(token, userKey, msg)
+			pm := newPushoverMessageExtend(token, userKey, msg, *profile.Title, *profile.Sound, profile.Devices)
 			err, warnings := pm.validate()
 			if err != nil {
 				_ = level.Error(n.logger).Log("msg", "PushoverNotifier: invalid pushover message", "userKey", userKey, "error", err.Error())
@@ -220,11 +221,11 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 	group := async.NewGroup(ctx)
 	for _, pushover := range n.pushover {
-		p := pushover
-		for _, userKeys := range p.UserKeys {
-			uk := userKeys
+		po := pushover
+		for _, profiles := range po.Profiles {
+			pf := profiles
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- send(uk, p)
+				stopCh <- send(pf, po)
 			})
 		}
 	}

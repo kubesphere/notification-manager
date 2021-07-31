@@ -238,33 +238,6 @@ spec:
                 - from
                 - smartHost
                 type: object
-              pushover:
-                properties:
-                  labels:
-                    additionalProperties:
-                      type: string
-                    type: object
-                  pushoverTokenSecret:
-                    description: The token of a pushover application.
-                    properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
-                        type: string
-                      name:
-                        description: Name of the secret.
-                        type: string
-                      namespace:
-                        description: The namespace of the secret, default to the `defaultSecretNamespace`
-                          of `NotificationManager` crd. If the `defaultSecretNamespace`
-                          does not set, default to the pod's namespace.
-                        type: string
-                    required:
-                    - key
-                    type: object
-                required:
-                - pushoverTokenSecret
-                type: object
               slack:
                 properties:
                   labels:
