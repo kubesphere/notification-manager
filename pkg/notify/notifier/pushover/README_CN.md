@@ -69,15 +69,30 @@ type PushoverOptions struct {
 为 Receiver CRD 添加 Pushover 消息接收方的配置。
 
 ```go
+// PushoverUserProfile includes userKey and other preferences
+type PushoverUserProfile struct {
+    // UserKey is the user (Pushover User Key) to send notifications to.
+    UserKey *string `json:"userKey"`
+    // Devices refers to device name to send the message directly to that device, rather than all of the user's devices
+    Devices []string `json:"devices,omitempty"`
+    // Title refers to message's title, otherwise your app's name is used.
+    Title *string `json:"title,omitempty"`
+    // Sound refers to the name of one of the sounds (https://pushover.net/api#sounds) supported by device clients
+    Sound  *string `json:"sound,omitempty"`
+}
+
 type PushoverReceiver struct {
-   // whether the receiver is enabled
-   Enabled *bool `json:"enabled,omitempty"`
-   // PushoverConfig to be selected for this receiver
-   PushoverConfigSelector *metav1.LabelSelector `json:"pushoverConfigSelector,omitempty"`
-   // Selector to filter alerts.
-   AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
-   // The users (Pushover User Keys) to send notifications to.
-   UserKeys []string `json:"userKeys"`
+    // whether the receiver is enabled
+    Enabled *bool `json:"enabled,omitempty"`
+    // PushoverConfig to be selected for this receiver
+    PushoverConfigSelector *metav1.LabelSelector `json:"pushoverConfigSelector,omitempty"`
+    // Selector to filter alerts.
+    AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+    // The name of the template to generate DingTalk message.
+    // If the global template is not set, it will use default.
+    Template             *string `json:"template,omitempty"`
+    // The users profile.
+    Profiles []*PushoverUserProfile `json:"profiles,omitempty"`
 }
 ```
 
@@ -86,27 +101,52 @@ type PushoverReceiver struct {
 * Enabled：启用开关；
 * PushoverConfigSelector：关联 Pushover Config 的选择器；
 * AlertSelector：用于筛选告警的选择器；
-* UserKeys：用户的唯一标识符。每个 Pushover 用户都会被分配一个 user key，它相当于用户名。每一位想要接收 Pushover 消息的用户都要把他们的 user key 配置到这里。
+* Profiles：
+  * UserKey：必需项。用户的唯一标识符。每个 Pushover 用户都会被分配一个 user key，它相当于用户名。每一位想要接收 Pushover 消息的用户都要把他们的 user key 配置到这里；
+  * Devices：选填。用户可以在此指定接收消息的设备名称，留空则该用户的所有设备均会收到消息；
+  * Title：选填。消息的标题，不指定则默认为Pushover应用的名字；
+  * Sound：选填。消息提示音，不为空则必须从[支持的声音类型](https://pushover.net/api#sounds)中挑选一个。
 
 ```go
 if r.Spec.Pushover != nil {
-   if len(r.Spec.Pushover.UserKeys) == 0 {
-      allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("userKeys"),
-         "must be specified"))
-   } else {
-      // User Keys must match the regex
-      tokenRegex := regexp.MustCompile(`^[A-Za-z0-9]{30}$`)
-      for _, key := range r.Spec.Pushover.UserKeys {
-         if !tokenRegex.MatchString(key) {
-            allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("userKeys"),
-               fmt.Sprintf("found invalid Pushover User Key: %s", key)))
-         }
-      }
-   }
-}
+		// validate User Profile
+		if len(r.Spec.Pushover.Profiles) == 0 {
+			// err ...
+		} else {
+			// requirements
+			tokenRegex := regexp.MustCompile(`^[A-Za-z0-9]{30}$`)
+			deviceRegex := regexp.MustCompile(`^[A-Za-z0-9_-]{1,25}$`)
+			sounds := map[string]bool{"pushover": true, "bike": true, ... , "vibrate": true, "none": true}
+			// validate each profile
+			for i, profile := range r.Spec.Pushover.Profiles {
+				// validate UserKeys
+				if profile.UserKey == nil || !tokenRegex.MatchString(*profile.UserKey) {
+					// err ...
+				}
+				// validate Devices
+				for _, device := range profile.Devices {
+					if !deviceRegex.MatchString(device) {
+						// err ...
+					}
+				}
+				// Validate Title
+				if profile.Title != nil {
+					if l := utf8.RuneCountInString(*profile.Title); l > 250 {
+						// err ...
+					}
+				}
+				// Validate Sound
+				if profile.Sound != nil {
+					if !sounds[*profile.Sound] {
+						// err ...
+					}
+				}
+			}
+		}
+	}
 ```
 
-同样，如果 Pushover 通知渠道被启用，上述配置也需要被验证。主要是对user key的验证。首先，需要保证`UserKeys`不能为空，即至少要有一名用户接收消息；其次要对 user key 的合法性进行验证，根据Pushover API文档，user key 是一个长度固定为30字符，由大小写字母或数字构成的字符串，因此这里采用正则表达式的方式，对每一个 user key 进行匹配，任何一个 user key 不符合此格式都是不被允许的。
+同样，如果 Pushover 通知渠道被启用，上述配置也需要被验证。主要是对user key的验证。首先，需要保证`Profiles`不能为空，即至少要有一名用户接收消息；其次要对 user key 的合法性进行验证，根据Pushover API文档，user key 是一个长度固定为30字符，由大小写字母或数字构成的字符串，因此这里采用正则表达式的方式，对每一个 user key 进行匹配，任何一个 user key 不符合此格式都是不被允许的。
 
 ### Pushover 消息推送功能实现
 
@@ -160,7 +200,7 @@ type pushoverMessage struct {
 * UserKey：接收消息的用户user key；
 * Message：文本消息。
 
-此外还有很多选填字段，虽然暂未被使用，但可满足未来扩展的需要，它们是：
+此外还有很多选填字段，虽然有一部分暂未被使用，但可满足未来扩展的需要，它们是：
 
 * Attachment：附件图片；
 * Device：可以在此处指定接收用户所拥有的哪些设备才能接收到消息，多个设备时用逗号将它们分隔开，默认是接收用户的所有设备；
@@ -372,8 +412,11 @@ metadata:
 spec:
   pushover:
     # pushoverConfigSelector needn't to be configured for a global receiver
-    userKeys:
-    - ur99hih8czsgv4xaqsetseefr*****
+    profiles:
+      - userKey: uzggr3m9kw2r5m7im5aicwm1j*****
+        title: "test title"
+        sound: "bike"
+        devices: ["iphone"] # only the user's device called "iphone" can receive messages
 ---
 apiVersion: v1
 data:
@@ -402,7 +445,7 @@ curl -XPOST -d @alert.json http://127.0.0.1:19093/api/v2/alerts
 
 结果：
 
-![C5B353F651FAD0F3177B007FF834AC1C.png](https://i.loli.net/2021/07/28/X4JpvGYLaCIxof5.png)
+![pushover.png](https://i.loli.net/2021/07/31/J2ADI7dezqOjQKB.png)
 
 ## 参考
 

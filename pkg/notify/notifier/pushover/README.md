@@ -63,15 +63,30 @@ type PushoverOptions struct {
 #### Receiver CRD
 
 ```go
+// PushoverUserProfile includes userKey and other preferences
+type PushoverUserProfile struct {
+    // UserKey is the user (Pushover User Key) to send notifications to.
+    UserKey *string `json:"userKey"`
+    // Devices refers to device name to send the message directly to that device, rather than all of the user's devices
+    Devices []string `json:"devices,omitempty"`
+    // Title refers to message's title, otherwise your app's name is used.
+    Title *string `json:"title,omitempty"`
+    // Sound refers to the name of one of the sounds (https://pushover.net/api#sounds) supported by device clients
+    Sound  *string `json:"sound,omitempty"`
+}
+
 type PushoverReceiver struct {
-   // whether the receiver is enabled
-   Enabled *bool `json:"enabled,omitempty"`
-   // PushoverConfig to be selected for this receiver
-   PushoverConfigSelector *metav1.LabelSelector `json:"pushoverConfigSelector,omitempty"`
-   // Selector to filter alerts.
-   AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
-   // The users (Pushover User Keys) to send notifications to.
-   UserKeys []string `json:"userKeys"`
+    // whether the receiver is enabled
+    Enabled *bool `json:"enabled,omitempty"`
+    // PushoverConfig to be selected for this receiver
+    PushoverConfigSelector *metav1.LabelSelector `json:"pushoverConfigSelector,omitempty"`
+    // Selector to filter alerts.
+    AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+    // The name of the template to generate DingTalk message.
+    // If the global template is not set, it will use default.
+    Template             *string `json:"template,omitempty"`
+    // The users profile.
+    Profiles []*PushoverUserProfile `json:"profiles,omitempty"`
 }
 ```
 
@@ -80,27 +95,52 @@ This includes:
 * Enabled: Pushover receiver switch.
 * PushoverConfigSelector: Selector that associates the Pushover Config.
 * AlertSelector: Selector that filters alerts；
-* UserKeys: A unique identifier for the user. Each Pushover user is assigned a user key, same as an username. Each user who intends to receive alerts via Pushover will have to configure their user key here.
+* Profiles: 
+  * UserKey: Required. A unique identifier for the user. Each Pushover user is assigned a user key, same as an username. Each user who intends to receive alerts via Pushover will have to configure their user key here.
+  * Devices: Optional. Device names to send the message directly to that device, rather than all of the user's devices.
+  * Title: Optional. Message's title, otherwise your app's name is used.
+  * Sound: Optional. Sound refers to the name of one of the [sounds](https://pushover.net/api#sounds) supported by device clients
 
 ```go
 if r.Spec.Pushover != nil {
-   if len(r.Spec.Pushover.UserKeys) == 0 {
-      allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("userKeys"),
-         "must be specified"))
-   } else {
-      // User Keys must match the regex
-      tokenRegex := regexp.MustCompile(`^[A-Za-z0-9]{30}$`)
-      for _, key := range r.Spec.Pushover.UserKeys {
-         if !tokenRegex.MatchString(key) {
-            allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("userKeys"),
-               fmt.Sprintf("found invalid Pushover User Key: %s", key)))
-         }
-      }
-   }
-}
+		// validate User Profile
+		if len(r.Spec.Pushover.Profiles) == 0 {
+			// err ...
+		} else {
+			// requirements
+			tokenRegex := regexp.MustCompile(`^[A-Za-z0-9]{30}$`)
+			deviceRegex := regexp.MustCompile(`^[A-Za-z0-9_-]{1,25}$`)
+			sounds := map[string]bool{"pushover": true, "bike": true, ... , "vibrate": true, "none": true}
+			// validate each profile
+			for i, profile := range r.Spec.Pushover.Profiles {
+				// validate UserKeys
+				if profile.UserKey == nil || !tokenRegex.MatchString(*profile.UserKey) {
+					// err ...
+				}
+				// validate Devices
+				for _, device := range profile.Devices {
+					if !deviceRegex.MatchString(device) {
+						// err ...
+					}
+				}
+				// Validate Title
+				if profile.Title != nil {
+					if l := utf8.RuneCountInString(*profile.Title); l > 250 {
+						// err ...
+					}
+				}
+				// Validate Sound
+				if profile.Sound != nil {
+					if !sounds[*profile.Sound] {
+						// err ...
+					}
+				}
+			}
+		}
+	}
 ```
 
-If Pushover receiver is enabled, configures above should be validated, especially the `UserKeys`. First, ensure that `UserKeys` cannot be empty, i.e., there must be at least one user receiving the message; second, verify the legitimacy of the user key, which is a string of upper and lower case letters or numbers with a fixed length of 30 characters, according to the Pushover API documentation. A regular expression is applied. Any user key that does not match this format is not allowed.
+If Pushover receiver is enabled, configures above should be validated, especially the `UserKeys`. First, ensure that `Profiles` cannot be empty, i.e., there must be at least one user receiving the message; second, verify the legitimacy of the user key, which is a string of upper and lower case letters or numbers with a fixed length of 30 characters, according to the Pushover API documentation. A regular expression is applied. Any user key that does not match this format is not allowed.
 
 ### Implementation
 
@@ -154,7 +194,7 @@ Required fields:
 * UserKey: a user receipt, viewable in user's dashboard.
 * Message: text message.
 
-There are also a number of optional fields that are not being used at this time, but could be used to meet the future needs, they are:
+There are also a number of optional fields that parts of them are not being used at this time, but could be used to meet the future needs, they are:
 
 * Attachment: an image file.
 * Device: user's device name to send the message directly to that device, rather than all of the user's devices (multiple devices may be separated by a comma).
@@ -366,8 +406,11 @@ metadata:
 spec:
   pushover:
     # pushoverConfigSelector needn't to be configured for a global receiver
-    userKeys:
-    - ur99hih8czsgv4xaqsetseefr*****
+    profiles:
+      - userKey: uzggr3m9kw2r5m7im5aicwm1j*****
+        title: "test title"
+        sound: "bike"
+        devices: ["iphone"] # only the user's device called "iphone" can receive messages
 ---
 apiVersion: v1
 data:
@@ -394,7 +437,7 @@ curl -XPOST -d @alert.json http://127.0.0.1:19093/api/v2/alerts
 
 Result:
 
-![C5B353F651FAD0F3177B007FF834AC1C.png](https://i.loli.net/2021/07/28/X4JpvGYLaCIxof5.png)
+![pushover.png](https://i.loli.net/2021/07/31/J2ADI7dezqOjQKB.png)
 
 ## Reference
 
