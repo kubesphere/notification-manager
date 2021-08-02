@@ -2,10 +2,8 @@ package pushover
 
 import (
 	"fmt"
-	"io"
 	"regexp"
 	"strings"
-	"time"
 	"unicode/utf8"
 )
 
@@ -15,10 +13,6 @@ const (
 	MessageMaxLength = 1024
 	// TitleMaxLength is the maximum length of the title, up to 250 characters.
 	TitleMaxLength = 250
-	// UrlMaxLength is the maximum length of the Url, limited to 512 characters.
-	UrlMaxLength = 512
-	// UrlTitleMaxLength is the maximum length of the Url, limited to 100 characters.
-	UrlTitleMaxLength = 100
 )
 
 var (
@@ -62,31 +56,12 @@ type pushoverMessage struct {
 	Message string `json:"message"`
 
 	// common optional fields
-	// Attachment is an image to send with the message. NOTE: the caller has to close the reader.
-	Attachment io.Reader
 	// Device specifies a set of user's devices to send the message; all would be sent if empty
 	Device string `json:"device,omitempty"`
 	// Title is the message's title, otherwise application's name is used.
 	Title string `json:"title,omitempty"`
-	// Url is a supplementary URL to show with the message.
-	Url string `json:"url,omitempty"`
-	// UrlTitle is a title for Url, otherwise just the Url is shown.
-	UrlTitle string `json:"url_title,omitempty"`
-	// Priority ranges from -2 (no notification) to 2 (emergency, confirmation required).
-	Priority int `json:"priority,omitempty"`
 	// Sound is the name of one of the sounds supported by device clients.
 	Sound string `json:"sound,omitempty"`
-	// Timestamp is a Unix timestamp of your message's date and time to display to the user
-	Timestamp int64 `json:"timestamp,omitempty"`
-
-	// emergency Priority fields (no effects if Priority != 2)
-	Retry    time.Duration `json:"retry,omitempty"`
-	Expire   time.Duration `json:"expire,omitempty"`
-	Callback string        `json:"callback,omitempty"`
-
-	// styling fields (only one of both can be `1`, at most)
-	Html      int `json:"html,omitempty"`
-	Monospace int `json:"monospace,omitempty"`
 }
 
 func newPushoverMessage(token string, userKey string, message string) pushoverMessage {
@@ -136,46 +111,10 @@ func (p *pushoverMessage) validate() (err error, warns []string) {
 		return
 	}
 
-	// Validate the length of URL.
-	if l := utf8.RuneCountInString(p.Url); l > UrlMaxLength {
-		err = fmt.Errorf("invalid URL length, should be < %d, actually %d", UrlMaxLength, l)
-		return
-	}
-
-	// Validate URL title field.
-	if l := utf8.RuneCountInString(p.UrlTitle); l > UrlTitleMaxLength {
-		err = fmt.Errorf("invalid URL title length, should be < %d, actually %d", UrlTitleMaxLength, l)
-		return
-	}
-
-	// Validate UrlTitle field, it should not be set with an empty Url.
-	if len(p.Url) == 0 && len(p.UrlTitle) > 0 {
-		err = fmt.Errorf("the URLTitle should not be set with an empty URL")
-		return
-	}
-
-	// Validate priorities.
-	if p.Priority > 2 || p.Priority < -2 {
-		err = fmt.Errorf("invalid priority, should be in [-2, 2], actually %d", p.Priority)
-		return
-	}
-
-	// Validate emergency priority, requiring both retry and expire.
-	if p.Priority == 2 && (p.Retry == 0 || p.Expire == 0) {
-		err = fmt.Errorf("the retry and expire parameters must be supplied if priority = 2")
-		return
-	}
-
 	// Validate sound.
 	if len(p.Sound) > 0 && !sounds[p.Sound] {
 		warns = append(warns, fmt.Sprintf("not supported sound: %s, replaced with default sound", p.Sound))
 		p.Sound = "pushover"
-	}
-
-	// Attachment is not supported right now.
-	if p.Attachment != nil {
-		err = fmt.Errorf("adding attachment is not supported now")
-		return
 	}
 
 	return
