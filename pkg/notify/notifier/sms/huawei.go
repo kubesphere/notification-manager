@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	allowedTemplateKeys = []string{"alertname", "alerttype", "node", "namespace", "pod", "cluster", "workload", "severity", "message", "summary"}
+	allowedTemplateKeys = []string{"alertname", "severity", "message", "summary", "alerttype", "cluster", "node", "namespace", "workload", "pod"}
 )
 
 type HuaweiNotifier struct {
@@ -125,7 +125,7 @@ func buildWSSEHeader(appKey string, appSecret string) string {
 
 // Note here, pls make your custom SMS template containing ten placeholders(the keys stored in the field allowedTemplateKeys).
 // BTW, you can create an SMS template in Huawei Cloud's SMS console.
-// i.e: Received notifications: alertname=${TEXT}, alerttype=${TEXT}, node=${TEXT}, namespace=${TEXT}, pod=${TEXT}, cluster=${TEXT} ... (10 placeholders).
+// i.e: Received notifications: alertname=${TEXT}, alerttype=${TEXT}, message=${TEXT}, summary=${TEXT}... (10 placeholders).
 func generateParams(messages string) []string {
 	// sample: 1 alert for  alertname=test  rule_id=d556b8d429c631f8 \nAlerts Firing:\nLabels:\n- alertname = test\n- alerttype = metric\n- cluster = default\n- host_ip = 192.168.88.6\n- node = node1\n- role = master\n- rule_id = d556b8d429c631f8\n- severity = critical\nAnnotations:\n- kind = Node\n- message = test message\n- resources = [\"node1\"]\n- rule_update_time = 2021-07-27T13:48:32Z\n- rules = [{\"_metricType\":\"node:node_memory_utilisation:{$1}\",\"condition_type\":\">=\",\"thresholds\":\"10\",\"unit\":\"%\"}]\n- summary = node node1 memory utilization > = 10%
 	re := regexp.MustCompile(`[a-zA-Z0-9_]+\s+=\s+.*?[^\n]+`)
