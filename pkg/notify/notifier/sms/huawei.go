@@ -23,6 +23,10 @@ const (
 	DefaultUrl         = "https://rtcsms.cn-north-1.myhuaweicloud.com:10743/sms/batchSendSms/v1"
 )
 
+var (
+	allowedTemplateKeys = []string{"alertname", "severity", "message", "summary", "alerttype", "cluster", "node", "namespace", "workload", "pod"}
+)
+
 type HuaweiNotifier struct {
 	Signature     string
 	NotifierCfg   *config.Config
@@ -119,14 +123,15 @@ func buildWSSEHeader(appKey string, appSecret string) string {
 	return fmt.Sprintf(`UsernameToken Username="%s",PasswordDigest="%s",Nonce="%s",Created="%s"`, strings.ReplaceAll(appKey, "\n", ""), passwordDigest, nonce, now)
 }
 
-// Note here, the keys corresponding to the return values are alertname,alerttype,severity,message,summary.
-// Pls make your custom SMS template containing five placeholders, you can create an SMS template in Huawei Cloud's SMS console.
-// i.e: Received notifications: alertname:${TEXT}, alerttype:${TEXT}, serverity:${TEXT}, message:${TEXT}, summary:${TEXT}
+// Note here, pls make your custom SMS template containing ten placeholders(the keys stored in the field allowedTemplateKeys).
+// BTW, you can create an SMS template in Huawei Cloud's SMS console.
+// i.e: Received notifications: alertname=${TEXT}, alerttype=${TEXT}, message=${TEXT}, summary=${TEXT}... (10 placeholders).
 func generateParams(messages string) []string {
-	messagePat := `alertname=(?P<alertname>.*?)\s+(?s).*alerttype\s?=\s?(?P<alerttype>[a-zA-Z]+)\s+(?s).*severity\s?=\s?(?P<severity>[a-zA-Z]+)\s+(?s).*message\s?=\s?(?P<message>.*?)\s+(?s).*summary\s?=\s?(?P<summary>.*[^\"])`
-	re := regexp.MustCompile(messagePat)
+	// sample: 1 alert for  alertname=test  rule_id=d556b8d429c631f8 \nAlerts Firing:\nLabels:\n- alertname = test\n- alerttype = metric\n- cluster = default\n- host_ip = 192.168.88.6\n- node = node1\n- role = master\n- rule_id = d556b8d429c631f8\n- severity = critical\nAnnotations:\n- kind = Node\n- message = test message\n- resources = [\"node1\"]\n- rule_update_time = 2021-07-27T13:48:32Z\n- rules = [{\"_metricType\":\"node:node_memory_utilisation:{$1}\",\"condition_type\":\">=\",\"thresholds\":\"10\",\"unit\":\"%\"}]\n- summary = node node1 memory utilization > = 10%
+	re := regexp.MustCompile(`[a-zA-Z0-9_]+\s+=\s+.*?[^\n]+`)
+	sepRe := regexp.MustCompile(`\s+=\s+`)
 
-	matches := re.FindStringSubmatch(messages)
+	matches := re.FindAllString(messages, -1)
 	sa := make([]string, 0)
 	if len(matches) == 0 {
 		// Keep the length of the string less than 20 characters.
@@ -137,17 +142,27 @@ func generateParams(messages string) []string {
 		return sa
 	}
 
-	stripedRe := regexp.MustCompile(`\s+`)
-
-	for i, m := range matches {
-		if i > 0 {
-			mn := stripedRe.ReplaceAllString(m, "")
-			// Keep the length of the string less than 20 characters.
-			if utf8.RuneCountInString(mn) > 20 {
-				mn = string([]rune(mn)[:20])
+	extractedPairs := make(map[string]string)
+	for _, m := range matches {
+		mn := sepRe.Split(m, -1)
+		if len(mn) > 1 {
+			if mn[0] == "deployment" || mn[0] == "statfulset" || mn[0] == "daemonset" {
+				mn[0] = "workload"
 			}
-			sa = append(sa, `"`+mn+`"`)
+			extractedPairs[mn[0]] = mn[1]
 		}
+	}
+
+	for _, key := range allowedTemplateKeys {
+		v := ""
+		if val, ok := extractedPairs[key]; ok {
+			v = val
+		}
+		// Keep the length of the string less than 20 characters.
+		if utf8.RuneCountInString(v) > 20 {
+			v = string([]rune(v)[:20])
+		}
+		sa = append(sa, `"`+v+`"`)
 	}
 
 	return sa

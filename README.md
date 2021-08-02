@@ -555,14 +555,14 @@ metadata:
 type: Opaque
 ```
 For SMS templates,  you can create them in your SMS provider's SMS console.
-For Huawei Cloud SMS provider, pls make your custom SMS template containing five placeholders. 
+For Huawei Cloud SMS provider, pls make your custom SMS template containing ten placeholders. 
 For a detailed description, if you have a template like this: 
 ```
-[KubeSphere alerts] alertname = ${TEXT}, alerttype = ${TEXT}, severity = ${TEXT}, message = ${TEXT}, summary = ${TEXT}
+[KubeSphere alerts] alertname = ${TEXT}, severity = ${TEXT}, message = ${TEXT}, summary = ${TEXT}, alerttype = ${TEXT}, cluster = ${TEXT}, node = ${TEXT}, namespace = ${TEXT}, workload = ${TEXT}, pod = ${TEXT}
 ```
 Then you will receive the notification as below:
 ```
-[KubeSphere alerts] alertname = test, alerttype = metric, severity = warning, message = this is a test message, summary = node node1 memory utilization > = 10%
+[KubeSphere alerts] alertname = test, severity = warning, message = this is a test message, summary = node node1 memory utilization >= 10%, alerttype = metric, cluster = default, node = node1, namespace = kube-system, workload = nginx-deployment, pod = pod1
 ```
 
 ### Deploy Notification Manager in any other Kubernetes cluster (Uses `namespace` to distinguish each tenant user):
