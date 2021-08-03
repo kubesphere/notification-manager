@@ -9,7 +9,7 @@ spec:
     strategy: Webhook
     webhook:
       clientConfig:
-        caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURXekNDQWtPZ0F3SUJBZ0lVWVRnYkxtTVQ3VzMwZkxRZWh5R3c2R09KTmlJd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1BERUxNQWtHQTFVRUJoTUNRMDR4Q3pBSkJnTlZCQWdNQWtoQ01Rc3dDUVlEVlFRS0RBSlJRekVUTUJFRwpBMVVFQXd3S2QyVmlhRzl2YXkxallUQWdGdzB5TVRBM01qRXhNREl4TkRKYUdBOHlNVEl4TURZeU56RXdNakUwCk1sb3dQREVMTUFrR0ExVUVCaE1DUTA0eEN6QUpCZ05WQkFnTUFraENNUXN3Q1FZRFZRUUtEQUpSUXpFVE1CRUcKQTFVRUF3d0tkMlZpYUc5dmF5MWpZVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQgpBTDV4c0NLRVFWYWU2bXVoN2F0MXpmeW52MnRNQWpMWERMUkJEL01CVURKK2Q0RVFBbmtOeU9FK2ZOYTlBaTZSCmdYcUJ4SFJORG9vMXBmS2E0MU9zYlU2Q0hYNEVpbkJySUxYdFQ4QjZCTXI1Sk41cVpMdUpZSktObHlsTnBtVWgKRTVDeHNJb3FVdWJQZTNVMHA1S3VlY0ZBam4xOCtkbkt5bEg2L05lNnY2c2dxQ3V3ZVo4cEwydlA3RmJLZ1N4YgpBaXZheVkvS3ZHcTR4Ry9qd2xDaXFsK3JYbE91MUZYWGJFdTNkOWhUdTl5V256cEZERDdZbnNNTFA5SUhUWUhKCmJJTmVMYjJTbHRXcGpld3dHNkgrQlEzOUNmeW1rZlRidG43VTVLZU5Yc2xiTlJZcUt0bDFpdjhKRHJkaTFNNE8KRkZWanBoMHVaYkFzTXpIczFyWnpzVEVDQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFRkpOczN2WXJVQmN2WTYwSApIbXpjaWo3RXN5YitNQjhHQTFVZEl3UVlNQmFBRkpOczN2WXJVQmN2WTYwSEhtemNpajdFc3liK01BOEdBMVVkCkV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQTlpazgwZkx2d3YrQmlOWHpScWNrRTIKMXlGbkp1eEhZU3dobGMyRkNiZHc3eTV5Uk5ZVjRDTHJlNmJrRUViZnpxWU52MEF2amhxRWxVWmNjK0Jla2NDOQpnSnNvWS96VnJMcVFlV1VHNExOS3pyWUNSMm9KOW5WNTFyQ290N2NCUmtSQkcxMldCSENhOGZGblV6R2JZbTlaCmtHQ3p6WHAxeW9MNkFnVk9zak5kUE9XUDFYYzdDdlcwZlNLS0xtV3pwQ25qWjZPMGdFSlhJeml4RE9PNXl5MjkKUzNUaDNPNmxYdG1aUTlGVzdqMi90bHloVGc3azBkRnVuaGVoVWx4VDhqaE54NWVsNDA2ZGVrNzc5c3ZpL3MrZAo1T3MwQzdDdDhmMFVnRVlHMm9rTFdiSkRBM2t6UU9NNHlQQ1Z6aEo5aVRLYkZVOGFmUGwyd0dxeWhvaDZyUms9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+        caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURXekNDQWtPZ0F3SUJBZ0lVT3hOb1NwMTlmNS9CNllvZGlRek53MFdJWGhrd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1BERUxNQWtHQTFVRUJoTUNRMDR4Q3pBSkJnTlZCQWdNQWtoQ01Rc3dDUVlEVlFRS0RBSlJRekVUTUJFRwpBMVVFQXd3S2QyVmlhRzl2YXkxallUQWdGdzB5TVRBM01qY3dPREV5TXpaYUdBOHlNVEl4TURjd016QTRNVEl6Ck5sb3dQREVMTUFrR0ExVUVCaE1DUTA0eEN6QUpCZ05WQkFnTUFraENNUXN3Q1FZRFZRUUtEQUpSUXpFVE1CRUcKQTFVRUF3d0tkMlZpYUc5dmF5MWpZVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQgpBTlpzblhIZ21meFJYL2MvQy95S0QzY3hMaGdpSzZ5MkphMlh4OUtYeWRPUjNLSStVSzZ2dXM2V1YzTGl0eTZDCmtPVFlScjV6ZlV3aXZZYUMydHVGRnhTUE80L085dHhFVlBha1UwUGo1N0tVRDBiUnJZWEpDY1V5Ri9TZUlCY0EKMlFmbDZEem0rWjd4NHM1TnE1NFMvUUhpYzJFclVVbHEwbmd3MFQ3UVRieDB4M2Ria0ZNRko0VjlLSjVZdkhOSwpLeWdwR2szb2RpUWZ2Yi81b2hjUUhkTXpQV0Rmd25GTERHZjFUWGFHK0VYeDZodmVoK0RXV2grQzA5ZlI5R05yCmhzNnlZaUU1cmVmY29EUlhrRGVCSkZ3eWtPaVErRE5Fc0RaSU40VHlHTkhmeTRYaUp3QWgxNXBsZTkzQWNTTVQKTlEwNWRYK2FiQmg0djQ4NDRab1lUS2tDQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFRko5NzNRUUVSVi9DVlRCZQovbmFyQmhZcS9GV0pNQjhHQTFVZEl3UVlNQmFBRko5NzNRUUVSVi9DVlRCZS9uYXJCaFlxL0ZXSk1BOEdBMVVkCkV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQk9ZOWNDbFpTYm1scndFN0YvZVBMVm4Kenl2dW0yUUE3MU9rcGRtWjN6cnV1MW16VmZNNU1ORndkUkJMOGduS05IdjEzaGhFeGQ4enJmQ2hYQWIzaWl5aQpSZnBSTzJodDBWSi9HQklaYlM1ZjIvZ1hvNXpSRHk0cFV0ekozOWZUZG9pNzQxNlhJdU9ubHI0bDk3ZnlRRTI4Cno0NlAzYlhidlZKU1VEcytFL1g0NVNHVS8xdFNCaFNnaTg1NllVWGxybWJNMDlHN29kSmx4VGozTG1qQ1NlQWUKWG9lYWlTUEl6UlMrWjVUQ0tudDdvbjVBSGQydzdrT0Q1K2tTK3gvbWY4aU1iaVV5dCtXYWVzdjNIcHg1TmwvWgprb1dxVVc1cXZlQ0poQUM0SVc5V3hmc2JWRXlZSTR0Zm9SNzZoWVhCdVVReE9BVHlCdjNJMmZYUUkvU2ZrdW89Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
         service:
           name: notification-manager-webhook
           namespace: kubesphere-monitoring-system
@@ -246,33 +246,6 @@ spec:
                 required:
                 - from
                 - smartHost
-                type: object
-              pushover:
-                properties:
-                  labels:
-                    additionalProperties:
-                      type: string
-                    type: object
-                  pushoverTokenSecret:
-                    description: The token of a pushover application.
-                    properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
-                        type: string
-                      name:
-                        description: Name of the secret.
-                        type: string
-                      namespace:
-                        description: The namespace of the secret, default to the `defaultSecretNamespace`
-                          of `NotificationManager` crd. If the `defaultSecretNamespace`
-                          does not set, default to the pod's namespace.
-                        type: string
-                    required:
-                    - key
-                    type: object
-                required:
-                - pushoverTokenSecret
                 type: object
               slack:
                 properties:
@@ -733,7 +706,8 @@ spec:
               sms:
                 properties:
                   defaultProvider:
-                    description: The default sms provider, optional, use the first provider if not set
+                    description: The default sms provider, optional, use the first
+                      provider if not set
                     type: string
                   providers:
                     description: All sms providers
@@ -748,16 +722,21 @@ spec:
                               valueFrom:
                                 properties:
                                   secretKeyRef:
-                                    description: Selects a key of a secret in the pod's namespace
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
                                     properties:
                                       key:
-                                        description: The key of the secret to select from.  Must be a valid secret key.
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
                                         type: string
                                       name:
                                         description: Name of the secret.
                                         type: string
                                       namespace:
-                                        description: The namespace of the secret, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
                                         type: string
                                     required:
                                     - key
@@ -772,16 +751,21 @@ spec:
                               valueFrom:
                                 properties:
                                   secretKeyRef:
-                                    description: Selects a key of a secret in the pod's namespace
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
                                     properties:
                                       key:
-                                        description: The key of the secret to select from.  Must be a valid secret key.
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
                                         type: string
                                       name:
                                         description: Name of the secret.
                                         type: string
                                       namespace:
-                                        description: The namespace of the secret, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
                                         type: string
                                     required:
                                     - key
@@ -808,16 +792,21 @@ spec:
                               valueFrom:
                                 properties:
                                   secretKeyRef:
-                                    description: Selects a key of a secret in the pod's namespace
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
                                     properties:
                                       key:
-                                        description: The key of the secret to select from.  Must be a valid secret key.
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
                                         type: string
                                       name:
                                         description: Name of the secret.
                                         type: string
                                       namespace:
-                                        description: The namespace of the secret, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
                                         type: string
                                     required:
                                     - key
@@ -832,16 +821,21 @@ spec:
                               valueFrom:
                                 properties:
                                   secretKeyRef:
-                                    description: Selects a key of a secret in the pod's namespace
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
                                     properties:
                                       key:
-                                        description: The key of the secret to select from.  Must be a valid secret key.
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
                                         type: string
                                       name:
                                         description: Name of the secret.
                                         type: string
                                       namespace:
-                                        description: The namespace of the secret, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
                                         type: string
                                     required:
                                     - key
@@ -855,8 +849,6 @@ spec:
                             type: string
                           templateId:
                             type: string
-                          templateParas:
-                            type: string
                           url:
                             type: string
                         required:
@@ -865,7 +857,6 @@ spec:
                         - sender
                         - signature
                         - templateId
-                        - templateParas
                         type: object
                       tencent:
                         description: Sms tencent provider parameters
@@ -877,16 +868,21 @@ spec:
                               valueFrom:
                                 properties:
                                   secretKeyRef:
-                                    description: Selects a key of a secret in the pod's namespace
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
                                     properties:
                                       key:
-                                        description: The key of the secret to select from.  Must be a valid secret key.
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
                                         type: string
                                       name:
                                         description: Name of the secret.
                                         type: string
                                       namespace:
-                                        description: The namespace of the secret, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
                                         type: string
                                     required:
                                     - key
@@ -901,16 +897,21 @@ spec:
                               valueFrom:
                                 properties:
                                   secretKeyRef:
-                                    description: Selects a key of a secret in the pod's namespace
+                                    description: Selects a key of a secret in the
+                                      pod's namespace
                                     properties:
                                       key:
-                                        description: The key of the secret to select from.  Must be a valid secret key.
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
                                         type: string
                                       name:
                                         description: Name of the secret.
                                         type: string
                                       namespace:
-                                        description: The namespace of the secret, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                                        description: The namespace of the secret,
+                                          default to the `defaultSecretNamespace`
+                                          of `NotificationManager` crd. If the `defaultSecretNamespace`
+                                          does not set, default to the pod's namespace.
                                         type: string
                                     required:
                                     - key
@@ -1874,18 +1875,6 @@ spec:
                             items:
                               type: string
                             type: array
-                        type: object
-                      pushover:
-                        properties:
-                          notificationTimeout:
-                            description: Notification Sending Timeout
-                            format: int32
-                            type: integer
-                          template:
-                            description: The name of the template to generate pushover
-                              message. If the global template is not set, it will
-                              use default.
-                            type: string
                         type: object
                       slack:
                         properties:
@@ -4122,10 +4111,12 @@ spec:
                               use default.
                             type: string
                           titleTemplate:
-                            description: The name of the template to generate markdown title
+                            description: The name of the template to generate markdown
+                              title
                             type: string
                           tmplType:
-                            description: 'template type: text or markdown, default type is text'
+                            description: 'template type: text or markdown, default
+                              type is text'
                             type: string
                           tokenExpires:
                             description: The time of token expired.
@@ -4154,7 +4145,8 @@ spec:
                               use default.
                             type: string
                           tmplType:
-                            description: 'template type: text or html, default type is html'
+                            description: 'template type: text or html, default type
+                              is html'
                             type: string
                         type: object
                       global:
@@ -4205,7 +4197,9 @@ spec:
                             format: int32
                             type: integer
                           template:
-                            description: The name of the template to generate sms message. If the global template is not set, it will use default.
+                            description: The name of the template to generate sms
+                              message. If the global template is not set, it will
+                              use default.
                             type: string
                         type: object
                       webhook:
@@ -4235,7 +4229,8 @@ spec:
                               message.
                             type: string
                           tmplType:
-                            description: 'template type: text or markdown, default type is text'
+                            description: 'template type: text or markdown, default
+                              type is text'
                             type: string
                           tokenExpires:
                             description: The time of token expired.
@@ -6728,7 +6723,7 @@ spec:
     strategy: Webhook
     webhook:
       clientConfig:
-        caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURXekNDQWtPZ0F3SUJBZ0lVWVRnYkxtTVQ3VzMwZkxRZWh5R3c2R09KTmlJd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1BERUxNQWtHQTFVRUJoTUNRMDR4Q3pBSkJnTlZCQWdNQWtoQ01Rc3dDUVlEVlFRS0RBSlJRekVUTUJFRwpBMVVFQXd3S2QyVmlhRzl2YXkxallUQWdGdzB5TVRBM01qRXhNREl4TkRKYUdBOHlNVEl4TURZeU56RXdNakUwCk1sb3dQREVMTUFrR0ExVUVCaE1DUTA0eEN6QUpCZ05WQkFnTUFraENNUXN3Q1FZRFZRUUtEQUpSUXpFVE1CRUcKQTFVRUF3d0tkMlZpYUc5dmF5MWpZVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQgpBTDV4c0NLRVFWYWU2bXVoN2F0MXpmeW52MnRNQWpMWERMUkJEL01CVURKK2Q0RVFBbmtOeU9FK2ZOYTlBaTZSCmdYcUJ4SFJORG9vMXBmS2E0MU9zYlU2Q0hYNEVpbkJySUxYdFQ4QjZCTXI1Sk41cVpMdUpZSktObHlsTnBtVWgKRTVDeHNJb3FVdWJQZTNVMHA1S3VlY0ZBam4xOCtkbkt5bEg2L05lNnY2c2dxQ3V3ZVo4cEwydlA3RmJLZ1N4YgpBaXZheVkvS3ZHcTR4Ry9qd2xDaXFsK3JYbE91MUZYWGJFdTNkOWhUdTl5V256cEZERDdZbnNNTFA5SUhUWUhKCmJJTmVMYjJTbHRXcGpld3dHNkgrQlEzOUNmeW1rZlRidG43VTVLZU5Yc2xiTlJZcUt0bDFpdjhKRHJkaTFNNE8KRkZWanBoMHVaYkFzTXpIczFyWnpzVEVDQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFRkpOczN2WXJVQmN2WTYwSApIbXpjaWo3RXN5YitNQjhHQTFVZEl3UVlNQmFBRkpOczN2WXJVQmN2WTYwSEhtemNpajdFc3liK01BOEdBMVVkCkV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQTlpazgwZkx2d3YrQmlOWHpScWNrRTIKMXlGbkp1eEhZU3dobGMyRkNiZHc3eTV5Uk5ZVjRDTHJlNmJrRUViZnpxWU52MEF2amhxRWxVWmNjK0Jla2NDOQpnSnNvWS96VnJMcVFlV1VHNExOS3pyWUNSMm9KOW5WNTFyQ290N2NCUmtSQkcxMldCSENhOGZGblV6R2JZbTlaCmtHQ3p6WHAxeW9MNkFnVk9zak5kUE9XUDFYYzdDdlcwZlNLS0xtV3pwQ25qWjZPMGdFSlhJeml4RE9PNXl5MjkKUzNUaDNPNmxYdG1aUTlGVzdqMi90bHloVGc3azBkRnVuaGVoVWx4VDhqaE54NWVsNDA2ZGVrNzc5c3ZpL3MrZAo1T3MwQzdDdDhmMFVnRVlHMm9rTFdiSkRBM2t6UU9NNHlQQ1Z6aEo5aVRLYkZVOGFmUGwyd0dxeWhvaDZyUms9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+        caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURXekNDQWtPZ0F3SUJBZ0lVT3hOb1NwMTlmNS9CNllvZGlRek53MFdJWGhrd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1BERUxNQWtHQTFVRUJoTUNRMDR4Q3pBSkJnTlZCQWdNQWtoQ01Rc3dDUVlEVlFRS0RBSlJRekVUTUJFRwpBMVVFQXd3S2QyVmlhRzl2YXkxallUQWdGdzB5TVRBM01qY3dPREV5TXpaYUdBOHlNVEl4TURjd016QTRNVEl6Ck5sb3dQREVMTUFrR0ExVUVCaE1DUTA0eEN6QUpCZ05WQkFnTUFraENNUXN3Q1FZRFZRUUtEQUpSUXpFVE1CRUcKQTFVRUF3d0tkMlZpYUc5dmF5MWpZVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQgpBTlpzblhIZ21meFJYL2MvQy95S0QzY3hMaGdpSzZ5MkphMlh4OUtYeWRPUjNLSStVSzZ2dXM2V1YzTGl0eTZDCmtPVFlScjV6ZlV3aXZZYUMydHVGRnhTUE80L085dHhFVlBha1UwUGo1N0tVRDBiUnJZWEpDY1V5Ri9TZUlCY0EKMlFmbDZEem0rWjd4NHM1TnE1NFMvUUhpYzJFclVVbHEwbmd3MFQ3UVRieDB4M2Ria0ZNRko0VjlLSjVZdkhOSwpLeWdwR2szb2RpUWZ2Yi81b2hjUUhkTXpQV0Rmd25GTERHZjFUWGFHK0VYeDZodmVoK0RXV2grQzA5ZlI5R05yCmhzNnlZaUU1cmVmY29EUlhrRGVCSkZ3eWtPaVErRE5Fc0RaSU40VHlHTkhmeTRYaUp3QWgxNXBsZTkzQWNTTVQKTlEwNWRYK2FiQmg0djQ4NDRab1lUS2tDQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFRko5NzNRUUVSVi9DVlRCZQovbmFyQmhZcS9GV0pNQjhHQTFVZEl3UVlNQmFBRko5NzNRUUVSVi9DVlRCZS9uYXJCaFlxL0ZXSk1BOEdBMVVkCkV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQk9ZOWNDbFpTYm1scndFN0YvZVBMVm4Kenl2dW0yUUE3MU9rcGRtWjN6cnV1MW16VmZNNU1ORndkUkJMOGduS05IdjEzaGhFeGQ4enJmQ2hYQWIzaWl5aQpSZnBSTzJodDBWSi9HQklaYlM1ZjIvZ1hvNXpSRHk0cFV0ekozOWZUZG9pNzQxNlhJdU9ubHI0bDk3ZnlRRTI4Cno0NlAzYlhidlZKU1VEcytFL1g0NVNHVS8xdFNCaFNnaTg1NllVWGxybWJNMDlHN29kSmx4VGozTG1qQ1NlQWUKWG9lYWlTUEl6UlMrWjVUQ0tudDdvbjVBSGQydzdrT0Q1K2tTK3gvbWY4aU1iaVV5dCtXYWVzdjNIcHg1TmwvWgprb1dxVVc1cXZlQ0poQUM0SVc5V3hmc2JWRXlZSTR0Zm9SNzZoWVhCdVVReE9BVHlCdjNJMmZYUUkvU2ZrdW89Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
         service:
           name: notification-manager-webhook
           namespace: kubesphere-monitoring-system
@@ -7024,108 +7019,6 @@ spec:
                     type: array
                 required:
                 - to
-                type: object
-              pushover:
-                properties:
-                  alertSelector:
-                    description: Selector to filter alerts.
-                    properties:
-                      matchExpressions:
-                        description: matchExpressions is a list of label selector
-                          requirements. The requirements are ANDed.
-                        items:
-                          description: A label selector requirement is a selector
-                            that contains values, a key, and an operator that relates
-                            the key and values.
-                          properties:
-                            key:
-                              description: key is the label key that the selector
-                                applies to.
-                              type: string
-                            operator:
-                              description: operator represents a key's relationship
-                                to a set of values. Valid operators are In, NotIn,
-                                Exists and DoesNotExist.
-                              type: string
-                            values:
-                              description: values is an array of string values. If
-                                the operator is In or NotIn, the values array must
-                                be non-empty. If the operator is Exists or DoesNotExist,
-                                the values array must be empty. This array is replaced
-                                during a strategic merge patch.
-                              items:
-                                type: string
-                              type: array
-                          required:
-                          - key
-                          - operator
-                          type: object
-                        type: array
-                      matchLabels:
-                        additionalProperties:
-                          type: string
-                        description: matchLabels is a map of {key,value} pairs. A
-                          single {key,value} in the matchLabels map is equivalent
-                          to an element of matchExpressions, whose key field is "key",
-                          the operator is "In", and the values array contains only
-                          "value". The requirements are ANDed.
-                        type: object
-                    type: object
-                  enabled:
-                    description: whether the receiver is enabled
-                    type: boolean
-                  pushoverConfigSelector:
-                    description: PushoverConfig to be selected for this receiver
-                    properties:
-                      matchExpressions:
-                        description: matchExpressions is a list of label selector
-                          requirements. The requirements are ANDed.
-                        items:
-                          description: A label selector requirement is a selector
-                            that contains values, a key, and an operator that relates
-                            the key and values.
-                          properties:
-                            key:
-                              description: key is the label key that the selector
-                                applies to.
-                              type: string
-                            operator:
-                              description: operator represents a key's relationship
-                                to a set of values. Valid operators are In, NotIn,
-                                Exists and DoesNotExist.
-                              type: string
-                            values:
-                              description: values is an array of string values. If
-                                the operator is In or NotIn, the values array must
-                                be non-empty. If the operator is Exists or DoesNotExist,
-                                the values array must be empty. This array is replaced
-                                during a strategic merge patch.
-                              items:
-                                type: string
-                              type: array
-                          required:
-                          - key
-                          - operator
-                          type: object
-                        type: array
-                      matchLabels:
-                        additionalProperties:
-                          type: string
-                        description: matchLabels is a map of {key,value} pairs. A
-                          single {key,value} in the matchLabels map is equivalent
-                          to an element of matchExpressions, whose key field is "key",
-                          the operator is "In", and the values array contains only
-                          "value". The requirements are ANDed.
-                        type: object
-                    type: object
-                  userKeys:
-                    description: The users (Pushover User Keys) to send notifications
-                      to.
-                    items:
-                      type: string
-                    type: array
-                required:
-                - userKeys
                 type: object
               slack:
                 properties:
@@ -7687,7 +7580,8 @@ spec:
                         description: Whether @everyone.
                         type: boolean
                       atMobiles:
-                        description: The phone numbers of the users which will be @.
+                        description: The phone numbers of the users which will be
+                          @.
                         items:
                           type: string
                         type: array
@@ -7824,7 +7718,8 @@ spec:
                     description: whether the receiver is enabled
                     type: boolean
                   template:
-                    description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
+                    description: The name of the template to generate DingTalk message.
+                      If the global template is not set, it will use default.
                     type: string
                   titleTemplate:
                     description: The name of the template to generate markdown title
@@ -7930,7 +7825,8 @@ spec:
                     description: The name of the template to generate email subject
                     type: string
                   template:
-                    description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
+                    description: The name of the template to generate DingTalk message.
+                      If the global template is not set, it will use default.
                     type: string
                   tmplType:
                     description: 'template type: text or html, default type is html'
@@ -7992,6 +7888,36 @@ spec:
                   enabled:
                     description: whether the receiver is enabled
                     type: boolean
+                  profiles:
+                    description: The users profile.
+                    items:
+                      description: PushoverUserProfile includes userKey and other
+                        preferences
+                      properties:
+                        devices:
+                          description: Devices refers to device name to send the message
+                            directly to that device, rather than all of the user's
+                            devices
+                          items:
+                            type: string
+                          type: array
+                        sound:
+                          description: Sound refers to the name of one of the sounds
+                            (https://pushover.net/api#sounds) supported by device
+                            clients
+                          type: string
+                        title:
+                          description: Title refers to message's title, otherwise
+                            your app's name is used.
+                          type: string
+                        userKey:
+                          description: UserKey is the user (Pushover User Key) to
+                            send notifications to.
+                          type: string
+                      required:
+                      - userKey
+                      type: object
+                    type: array
                   pushoverConfigSelector:
                     description: PushoverConfig to be selected for this receiver
                     properties:
@@ -8036,14 +7962,10 @@ spec:
                           "value". The requirements are ANDed.
                         type: object
                     type: object
-                  userKeys:
-                    description: The users (Pushover User Keys) to send notifications
-                      to.
-                    items:
-                      type: string
-                    type: array
-                required:
-                - userKeys
+                  template:
+                    description: The name of the template to generate DingTalk message.
+                      If the global template is not set, it will use default.
+                    type: string
                 type: object
               slack:
                 properties:
@@ -8144,7 +8066,8 @@ spec:
                         type: object
                     type: object
                   template:
-                    description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
+                    description: The name of the template to generate DingTalk message.
+                      If the global template is not set, it will use default.
                     type: string
                 required:
                 - channels
@@ -8207,18 +8130,28 @@ spec:
                     description: SmsConfig to be selected for this receiver
                     properties:
                       matchExpressions:
-                        description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
                         items:
-                          description: A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+                          description: A label selector requirement is a selector
+                            that contains values, a key, and an operator that relates
+                            the key and values.
                           properties:
                             key:
-                              description: key is the label key that the selector applies to.
+                              description: key is the label key that the selector
+                                applies to.
                               type: string
                             operator:
-                              description: operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
+                              description: operator represents a key's relationship
+                                to a set of values. Valid operators are In, NotIn,
+                                Exists and DoesNotExist.
                               type: string
                             values:
-                              description: values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
+                              description: values is an array of string values. If
+                                the operator is In or NotIn, the values array must
+                                be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced
+                                during a strategic merge patch.
                               items:
                                 type: string
                               type: array
@@ -8230,11 +8163,16 @@ spec:
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+                        description: matchLabels is a map of {key,value} pairs. A
+                          single {key,value} in the matchLabels map is equivalent
+                          to an element of matchExpressions, whose key field is "key",
+                          the operator is "In", and the values array contains only
+                          "value". The requirements are ANDed.
                         type: object
                     type: object
                   template:
-                    description: The name of the template to generate Sms message. If the global template is not set, it will use default.
+                    description: The name of the template to generate Sms message.
+                      If the global template is not set, it will use default.
                     type: string
                 required:
                 - phoneNumbers
@@ -8245,18 +8183,28 @@ spec:
                     description: Selector to filter alerts.
                     properties:
                       matchExpressions:
-                        description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
                         items:
-                          description: A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+                          description: A label selector requirement is a selector
+                            that contains values, a key, and an operator that relates
+                            the key and values.
                           properties:
                             key:
-                              description: key is the label key that the selector applies to.
+                              description: key is the label key that the selector
+                                applies to.
                               type: string
                             operator:
-                              description: operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
+                              description: operator represents a key's relationship
+                                to a set of values. Valid operators are In, NotIn,
+                                Exists and DoesNotExist.
                               type: string
                             values:
-                              description: values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
+                              description: values is an array of string values. If
+                                the operator is In or NotIn, the values array must
+                                be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced
+                                during a strategic merge patch.
                               items:
                                 type: string
                               type: array
@@ -8268,7 +8216,11 @@ spec:
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+                        description: matchLabels is a map of {key,value} pairs. A
+                          single {key,value} in the matchLabels map is equivalent
+                          to an element of matchExpressions, whose key field is "key",
+                          the operator is "In", and the values array contains only
+                          "value". The requirements are ANDed.
                         type: object
                     type: object
                   enabled:
@@ -8492,7 +8444,8 @@ spec:
                     - namespace
                     type: object
                   template:
-                    description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
+                    description: The name of the template to generate DingTalk message.
+                      If the global template is not set, it will use default.
                     type: string
                   url:
                     description: "`url` gives the location of the webhook, in standard
@@ -8609,10 +8562,12 @@ spec:
                     description: whether the receiver is enabled
                     type: boolean
                   template:
-                    description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
+                    description: The name of the template to generate DingTalk message.
+                      If the global template is not set, it will use default.
                     type: string
                   tmplType:
-                    description: 'template type: text or markdown, default type is text'
+                    description: 'template type: text or markdown, default type is
+                      text'
                     type: string
                   toParty:
                     items:
@@ -8864,8 +8819,8 @@ subjects:
 ---
 apiVersion: v1
 data:
-  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURmakNDQW1hZ0F3SUJBZ0lVQkRyNU11ZGhGcXRJRUZHbHJXNWh2cGtwM0tvd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1BERUxNQWtHQTFVRUJoTUNRMDR4Q3pBSkJnTlZCQWdNQWtoQ01Rc3dDUVlEVlFRS0RBSlJRekVUTUJFRwpBMVVFQXd3S2QyVmlhRzl2YXkxallUQWdGdzB5TVRBM01qRXhNREl4TkROYUdBOHlNVEl4TURZeU56RXdNakUwCk0xb3dUakVMTUFrR0ExVUVCaE1DUTA0eEN6QUpCZ05WQkFnTUFraENNUXN3Q1FZRFZRUUtEQUpSUXpFbE1DTUcKQTFVRUF3d2NibTkwYVdacFkyRjBhVzl1TFcxaGJtRm5aWEl0ZDJWaWFHOXZhekNDQVNJd0RRWUpLb1pJaHZjTgpBUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTGlWYXZxR203T2Q5S0I3QWg0K3MrVkpVWXBpWTFmN3c5MHhScWRHCjR0U2xDUHl3R3RQQkpBckdFU2pwUFRlVUdvYmVlYk5WcVRTUmkySTlvUDErMnJvQ2FEWGQ1bXk3SFZ6aTNPOFoKYldXRlFNTjJLR0dwZzBNYTNXMUlvSEJhcitGOHg2N0Rhb3c0VlBRTlUwTkhtOXdkT2NQS0pKc2JCb0c0bEZtUwpOT2F2UFYzVnlQZnFqOVBXRWV2TFkvNHFvT0NtWFdLVGZGclBKSmpsUGxxYTBHQllYNnMvdEx5T2tpQkorcVZ5CmM4RHVzWHNKSmRVNllWeEFMeXdtcFJSdDhnb3VleFBPNEdKQzVlT29iTzQwem5sdkkzK0lKTUk4N0x4cVZnWTgKTnRPMEp2NHFORjdJTncrR1NydGpFTHl1R0hGYnNhZmNzYVowa0tJTzRRNDJGdlVDQXdFQUFhTmtNR0l3Q1FZRApWUjBUQkFJd0FEQUxCZ05WSFE4RUJBTUNCZUF3U0FZRFZSMFJCRUV3UDRJOWJtOTBhV1pwWTJGMGFXOXVMVzFoCmJtRm5aWEl0ZDJWaWFHOXZheTVyZFdKbGMzQm9aWEpsTFcxdmJtbDBiM0pwYm1jdGMzbHpkR1Z0TG5OMll6QU4KQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBdDBqYWdaUGVYbzlUT0ZpaXowMTVuZm1aRkdKcnN0WnFqZHVuanlrTgpKanpoQWJKMUVnNUlxS1FLVjhZNTFYUGpXaUJxa0JFQUJYK21pUXNXRG83bjlFR0dWU3EwUG1rTEV4S29OenF0Ci9LTjJHZ0c1Mk1nbVVvc0hwRDVSb2pCNXMrUXhaT0E4UHVjWTM4T0ovb3BXWHozaWVSK0FZMGRLOU1BdWtoWUwKbVp1U1d3RWhLUWxuWUxET1hyZGNmSU53cDZoNVR5WmFmNHBVSmxaT3hnNyt0REJyeUZkUWNOMXNROUExS0hyUApGU2h3MzZ0NTllSlhIRGR4ZDNKRXdYMVl5ODBZdXd5ckJLTmk5ZlNQRzhuR1NBeUluaGsxNkNrVENqYm5aTi9HCkRFbUZqTjV2cUNCaTg5ZWMzc2I1ek9CeVpBeDAwY3V0KzF6ZDB5Ulk2MzM5dGc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
-  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2UUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktjd2dnU2pBZ0VBQW9JQkFRQzRsV3I2aHB1em5mU2cKZXdJZVByUGxTVkdLWW1OWCs4UGRNVWFuUnVMVXBRajhzQnJUd1NRS3hoRW82VDAzbEJxRzNubXpWYWswa1l0aQpQYUQ5ZnRxNkFtZzEzZVpzdXgxYzR0enZHVzFsaFVERGRpaGhxWU5ER3QxdFNLQndXcS9oZk1ldXcycU1PRlQwCkRWTkRSNXZjSFRuRHlpU2JHd2FCdUpSWmtqVG1yejFkMWNqMzZvL1QxaEhyeTJQK0txRGdwbDFpazN4YXp5U1kKNVQ1YW10QmdXRityUDdTOGpwSWdTZnFsY25QQTdyRjdDU1hWT21GY1FDOHNKcVVVYmZJS0xuc1R6dUJpUXVYagpxR3p1Tk01NWJ5Ti9pQ1RDUE95OGFsWUdQRGJUdENiK0tqUmV5RGNQaGtxN1l4QzhyaGh4VzdHbjNMR21kSkNpCkR1RU9OaGIxQWdNQkFBRUNnZ0VBVjJQR2hsMzhrWW1USy9lUkJTakNteWVmUjFsVmwyNUhTUTN2V1hzaUlYTVIKVWpFK1Frc0srVjdVK1AyVVVoLzRmeW9Oakc1ZDhkbUdtRGg5WkFjUEgwbk1kTlJlSjlSZkRuOEtBdG1UQmFHVgpDL1dCSU52VW5ZeTJrT3IxcXJ3RTBVajJjVE5yMm45QkdWckZ0UERPUmVSQVdRWDNWc2Z3eUxITzZxbGlDbVRXCjMveTR0c1R6T0dHbXFLT29qNXVwN2lEK0IvT3dZOU41d0xIL3pxZ3ZXaElaWU5UNXRDdmE1ZmVaYXpvWVg1ZjMKdGs3RGE5dHlKcSswSlUrNllQRUxIaTl1OTNrM2I3VHdZN0ltZVpqU3Jpa2xjY2VLUXZ0U1BjTzhJVXBocUF6SApMWWJ3b3Z4VGFMNEVzWHlmOCsxdXRpQTBYU1RZNGVGeHZiNmludW1kQVFLQmdRRHBBa053TlFKSjBSNU5UeThKCkVIL1pYY2QxU3l6VitWbHNYZDZaNWxHdDNpMnpQMDdDUVZNRzl6N1FYangzcyt2MzhrOVVTTmhoZEN0aEVYV1UKUjZLWTNpQTVqSVJIcmdsUVFWVUFNUGhzUWtsMFNNVGhRN085K0VyNG11Q3E2RVpXVURDMm45amZBN0Z1M0U5TgpDbFpvbXYyZmdoYkJYQjh0aStvQjVrOWNrUUtCZ1FES3kvTEdLeTVybHVSRFkyWDlnU2M0Q09jT2tJRjZaSGJVCkpqUVZKdllFbjJVWHA4bkpEY2lhanJRY0dNZks3ZUx5K1ByUnNSZEQrUmhoQmRYTXhzSjRYYU1uVFBFSmJzamgKWHBWNlRpZkpyNzFWZlRjQXZoWGxJUEV0eWRLcFBSOTVSU1F0c3ZKMW00dWRWZmxpTSs2RThCWFhTd1hoY3lOcwpxZlY2SjlWV0pRS0JnUURBNmpMVGo4L1pOZDRVdTk2QmJydXJSODEvKzBHZjF0YUd0aUU2NGtuMTNlR1FhblhXCnR5YjZ1WEcwS3BGOXVlVkFYOG4yU21sOEppWlVNNVJadEFXVzh6RlM5RmdBME1LOVE1b1FrbnJiaHZZeDVKMjgKczhUNUg3MVNuMGdydUN1a0FyaVNPejNmUnJ0OHdjS1dVbHpBTnJLTmdiTTlXL3drUlpiMUE2M3BRUUtCZ0EraQp5L1FsamkyemM2UVNmT0dmM0tOQVpIaEdBZ1dxeTFLdUkyUGlIaVBiR2xOSmw1Qk41TUt0OEFzZWlnRUdlSElkCmFsRlNveVdWaGlDczc0QWJieEVTdnlxZmp4SVlIWnJxelFHaUZ3VkE3SXN6M1ZMTVZTbldjV0lEWnArdjI4WmcKNDFvMnF1VVFlaUpHWjdUL3BndFA2NDh1OUtRZVdZUGVVdFA1VUVTVkFvR0FiSnVEQkdLN08vMWs1c0ZDbGtVQgpwb0laalFrYi9ZeFNVcDdvZTJkUWxkbHFWMmxpTUhlbVRwUHZKZGpLdE9JZ2s1SmhxbUNncXRZSEdnTXlaVlpaCkpZd1UvTUZCNGh0cmhKV0hwOFppb0pYUWNlK3RVbFBrRjd5MGt1U1YrVlpIUFNCOGRmdyt2MWVqZU82TnNHbmgKdDdWL05IZ2picHlOUjB2bXVXVWhOY2c9Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURmakNDQW1hZ0F3SUJBZ0lVWWJ2VnJ2N0MxbGtOWEp3YmFFU0F1RkxLb1dnd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1BERUxNQWtHQTFVRUJoTUNRMDR4Q3pBSkJnTlZCQWdNQWtoQ01Rc3dDUVlEVlFRS0RBSlJRekVUTUJFRwpBMVVFQXd3S2QyVmlhRzl2YXkxallUQWdGdzB5TVRBM01qY3dPREV5TXpaYUdBOHlNVEl4TURjd016QTRNVEl6Ck5sb3dUakVMTUFrR0ExVUVCaE1DUTA0eEN6QUpCZ05WQkFnTUFraENNUXN3Q1FZRFZRUUtEQUpSUXpFbE1DTUcKQTFVRUF3d2NibTkwYVdacFkyRjBhVzl1TFcxaGJtRm5aWEl0ZDJWaWFHOXZhekNDQVNJd0RRWUpLb1pJaHZjTgpBUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTnBCT0x2MlJ0aVNQRkVCMmhrcXQ5c1BHTy9oc0x2ZTQ0Q0NhUUduCjNTcS9OQ005NmI3NUlWRW1UU3R6aGhRdWJCSHVVNG0yaXFMRTBSOW5UMytJOWVTdEZ6a085cmdFQXVKcGNLYzUKYXJwSkVWeTVKQ3JKd1QwOEdWUnpXNXdmY1dQTXBraVVtK3FCY2JmUGZUb1o2RUgxaHJIL1ZwMXJHSFBOUlVBWApDQ0Z4OFFWVDFlY0x1N3FJUGg0NG1tK0cydDFyME1DeWhZTEVrZVRVeWhpNFhPbXRGZUdQcG5HaWo2OVlxN1lxCk1oNVhpR0F3aU9lSWtLcUlRMGRLOU5kVXcvV1FobTIrbTVKTUlpRGM4dnkzaU1YUXd3aW83ZDlxUWgzZWZMSE0KcDNMTWhiK1BNS1pMZzU4RldKVlVjNUdDVm0raysxb3lFbG5Dbjl0RkhVM1Q5NWNDQXdFQUFhTmtNR0l3Q1FZRApWUjBUQkFJd0FEQUxCZ05WSFE4RUJBTUNCZUF3U0FZRFZSMFJCRUV3UDRJOWJtOTBhV1pwWTJGMGFXOXVMVzFoCmJtRm5aWEl0ZDJWaWFHOXZheTVyZFdKbGMzQm9aWEpsTFcxdmJtbDBiM0pwYm1jdGMzbHpkR1Z0TG5OMll6QU4KQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBbHEwNEFwUHNBZ3pxMFN1QzlxVXpqUkhTdFFIcHB0dEN0VERIWnhacApaeEVrVHV1d3JndXdBOVBuR3kybkpuVTBoUWVCZ09RK0dFYXg0QVdoWnJydk5qMmlhOWg1VC9jRi8xNElPY24zCnN5SUtiSnAyVE4zZFByblNuazBJcmU3bW9yL0FVUThOdFdSd1FwemdWL0JQZzZLbjRuT0NDLzQ0aGtpZ2tUR20KeTJKcGV2VVR6ZDhXOWl6ZGVYdGIzM1RvWmF6MkVmR2pXREdjUlFMdm9TTUNqTW9mbXVQMDRxUzcrY2cxRlluZwo4WnF0OGZSZmlFdjNHTlZmNEE5MUFnNlM0bTlFYi9pS0c1cHhoTjVOQVE1K3N5ZmQ2Tmk3RmM2MnJqN1lKU095CktHbWNCWVo5YVlUNHpKWGZmTnlkZjlQR05sem5zL2s2eXVLWXVibDNvVnlBZFE9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2Z0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktnd2dnU2tBZ0VBQW9JQkFRRGFRVGk3OWtiWWtqeFIKQWRvWktyZmJEeGp2NGJDNzN1T0FnbWtCcDkwcXZ6UWpQZW0rK1NGUkprMHJjNFlVTG13UjdsT0p0b3FpeE5FZgpaMDkvaVBYa3JSYzVEdmE0QkFMaWFYQ25PV3E2U1JGY3VTUXF5Y0U5UEJsVWMxdWNIM0ZqektaSWxKdnFnWEczCnozMDZHZWhCOVlheC8xYWRheGh6elVWQUZ3Z2hjZkVGVTlYbkM3dTZpRDRlT0pwdmh0cmRhOURBc29XQ3hKSGsKMU1vWXVGenByUlhoajZaeG9vK3ZXS3UyS2pJZVY0aGdNSWpuaUpDcWlFTkhTdlRYVk1QMWtJWnR2cHVTVENJZwozUEw4dDRqRjBNTUlxTzNmYWtJZDNueXh6S2R5eklXL2p6Q21TNE9mQlZpVlZIT1JnbFp2cFB0YU1oSlp3cC9iClJSMU4wL2VYQWdNQkFBRUNnZ0VCQU5McFhFNG52R2JsU214dUFibDRVcHZhaHhxcFd3VHlhNTl3WnRFMnlyL1kKYmlYd1dzWTJNa0FkWjAycUlkTzIyTENyUXdjOTQ5TlBwMWRWbXJtQVBUOXpGWklLSjluRDVwV3RselBDaEtUbwpuMktmZDVmeHlFL0ltQ0hJS0t0Q3AyenVBM0w0U1lQZysyZkpseFppbXRQQzFSdUZ5TW52Q0g0L3k4QVhnYi91CmR4NmJoOFpqMHFjRThIV1Y0eUJoNE84N3ZNODZFK083VmdHdkNMUko2RlYzMkZRRER5RlBVZmJvcjk0RXh2ZEwKK0c3Z3h5a1FUNDdiYVJtVnYvcE5sV1lnazQvQXdhQ2hGOWcvRVpWYzJNcmVxRUdlcHg0Q1RuR2hkK2l5U1lsRgpYak40OVFsWENLMHU3c0NzQ0lnbjREcituUk01cExXb0RFWXljYUhBU21FQ2dZRUE4cE4wVXBIeC9FL3VmUEpUCkJqYTlpQVlpTllLWlhPZU83Tkt4VEJtT2NIS3dmN1AraEpZY3RSUGdObkpFN0NLY2ZOVUQvLzdIV2pGOE1aUGkKRkZBcElKRTdlSDZoLzhYVkFqdjZUbmg1NHBkNkVCQjdnUUNYdElPY0UvaUlReFlWVFZnS0ZmamlNK09iakR3VQp4SG1CNUlNblpZU0dWMjJybEpYamwrVlVtRE1DZ1lFQTVsVTJHbkFhb2Y1ekRIV05XLzV0NW16SCt6VlczTGdPCnlNUnhpNWp2TGhpb1NxZC9mdC81dlFhUHkyYkUzZ0J3cDFtNW1WaHJHRzlFNnk3TVV5WHMyeXpocnZrN2E3RG4KRzRYcUZzdXVSYU56Zys3ekVibHpZY2tWb2Exd1hLOE5MUFFZTko1MGVkV3NSSzJiS1hWTE9WWnkrbklISmdzSQpzY3paRnYydHp3MENnWUVBZ00rZVdHNVprb01iZ0V2cG5JWWE5UTFVd3hkN3V1TFhlWmlVUDNYZXRvV2doZCtkCnl1Z3ZqRlJtbm1MbGlJTUVtQ0ZCZzRIV2VHV0lyb2I1NlpGN2xXaXByTjJKeHRsVnVGOERGd0pRcnV1RERON0QKeG9mN0J3ZFFMU2F2clBnZ0RiY3ZlK1Z5c04wdmJ6TkVUK1M1L2c5TEwxUkZSazNkYkFTQUc5dlNwUk1DZ1lCeApDNTlMS0h3Wng0MWxyd2dhLzJ1bTdQclZreDgzb3VvMnBSdHBQVDBlYmFHalNrUHIzRGR4QzVobFp1SDJaMWJpCis4bDR0b21SYTRMeXZud3Z6dXhKd2VSZUFScWx4eVFXUVFwYjk4bG5pa28ybFg4YzB0MExRQ3JxdC9udXMwZVAKS1puN3NVMVBRb3lUQkhXanlscUtJS0M3eEYwMzBiQ0p1eFZORUdKT3ZRS0JnQjlaREM3WHpWLzJkSXBFT2pGQQptQ3B5RUFCUXZWdkR6UzJpUmh6RFdmdlRqU1pUOFd2RWFQbWhWbm1SV1BRczhtTlZIUXJNc1Btc2RaazlBTXJECllmaURTZUdMU1RIb2pwTHhHNWpGZVFML2t4RkVGWHlyUS8wZkNDcHBVWXk3RXdpWDA5WXZzamVPQ0xzSUZjVnkKL1RjdFVmc3VPNVY1OHRTMmxUSm1CRnptCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
 kind: Secret
 metadata:
   name: notification-manager-webhook-server-cert
@@ -8943,11 +8898,11 @@ spec:
             cpu: 100m
             memory: 20Mi
         volumeMounts:
-        - mountPath: /etc/localtime
-          name: host-time
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+        - mountPath: /etc/localtime
+          name: host-time
       - args:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
@@ -8961,14 +8916,14 @@ spec:
       serviceAccountName: notification-manager-sa
       terminationGracePeriodSeconds: 10
       volumes:
-      - hostPath:
-          path: /etc/localtime
-          type: ""
-        name: host-time
       - name: cert
         secret:
           defaultMode: 420
           secretName: notification-manager-webhook-server-cert
+      - hostPath:
+          path: /etc/localtime
+          type: ""
+        name: host-time
 ---
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
@@ -8976,7 +8931,7 @@ metadata:
   name: notification-manager-validating-webhook
 webhooks:
 - clientConfig:
-    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURXekNDQWtPZ0F3SUJBZ0lVWVRnYkxtTVQ3VzMwZkxRZWh5R3c2R09KTmlJd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1BERUxNQWtHQTFVRUJoTUNRMDR4Q3pBSkJnTlZCQWdNQWtoQ01Rc3dDUVlEVlFRS0RBSlJRekVUTUJFRwpBMVVFQXd3S2QyVmlhRzl2YXkxallUQWdGdzB5TVRBM01qRXhNREl4TkRKYUdBOHlNVEl4TURZeU56RXdNakUwCk1sb3dQREVMTUFrR0ExVUVCaE1DUTA0eEN6QUpCZ05WQkFnTUFraENNUXN3Q1FZRFZRUUtEQUpSUXpFVE1CRUcKQTFVRUF3d0tkMlZpYUc5dmF5MWpZVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQgpBTDV4c0NLRVFWYWU2bXVoN2F0MXpmeW52MnRNQWpMWERMUkJEL01CVURKK2Q0RVFBbmtOeU9FK2ZOYTlBaTZSCmdYcUJ4SFJORG9vMXBmS2E0MU9zYlU2Q0hYNEVpbkJySUxYdFQ4QjZCTXI1Sk41cVpMdUpZSktObHlsTnBtVWgKRTVDeHNJb3FVdWJQZTNVMHA1S3VlY0ZBam4xOCtkbkt5bEg2L05lNnY2c2dxQ3V3ZVo4cEwydlA3RmJLZ1N4YgpBaXZheVkvS3ZHcTR4Ry9qd2xDaXFsK3JYbE91MUZYWGJFdTNkOWhUdTl5V256cEZERDdZbnNNTFA5SUhUWUhKCmJJTmVMYjJTbHRXcGpld3dHNkgrQlEzOUNmeW1rZlRidG43VTVLZU5Yc2xiTlJZcUt0bDFpdjhKRHJkaTFNNE8KRkZWanBoMHVaYkFzTXpIczFyWnpzVEVDQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFRkpOczN2WXJVQmN2WTYwSApIbXpjaWo3RXN5YitNQjhHQTFVZEl3UVlNQmFBRkpOczN2WXJVQmN2WTYwSEhtemNpajdFc3liK01BOEdBMVVkCkV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQTlpazgwZkx2d3YrQmlOWHpScWNrRTIKMXlGbkp1eEhZU3dobGMyRkNiZHc3eTV5Uk5ZVjRDTHJlNmJrRUViZnpxWU52MEF2amhxRWxVWmNjK0Jla2NDOQpnSnNvWS96VnJMcVFlV1VHNExOS3pyWUNSMm9KOW5WNTFyQ290N2NCUmtSQkcxMldCSENhOGZGblV6R2JZbTlaCmtHQ3p6WHAxeW9MNkFnVk9zak5kUE9XUDFYYzdDdlcwZlNLS0xtV3pwQ25qWjZPMGdFSlhJeml4RE9PNXl5MjkKUzNUaDNPNmxYdG1aUTlGVzdqMi90bHloVGc3azBkRnVuaGVoVWx4VDhqaE54NWVsNDA2ZGVrNzc5c3ZpL3MrZAo1T3MwQzdDdDhmMFVnRVlHMm9rTFdiSkRBM2t6UU9NNHlQQ1Z6aEo5aVRLYkZVOGFmUGwyd0dxeWhvaDZyUms9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURXekNDQWtPZ0F3SUJBZ0lVT3hOb1NwMTlmNS9CNllvZGlRek53MFdJWGhrd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1BERUxNQWtHQTFVRUJoTUNRMDR4Q3pBSkJnTlZCQWdNQWtoQ01Rc3dDUVlEVlFRS0RBSlJRekVUTUJFRwpBMVVFQXd3S2QyVmlhRzl2YXkxallUQWdGdzB5TVRBM01qY3dPREV5TXpaYUdBOHlNVEl4TURjd016QTRNVEl6Ck5sb3dQREVMTUFrR0ExVUVCaE1DUTA0eEN6QUpCZ05WQkFnTUFraENNUXN3Q1FZRFZRUUtEQUpSUXpFVE1CRUcKQTFVRUF3d0tkMlZpYUc5dmF5MWpZVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQgpBTlpzblhIZ21meFJYL2MvQy95S0QzY3hMaGdpSzZ5MkphMlh4OUtYeWRPUjNLSStVSzZ2dXM2V1YzTGl0eTZDCmtPVFlScjV6ZlV3aXZZYUMydHVGRnhTUE80L085dHhFVlBha1UwUGo1N0tVRDBiUnJZWEpDY1V5Ri9TZUlCY0EKMlFmbDZEem0rWjd4NHM1TnE1NFMvUUhpYzJFclVVbHEwbmd3MFQ3UVRieDB4M2Ria0ZNRko0VjlLSjVZdkhOSwpLeWdwR2szb2RpUWZ2Yi81b2hjUUhkTXpQV0Rmd25GTERHZjFUWGFHK0VYeDZodmVoK0RXV2grQzA5ZlI5R05yCmhzNnlZaUU1cmVmY29EUlhrRGVCSkZ3eWtPaVErRE5Fc0RaSU40VHlHTkhmeTRYaUp3QWgxNXBsZTkzQWNTTVQKTlEwNWRYK2FiQmg0djQ4NDRab1lUS2tDQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFRko5NzNRUUVSVi9DVlRCZQovbmFyQmhZcS9GV0pNQjhHQTFVZEl3UVlNQmFBRko5NzNRUUVSVi9DVlRCZS9uYXJCaFlxL0ZXSk1BOEdBMVVkCkV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQk9ZOWNDbFpTYm1scndFN0YvZVBMVm4Kenl2dW0yUUE3MU9rcGRtWjN6cnV1MW16VmZNNU1ORndkUkJMOGduS05IdjEzaGhFeGQ4enJmQ2hYQWIzaWl5aQpSZnBSTzJodDBWSi9HQklaYlM1ZjIvZ1hvNXpSRHk0cFV0ekozOWZUZG9pNzQxNlhJdU9ubHI0bDk3ZnlRRTI4Cno0NlAzYlhidlZKU1VEcytFL1g0NVNHVS8xdFNCaFNnaTg1NllVWGxybWJNMDlHN29kSmx4VGozTG1qQ1NlQWUKWG9lYWlTUEl6UlMrWjVUQ0tudDdvbjVBSGQydzdrT0Q1K2tTK3gvbWY4aU1iaVV5dCtXYWVzdjNIcHg1TmwvWgprb1dxVVc1cXZlQ0poQUM0SVc5V3hmc2JWRXlZSTR0Zm9SNzZoWVhCdVVReE9BVHlCdjNJMmZYUUkvU2ZrdW89Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
     service:
       name: notification-manager-webhook
       namespace: kubesphere-monitoring-system
@@ -8994,7 +8949,7 @@ webhooks:
     resources:
     - configs
 - clientConfig:
-    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURXekNDQWtPZ0F3SUJBZ0lVWVRnYkxtTVQ3VzMwZkxRZWh5R3c2R09KTmlJd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1BERUxNQWtHQTFVRUJoTUNRMDR4Q3pBSkJnTlZCQWdNQWtoQ01Rc3dDUVlEVlFRS0RBSlJRekVUTUJFRwpBMVVFQXd3S2QyVmlhRzl2YXkxallUQWdGdzB5TVRBM01qRXhNREl4TkRKYUdBOHlNVEl4TURZeU56RXdNakUwCk1sb3dQREVMTUFrR0ExVUVCaE1DUTA0eEN6QUpCZ05WQkFnTUFraENNUXN3Q1FZRFZRUUtEQUpSUXpFVE1CRUcKQTFVRUF3d0tkMlZpYUc5dmF5MWpZVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQgpBTDV4c0NLRVFWYWU2bXVoN2F0MXpmeW52MnRNQWpMWERMUkJEL01CVURKK2Q0RVFBbmtOeU9FK2ZOYTlBaTZSCmdYcUJ4SFJORG9vMXBmS2E0MU9zYlU2Q0hYNEVpbkJySUxYdFQ4QjZCTXI1Sk41cVpMdUpZSktObHlsTnBtVWgKRTVDeHNJb3FVdWJQZTNVMHA1S3VlY0ZBam4xOCtkbkt5bEg2L05lNnY2c2dxQ3V3ZVo4cEwydlA3RmJLZ1N4YgpBaXZheVkvS3ZHcTR4Ry9qd2xDaXFsK3JYbE91MUZYWGJFdTNkOWhUdTl5V256cEZERDdZbnNNTFA5SUhUWUhKCmJJTmVMYjJTbHRXcGpld3dHNkgrQlEzOUNmeW1rZlRidG43VTVLZU5Yc2xiTlJZcUt0bDFpdjhKRHJkaTFNNE8KRkZWanBoMHVaYkFzTXpIczFyWnpzVEVDQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFRkpOczN2WXJVQmN2WTYwSApIbXpjaWo3RXN5YitNQjhHQTFVZEl3UVlNQmFBRkpOczN2WXJVQmN2WTYwSEhtemNpajdFc3liK01BOEdBMVVkCkV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQTlpazgwZkx2d3YrQmlOWHpScWNrRTIKMXlGbkp1eEhZU3dobGMyRkNiZHc3eTV5Uk5ZVjRDTHJlNmJrRUViZnpxWU52MEF2amhxRWxVWmNjK0Jla2NDOQpnSnNvWS96VnJMcVFlV1VHNExOS3pyWUNSMm9KOW5WNTFyQ290N2NCUmtSQkcxMldCSENhOGZGblV6R2JZbTlaCmtHQ3p6WHAxeW9MNkFnVk9zak5kUE9XUDFYYzdDdlcwZlNLS0xtV3pwQ25qWjZPMGdFSlhJeml4RE9PNXl5MjkKUzNUaDNPNmxYdG1aUTlGVzdqMi90bHloVGc3azBkRnVuaGVoVWx4VDhqaE54NWVsNDA2ZGVrNzc5c3ZpL3MrZAo1T3MwQzdDdDhmMFVnRVlHMm9rTFdiSkRBM2t6UU9NNHlQQ1Z6aEo5aVRLYkZVOGFmUGwyd0dxeWhvaDZyUms9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURXekNDQWtPZ0F3SUJBZ0lVT3hOb1NwMTlmNS9CNllvZGlRek53MFdJWGhrd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1BERUxNQWtHQTFVRUJoTUNRMDR4Q3pBSkJnTlZCQWdNQWtoQ01Rc3dDUVlEVlFRS0RBSlJRekVUTUJFRwpBMVVFQXd3S2QyVmlhRzl2YXkxallUQWdGdzB5TVRBM01qY3dPREV5TXpaYUdBOHlNVEl4TURjd016QTRNVEl6Ck5sb3dQREVMTUFrR0ExVUVCaE1DUTA0eEN6QUpCZ05WQkFnTUFraENNUXN3Q1FZRFZRUUtEQUpSUXpFVE1CRUcKQTFVRUF3d0tkMlZpYUc5dmF5MWpZVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQgpBTlpzblhIZ21meFJYL2MvQy95S0QzY3hMaGdpSzZ5MkphMlh4OUtYeWRPUjNLSStVSzZ2dXM2V1YzTGl0eTZDCmtPVFlScjV6ZlV3aXZZYUMydHVGRnhTUE80L085dHhFVlBha1UwUGo1N0tVRDBiUnJZWEpDY1V5Ri9TZUlCY0EKMlFmbDZEem0rWjd4NHM1TnE1NFMvUUhpYzJFclVVbHEwbmd3MFQ3UVRieDB4M2Ria0ZNRko0VjlLSjVZdkhOSwpLeWdwR2szb2RpUWZ2Yi81b2hjUUhkTXpQV0Rmd25GTERHZjFUWGFHK0VYeDZodmVoK0RXV2grQzA5ZlI5R05yCmhzNnlZaUU1cmVmY29EUlhrRGVCSkZ3eWtPaVErRE5Fc0RaSU40VHlHTkhmeTRYaUp3QWgxNXBsZTkzQWNTTVQKTlEwNWRYK2FiQmg0djQ4NDRab1lUS2tDQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFRko5NzNRUUVSVi9DVlRCZQovbmFyQmhZcS9GV0pNQjhHQTFVZEl3UVlNQmFBRko5NzNRUUVSVi9DVlRCZS9uYXJCaFlxL0ZXSk1BOEdBMVVkCkV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQk9ZOWNDbFpTYm1scndFN0YvZVBMVm4Kenl2dW0yUUE3MU9rcGRtWjN6cnV1MW16VmZNNU1ORndkUkJMOGduS05IdjEzaGhFeGQ4enJmQ2hYQWIzaWl5aQpSZnBSTzJodDBWSi9HQklaYlM1ZjIvZ1hvNXpSRHk0cFV0ekozOWZUZG9pNzQxNlhJdU9ubHI0bDk3ZnlRRTI4Cno0NlAzYlhidlZKU1VEcytFL1g0NVNHVS8xdFNCaFNnaTg1NllVWGxybWJNMDlHN29kSmx4VGozTG1qQ1NlQWUKWG9lYWlTUEl6UlMrWjVUQ0tudDdvbjVBSGQydzdrT0Q1K2tTK3gvbWY4aU1iaVV5dCtXYWVzdjNIcHg1TmwvWgprb1dxVVc1cXZlQ0poQUM0SVc5V3hmc2JWRXlZSTR0Zm9SNzZoWVhCdVVReE9BVHlCdjNJMmZYUUkvU2ZrdW89Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
     service:
       name: notification-manager-webhook
       namespace: kubesphere-monitoring-system

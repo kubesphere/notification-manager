@@ -139,13 +139,12 @@ type TencentSMS struct {
 
 // Sms huawei provider parameters
 type HuaweiSMS struct {
-	Url           string      `json:"url,omitempty"`
-	Signature     string      `json:"signature"`
-	TemplateId    string      `json:"templateId"`
-	TemplateParas string      `json:"templateParas"`
-	Sender        string      `json:"sender"`
-	AppSecret     *Credential `json:"appSecret"`
-	AppKey        *Credential `json:"appKey"`
+	Url        string      `json:"url,omitempty"`
+	Signature  string      `json:"signature"`
+	TemplateId string      `json:"templateId"`
+	Sender     string      `json:"sender"`
+	AppSecret  *Credential `json:"appSecret"`
+	AppKey     *Credential `json:"appKey"`
 }
 
 type Providers struct {

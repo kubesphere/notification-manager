@@ -867,8 +867,6 @@ spec:
                             type: string
                           templateId:
                             type: string
-                          templateParas:
-                            type: string
                           url:
                             type: string
                         required:
@@ -877,7 +875,6 @@ spec:
                         - sender
                         - signature
                         - templateId
-                        - templateParas
                         type: object
                       tencent:
                         description: Sms tencent provider parameters

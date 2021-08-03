@@ -11,6 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/time/rate"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
@@ -18,7 +22,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -36,6 +39,7 @@ type Notifier struct {
 	template     *notifier.Template
 	templateName string
 	client       http.Client
+	limiter      *rate.Limiter
 }
 
 type pushoverRequest struct {
@@ -69,6 +73,7 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 		template:     tmpl,
 		templateName: DefaultTemplate,
 		client:       http.Client{Timeout: DefaultSendTimeout},
+		limiter:      rate.NewLimiter(1, 4), // a bucket with at most 4 tokens, and 1 token is generated per sec
 	}
 
 	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
@@ -110,9 +115,9 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	send := func(userKey string, c *config.Pushover) error {
+	send := func(profile *v2beta2.PushoverUserProfile, c *config.Pushover) error {
 
-		start := time.Now()
+		start, userKey := time.Now(), *profile.UserKey
 		defer func() {
 			_ = level.Debug(n.logger).Log("msg", "PushoverNotifier: send message", "userKey", userKey, "used", time.Since(start).String())
 		}()
@@ -137,13 +142,19 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return err
 		}
 
-		// send messages in parallel with errgroup
+		// send messages in parallel
 		g := new(errgroup.Group)
 		for _, message := range messages {
 			msg := message
-			g.Go(func() error {
+			g.Go(func() (err error) {
+				// consume a token from limiter bucket
+				if err := n.limiter.Wait(context.Background()); err != nil {
+					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: limiter error", "userKey", userKey, "error", err.Error())
+					return err
+				}
+
 				// construct pushover message struct as request parameters, and validate it
-				pm := newPushoverMessage(token, userKey, msg)
+				pm := newPushoverMessageExtend(token, userKey, msg, *profile.Title, *profile.Sound, profile.Devices)
 				err, warnings := pm.validate()
 				if err != nil {
 					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: invalid pushover message", "userKey", userKey, "error", err.Error())
@@ -184,6 +195,8 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 				// check status code, but not return error if it is not 2xx, since we will do this later
 				if response.StatusCode != http.StatusOK {
 					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: got non-2xx response", "userKey", userKey, "StatusCode", response.StatusCode)
+					body, _ := ioutil.ReadAll(response.Body)
+					return fmt.Errorf("PushoverNotifier: got non-2xx response, StatusCode: %d, response: %s", response.StatusCode, string(body))
 				}
 
 				// check if the remaining number of messages that can be sent is low
@@ -220,8 +233,9 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 				return nil
 			})
 		}
+		// Wait for all HTTP requests to complete.
 		if err := g.Wait(); err != nil {
-			_ = level.Error(n.logger).Log("msg", "PushoverNotifier: an error occurred in a goroutine when sending a message", "userKey", userKey, "error", err.Error())
+			_ = level.Error(n.logger).Log("msg", "PushoverNotifier: an occurred while sending messages", "userKey", userKey, "error", err.Error())
 			return err
 		}
 		return nil
@@ -229,11 +243,11 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 	group := async.NewGroup(ctx)
 	for _, pushover := range n.pushover {
-		p := pushover
-		for _, userKeys := range p.UserKeys {
-			uk := userKeys
+		po := pushover
+		for _, profiles := range po.Profiles {
+			pf := profiles
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- send(uk, p)
+				stopCh <- send(pf, po)
 			})
 		}
 	}

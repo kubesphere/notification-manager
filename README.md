@@ -464,6 +464,107 @@ EOF
 > - The `chatids` is the id of the conversation, it can only be obtained from the response of [creating conversation](https://ding-doc.dingtalk.com/document#/org-dev-guide/create-chat).
 > - The `webhook` is the URL of a chatbot, the `keywords` is the keywords of a chatbot, The `secret` is the secret of chatbot, you can get them in the setting page of chatbot.
 
+#### Deploy the default SmsConfig and a global SmsReceiver
+```
+apiVersion: notification.kubesphere.io/v2beta2
+kind: Receiver
+metadata:
+  labels:
+    app: notification-manager
+    type: global
+  name: global-sms-receiver
+spec:
+  sms:
+    enabled: true
+    phoneNumbers: ["13612345678"]
+---
+apiVersion: notification.kubesphere.io/v2beta2
+kind: Config
+metadata:
+  labels:
+    app: notification-manager
+    type: default
+  name: default-sms-config
+spec:
+  sms:
+    defaultProvider: huawei
+    providers:
+      huawei:
+        url: https://rtcsms.cn-north-1.myhuaweicloud.com:10743/sms/batchSendSms/v1
+        signature: "xxx"
+        templateId: "xxx"
+        sender: "12323313"
+        appSecret:
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: huawei.appSecret
+              name: default-sms-secret
+        appKey:
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: huawei.appKey
+              name: default-sms-secret
+      aliyun: 
+        signName: xxxx 
+        templateCode: xxx
+        accessKeyId: 
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: aliyun.accessKeyId
+              name: default-sms-secret
+        accessKeySecret:
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: aliyun.accessKeySecret
+              name: default-sms-secret
+      tencent:
+        templateID: xxx
+        smsSdkAppid: xxx
+        sign: xxxx
+        secretId:
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: tencent.secretId
+              name: default-sms-secret
+        secretKey:
+          valueFrom:
+            secretKeyRef:
+              namespace: "default"
+              key: tencent.secretKey
+              name: default-sms-secret
+
+---
+apiVersion: v1
+data:
+  aliyun.accessKeyId: eHh4eA==
+  aliyun.accessKeySecret: eHh4eA==
+  tencent.secretId: eHh4eA==
+  tencent.secretKey: eHh4eA==
+  huawei.appKey: eHh4eA==
+  huawei.appSecret: eHh4eA==
+kind: Secret
+metadata:
+  labels:
+    app: notification-manager
+  name: default-sms-secret
+type: Opaque
+```
+For SMS templates,  you can create them in your SMS provider's SMS console.
+For Huawei Cloud SMS provider, pls make your custom SMS template containing five placeholders. 
+For a detailed description, if you have a template like this: 
+```
+[KubeSphere alerts] alertname = ${TEXT}, alerttype = ${TEXT}, severity = ${TEXT}, message = ${TEXT}, summary = ${TEXT}
+```
+Then you will receive the notification as below:
+```
+[KubeSphere alerts] alertname = test, alerttype = metric, severity = warning, message = this is a test message, summary = node node1 memory utilization > = 10%
+```
+
 ### Deploy Notification Manager in any other Kubernetes cluster (Uses `namespace` to distinguish each tenant user):
 
 Deploying Notification Manager in Kubernetes is similar to deploying it in KubeSphere, the differences are:

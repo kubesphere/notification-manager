@@ -798,8 +798,8 @@ func (w *Wechat) Clone() *Wechat {
 
 type Pushover struct {
 	Template string
-	// The users (Pushover User Keys) to send notifications to.
-	UserKeys       []string
+	// Profiles are users to send notifications to.
+	Profiles       []*v2beta2.PushoverUserProfile
 	PushoverConfig *PushoverConfig
 	Selector       *metav1.LabelSelector
 	userKeyRegex   *regexp.Regexp // for an User Key's validation
@@ -818,7 +818,7 @@ func NewPushoverReceiver(c *Config, pr *v2beta2.PushoverReceiver) Receiver {
 			receiverType:   pushover,
 			configSelector: pr.PushoverConfigSelector,
 		},
-		UserKeys: pr.UserKeys,
+		Profiles: pr.Profiles,
 		Selector: pr.AlertSelector,
 		// User keys are 30 characters long, case-sensitive, and may contain the character set [A-Za-z0-9].
 		userKeyRegex: regexp.MustCompile(`^[A-Za-z0-9]{30}$`),
@@ -889,14 +889,14 @@ func (p *Pushover) SetConfig(obj interface{}) error {
 
 func (p *Pushover) Validate() error {
 
-	if p.UserKeys == nil || len(p.UserKeys) == 0 {
-		return fmt.Errorf("channel must be specified")
+	if p.Profiles == nil || len(p.Profiles) == 0 {
+		return fmt.Errorf("user profiles must be specified")
 	}
 
 	// validate user keys with regex
-	for _, userKey := range p.UserKeys {
-		if !p.userKeyRegex.MatchString(userKey) {
-			return fmt.Errorf("invalid user key： %s", userKey)
+	for _, profile := range p.Profiles {
+		if profile.UserKey == nil || !p.userKeyRegex.MatchString(*profile.UserKey) {
+			return fmt.Errorf("invalid user key： %s", *profile.UserKey)
 		}
 	}
 
