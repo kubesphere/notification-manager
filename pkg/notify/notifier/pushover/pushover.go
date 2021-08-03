@@ -172,9 +172,15 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 					Token:   token,
 					UserKey: userKey,
 					Message: msg,
-					Device:  strings.Join(profile.Devices, ","),
-					Title:   *profile.Title,
-					Sound:   *profile.Sound,
+				}
+				if len(profile.Devices) > 0 {
+					pReq.Device = strings.Join(profile.Devices, ",")
+				}
+				if profile.Title != nil {
+					pReq.Title = *profile.Title
+				}
+				if profile.Sound != nil {
+					pReq.Sound = *profile.Sound
 				}
 
 				// JSON encoding

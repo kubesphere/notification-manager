@@ -150,41 +150,22 @@ According to the documentation, Pushover offers a number of options in a message
 
 ```go
 // Pushover message struct
-type pushoverMessage struct {
-   // required fields
-   // Token is a Pushover application API token, required.
-   Token string `json:"token"`
-   // UserKey is recipient's Pushover User Key, required.
-   UserKey string `json:"user"`
-   // Message is your text message, required.
-   Message string `json:"message"`
-
-   // common optional fields
-   // Attachment is an image to send with the message. NOTE: the caller has to close the reader.
-   Attachment io.Reader
-   // Device specifies a set of user's devices to send the message; all would be sent if empty
-   Device string `json:"device,omitempty"`
-   // Title is the message's title, otherwise application's name is used.
-   Title string `json:"title,omitempty"`
-   // Url is a supplementary URL to show with the message.
-   Url string `json:"url,omitempty"`
-   // UrlTitle is a title for Url, otherwise just the Url is shown.
-   UrlTitle string `json:"url_title,omitempty"`
-   // Priority ranges from -2 (no notification) to 2 (emergency, confirmation required).
-   Priority int `json:"priority,omitempty"`
-   // Sound is the name of one of the sounds supported by device clients.
-   Sound string `json:"sound,omitempty"`
-   // Timestamp is a Unix timestamp of your message's date and time to display to the user
-   Timestamp int64 `json:"timestamp,omitempty"`
-
-   // emergency Priority fields (no effects if Priority != 2)
-   Retry    time.Duration `json:"retry,omitempty"`
-   Expire   time.Duration `json:"expire,omitempty"`
-   Callback string        `json:"callback,omitempty"`
-
-   // styling fields (only one of both can be `1`, at most)
-   Html      int `json:"html,omitempty"`
-   Monospace int `json:"monospace,omitempty"`
+type pushoverRequest struct {
+    // required fields
+    // Token is a Pushover application API token, required.
+    Token string `json:"token"`
+    // UserKey is recipient's Pushover User Key, required.
+    UserKey string `json:"user"`
+    // Message is your text message, required.
+    Message string `json:"message"`
+    
+    // common optional fields
+    // Device specifies a set of user's devices to send the message; all would be sent if empty
+    Device string `json:"device,omitempty"`
+    // Title is the message's title, otherwise application's name is used.
+    Title string `json:"title,omitempty"`
+    // Sound is the name of one of the sounds supported by device clients.
+    Sound string `json:"sound,omitempty"`
 }
 ```
 

@@ -7913,6 +7913,7 @@ spec:
                         userKey:
                           description: UserKey is the user (Pushover User Key) to
                             send notifications to.
+                          pattern: ^[A-Za-z0-9]{30}$
                           type: string
                       required:
                       - userKey
@@ -7966,6 +7967,8 @@ spec:
                     description: The name of the template to generate DingTalk message.
                       If the global template is not set, it will use default.
                     type: string
+                required:
+                - profiles
                 type: object
               slack:
                 properties:
