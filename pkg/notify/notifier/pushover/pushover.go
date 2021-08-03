@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -28,7 +27,7 @@ const (
 	DefaultSendTimeout = time.Second * 3
 	URL                = "https://api.pushover.net/1/messages.json"
 	DefaultTemplate    = `{{ template "nm.default.text" . }}`
-	PoMsgLimitAlert    = 99
+	MessageMaxLength   = 1024
 )
 
 type Notifier struct {
@@ -42,8 +41,23 @@ type Notifier struct {
 	limiter      *rate.Limiter
 }
 
+// Pushover message struct
 type pushoverRequest struct {
-	pushoverMessage
+	// required fields
+	// Token is a Pushover application API token, required.
+	Token string `json:"token"`
+	// UserKey is recipient's Pushover User Key, required.
+	UserKey string `json:"user"`
+	// Message is your text message, required.
+	Message string `json:"message"`
+
+	// common optional fields
+	// Device specifies a set of user's devices to send the message; all would be sent if empty
+	Device string `json:"device,omitempty"`
+	// Title is the message's title, otherwise application's name is used.
+	Title string `json:"title,omitempty"`
+	// Sound is the name of one of the sounds supported by device clients.
+	Sound string `json:"sound,omitempty"`
 }
 
 type pushoverResponse struct {
@@ -153,17 +167,15 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 					return err
 				}
 
-				// construct pushover message struct as request parameters, and validate it
-				pm := newPushoverMessageExtend(token, userKey, msg, *profile.Title, *profile.Sound, profile.Devices)
-				err, warnings := pm.validate()
-				if err != nil {
-					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: invalid pushover message", "userKey", userKey, "error", err.Error())
-					return err
+				// construct pushover message struct as request parameters
+				pReq := &pushoverRequest{
+					Token:   token,
+					UserKey: userKey,
+					Message: msg,
+					Device:  strings.Join(profile.Devices, ","),
+					Title:   *profile.Title,
+					Sound:   *profile.Sound,
 				}
-				if len(warnings) > 0 {
-					_ = level.Warn(n.logger).Log("msg", "PushoverNotifier: warnings about the message", "userKey", userKey, "warnings", strings.Join(warnings, "; "))
-				}
-				pReq := &pushoverRequest{pm}
 
 				// JSON encoding
 				var buf bytes.Buffer
@@ -199,15 +211,8 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 					return fmt.Errorf("PushoverNotifier: got non-2xx response, StatusCode: %d, response: %s", response.StatusCode, string(body))
 				}
 
-				// check if the remaining number of messages that can be sent is low
-				PoRemainingMsg, err := strconv.Atoi(response.Header.Get("X-Limit-App-Remaining"))
-				if err != nil {
-					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: get response headers error", "userKey", userKey, "error", err.Error())
-					return err
-				}
-				if PoRemainingMsg < PoMsgLimitAlert {
-					_ = level.Warn(n.logger).Log("msg", "PushoverNotifier: you are approaching Pushover app's message limits", "userKey", userKey, "warnings", fmt.Sprintf("remaining %d message for this period", PoRemainingMsg))
-				}
+				// report the remaining number of messages for this period
+				_ = level.Info(n.logger).Log("msg", "PushoverNotifier: remaining available message(s) for this period", "userKey", userKey, "remaining", response.Header.Get("X-Limit-App-Remaining"))
 
 				// decode the response
 				body, err := ioutil.ReadAll(response.Body)

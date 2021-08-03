@@ -204,6 +204,7 @@ type SmsReceiver struct {
 // PushoverUserProfile includes userKey and other preferences
 type PushoverUserProfile struct {
 	// UserKey is the user (Pushover User Key) to send notifications to.
+	// +kubebuilder:validation:Pattern=`^[A-Za-z0-9]{30}$`
 	UserKey *string `json:"userKey"`
 	// Devices refers to device name to send the message directly to that device, rather than all of the user's devices
 	Devices []string `json:"devices,omitempty"`
@@ -224,7 +225,7 @@ type PushoverReceiver struct {
 	// If the global template is not set, it will use default.
 	Template             *string `json:"template,omitempty"`
 	// The users profile.
-	Profiles []*PushoverUserProfile `json:"profiles,omitempty"`
+	Profiles []*PushoverUserProfile `json:"profiles"`
 }
 
 //ReceiverSpec defines the desired state of Receiver

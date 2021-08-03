@@ -29,6 +29,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
+var (
+	PushoverDeviceRegex = regexp.MustCompile(`^[A-Za-z0-9_-]{1,25}$`)
+	PushoverSounds = map[string]bool{"pushover": true, "bike": true, "bugle": true, "cashregister": true, "classical": true, "cosmic": true, "falling": true, "gamelan": true, "incoming": true, "intermission": true, "magic": true, "mechanical": true, "pianobar": true, "siren": true, "spacealarm": true, "tugboat": true, "alien": true, "climb": true, "persistent": true, "echo": true, "updown": true, "vibrate": true, "none": true}
+)
+
+
 func (r *Receiver) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -176,19 +182,16 @@ func (r *Receiver) validateReceiver() error {
 				"must be specified"))
 		} else {
 			// requirements
-			tokenRegex := regexp.MustCompile(`^[A-Za-z0-9]{30}$`)
-			deviceRegex := regexp.MustCompile(`^[A-Za-z0-9_-]{1,25}$`)
-			sounds := map[string]bool{"pushover": true, "bike": true, "bugle": true, "cashregister": true, "classical": true, "cosmic": true, "falling": true, "gamelan": true, "incoming": true, "intermission": true, "magic": true, "mechanical": true, "pianobar": true, "siren": true, "spacealarm": true, "tugboat": true, "alien": true, "climb": true, "persistent": true, "echo": true, "updown": true, "vibrate": true, "none": true}
 			// validate each profile
 			for i, profile := range r.Spec.Pushover.Profiles {
 				// validate UserKeys
-				if profile.UserKey == nil || !tokenRegex.MatchString(*profile.UserKey) {
+				if profile.UserKey == nil {
 					allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("profiles").Child("userKey"),
 						fmt.Sprintf("found invalid Pushover User Key: %s, profile: %d", *profile.UserKey, i)))
 				}
 				// validate Devices
 				for _, device := range profile.Devices {
-					if !deviceRegex.MatchString(device) {
+					if !PushoverDeviceRegex.MatchString(device) {
 						allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("devices"),
 							fmt.Sprintf("found invalid Pushover device name: %s, profile: %d", device, i)))
 					}
@@ -202,7 +205,7 @@ func (r *Receiver) validateReceiver() error {
 				}
 				// Validate Sound
 				if profile.Sound != nil {
-					if !sounds[*profile.Sound] {
+					if !PushoverSounds[*profile.Sound] {
 						allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("title"),
 							fmt.Sprintf("found invalid Pushover sound: %s, please refer to https://pushover.net/api#sounds, profile: %d", *profile.Sound, i)))
 					}
