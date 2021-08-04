@@ -216,8 +216,6 @@ The message push sends messages in parallel to each user registered by each tena
 
 Preprocess the message before sending it. First, the tenants that subscribed Pushover messages are selected based on the AlertSelector given at the time of resource definition. Second, Pushover has a limit of 1024 characters on the message length (the exceeded part will be truncated), and each message may contain more than one Alert. Thus, a strategy of splitting the message is applied here, i.e., a message should contain as many Alerts as possible, and each message is sent one after another to ensure that they can be received in an intact manner by the user. Third, fit the message to a template, from which the Pushover message structure is constructed and its legitimacy is verified. Finally, the Pushover message structure is encoded as a JSON string, a POST method is called to send a request to the Endpoint (https://api.pushover.net/1/messages.json), and an error will be raised if the status code of the returned response is not successful.
 
-In addition, the returned response header `X-Limit-App-Remaining` carries information about the limit, which refers to the remaining number of messages the application can send this month. If the number of messages that can be sent in a month is less than 100, the application prints a warning log with the number of messages left.
-
 ## Test
 
 ### Generate CRDs

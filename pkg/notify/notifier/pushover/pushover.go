@@ -10,17 +10,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
-	"golang.org/x/sync/errgroup"
-	"golang.org/x/time/rate"
-
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -38,7 +36,6 @@ type Notifier struct {
 	template     *notifier.Template
 	templateName string
 	client       http.Client
-	limiter      *rate.Limiter
 }
 
 // Pushover message struct
@@ -86,8 +83,7 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 		logger:       logger,
 		template:     tmpl,
 		templateName: DefaultTemplate,
-		client:       http.Client{Timeout: DefaultSendTimeout},
-		limiter:      rate.NewLimiter(1, 4), // a bucket with at most 4 tokens, and 1 token is generated per sec
+		client:       http.Client{Timeout: DefaultSendTimeout, Transport: &http.Transport{MaxConnsPerHost: 2}},
 	}
 
 	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
@@ -161,12 +157,6 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		for _, message := range messages {
 			msg := message
 			g.Go(func() (err error) {
-				// consume a token from limiter bucket
-				if err := n.limiter.Wait(context.Background()); err != nil {
-					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: limiter error", "userKey", userKey, "error", err.Error())
-					return err
-				}
-
 				// construct pushover message struct as request parameters
 				pReq := &pushoverRequest{
 					Token:   token,
@@ -216,9 +206,6 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 					body, _ := ioutil.ReadAll(response.Body)
 					return fmt.Errorf("PushoverNotifier: got non-2xx response, StatusCode: %d, response: %s", response.StatusCode, string(body))
 				}
-
-				// report the remaining number of messages for this period
-				_ = level.Info(n.logger).Log("msg", "PushoverNotifier: remaining available message(s) for this period", "userKey", userKey, "remaining", response.Header.Get("X-Limit-App-Remaining"))
 
 				// decode the response
 				body, err := ioutil.ReadAll(response.Body)
