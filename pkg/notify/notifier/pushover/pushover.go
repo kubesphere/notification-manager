@@ -28,6 +28,8 @@ const (
 	MessageMaxLength   = 1024
 )
 
+var client = http.Client{Timeout: DefaultSendTimeout, Transport: &http.Transport{MaxConnsPerHost: 2}}
+
 type Notifier struct {
 	notifierCfg  *config.Config
 	pushover     []*config.Pushover
@@ -35,7 +37,6 @@ type Notifier struct {
 	logger       log.Logger
 	template     *notifier.Template
 	templateName string
-	client       http.Client
 }
 
 // Pushover message struct
@@ -83,7 +84,6 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 		logger:       logger,
 		template:     tmpl,
 		templateName: DefaultTemplate,
-		client:       http.Client{Timeout: DefaultSendTimeout, Transport: &http.Transport{MaxConnsPerHost: 2}},
 	}
 
 	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
@@ -94,7 +94,7 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 
 		if opts.Pushover.NotificationTimeout != nil {
 			n.timeout = time.Second * time.Duration(*opts.Pushover.NotificationTimeout)
-			n.client.Timeout = n.timeout
+			client.Timeout = n.timeout
 		}
 
 		if !utils.StringIsNil(opts.Pushover.Template) {
@@ -189,7 +189,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 				request.Header.Set("Content-Type", "application/json")
 
 				// send the request
-				response, err := n.client.Do(request)
+				response, err := client.Do(request)
 				if err != nil {
 					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: do http error", "userKey", userKey, "error", err.Error())
 					return err
