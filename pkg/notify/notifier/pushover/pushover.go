@@ -28,7 +28,7 @@ const (
 	MessageMaxLength   = 1024
 )
 
-var client = http.Client{Timeout: DefaultSendTimeout, Transport: &http.Transport{MaxConnsPerHost: 2}}
+var client = &http.Client{Timeout: DefaultSendTimeout, Transport: &http.Transport{MaxConnsPerHost: 2}}
 
 type Notifier struct {
 	notifierCfg  *config.Config
