@@ -114,6 +114,8 @@ spec:
         notificationTimeout: 5
       slack:
         notificationTimeout: 5
+      pushover:
+        notificationTimeout: 5
   volumeMounts:
   - mountPath: /etc/notification-manager/
     name: template
@@ -565,6 +567,60 @@ Then you will receive the notification as below:
 [KubeSphere alerts] alertname = test, alerttype = metric, severity = warning, message = this is a test message, summary = node node1 memory utilization > = 10%
 ```
 
+#### Deploy the default PushoverConfig and global PushoverReceiver
+
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: notification.kubesphere.io/v2beta2
+kind: Config
+metadata:
+  name: default-pushover-config
+  labels:
+    app: notification-manager
+    type: default
+spec:
+  pushover:
+    pushoverTokenSecret:
+      valueFrom:
+        secretKeyRef:
+          key: token
+          name: < pushover-token-secret-name >
+---
+apiVersion: notification.kubesphere.io/v2beta2
+kind: Receiver
+metadata:
+  name: global-pushover-receiver
+  labels:
+    app: notification-manager
+    type: global
+spec:
+  pushover:
+    # pushoverConfigSelector needn't to be configured for a global receiver
+    profiles:
+    - userKey: < Pushover-User-Key >
+      title: "test title" # optional
+      sound: "classical" # optional
+      devices: ["iphone"] # optional
+---
+apiVersion: v1
+data:
+  token: < Pushover-Application-Token >
+kind: Secret
+metadata:
+  labels:
+    app: notification-manager
+  name: < pushover-token-secret-name >
+  namespace: kubesphere-monitoring-system
+type: Opaque
+EOF
+```
+> You can add a profile object for each user under `profiles`. This object includes:
+>* UserKey: Required. A unique identifier for the user. Each Pushover user is assigned a user key, same as an username. Each user who intends to receive alerts via Pushover will have to configure their user key here.
+>* Devices: Optional. Device names to send the message directly to that device, rather than all of the user's devices.
+>* Title: Optional. Message's title, otherwise your app's name is used.
+>* Sound: Optional. Sound refers to the name of one of the [sounds](https://pushover.net/api#sounds) supported by device clients
+
+
 ### Deploy Notification Manager in any other Kubernetes cluster (Uses `namespace` to distinguish each tenant user):
 
 Deploying Notification Manager in Kubernetes is similar to deploying it in KubeSphere, the differences are:
@@ -694,6 +750,8 @@ spec:
       dingtalk:
         template: <template>
       sms:
+        template: <template>
+      pushover:
         template: <template>
 ```
 

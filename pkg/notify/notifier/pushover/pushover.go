@@ -123,6 +123,12 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 	return n
 }
 
+// Notify sends messages to Pushover server.
+// The preprocess logic of the pushover notification messages are as below:
+// - The alert messages are filtered by AlertSelector first before sending to Pushover.
+// - Pushover has a limit of 1024 characters on the message length (the exceeded part will be truncated), and each message may contain more than one Alert. Thus, a strategy of splitting the message is applied here, i.e., a message should contain as many Alerts as possible, and each message is sent one after another to ensure that they can be received in an intact manner by the user.
+// - Render the message with a template, from which the Pushover message structure is constructed and its legitimacy is verified.
+// - The Pushover message structure is encoded as a JSON string, a POST method is called to send a request to the Endpoint (https://api.pushover.net/1/messages.json), and an error will be raised if the status code of the returned response is not successful.
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 	send := func(profile *v2beta2.PushoverUserProfile, c *config.Pushover) error {
