@@ -201,6 +201,33 @@ type SmsReceiver struct {
 	Template *string `json:"template,omitempty"`
 }
 
+// PushoverUserProfile includes userKey and other preferences
+type PushoverUserProfile struct {
+	// UserKey is the user (Pushover User Key) to send notifications to.
+	// +kubebuilder:validation:Pattern=`^[A-Za-z0-9]{30}$`
+	UserKey *string `json:"userKey"`
+	// Devices refers to device name to send the message directly to that device, rather than all of the user's devices
+	Devices []string `json:"devices,omitempty"`
+	// Title refers to message's title, otherwise your app's name is used.
+	Title *string `json:"title,omitempty"`
+	// Sound refers to the name of one of the sounds (https://pushover.net/api#sounds) supported by device clients
+	Sound  *string `json:"sound,omitempty"`
+}
+
+type PushoverReceiver struct {
+	// whether the receiver is enabled
+	Enabled *bool `json:"enabled,omitempty"`
+	// PushoverConfig to be selected for this receiver
+	PushoverConfigSelector *metav1.LabelSelector `json:"pushoverConfigSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	// The name of the template to generate DingTalk message.
+	// If the global template is not set, it will use default.
+	Template             *string `json:"template,omitempty"`
+	// The users profile.
+	Profiles []*PushoverUserProfile `json:"profiles"`
+}
+
 //ReceiverSpec defines the desired state of Receiver
 type ReceiverSpec struct {
 	DingTalk *DingTalkReceiver `json:"dingtalk,omitempty"`
@@ -209,6 +236,7 @@ type ReceiverSpec struct {
 	Webhook  *WebhookReceiver  `json:"webhook,omitempty"`
 	Wechat   *WechatReceiver   `json:"wechat,omitempty"`
 	Sms      *SmsReceiver      `json:"sms,omitempty"`
+	Pushover *PushoverReceiver `json:"pushover,omitempty"`
 }
 
 // ReceiverStatus defines the observed state of Receiver

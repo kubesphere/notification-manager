@@ -1116,6 +1116,137 @@ spec:
                 required:
                 - to
                 type: object
+              pushover:
+                properties:
+                  alertSelector:
+                    description: Selector to filter alerts.
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: A label selector requirement is a selector
+                            that contains values, a key, and an operator that relates
+                            the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: operator represents a key's relationship
+                                to a set of values. Valid operators are In, NotIn,
+                                Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: values is an array of string values. If
+                                the operator is In or NotIn, the values array must
+                                be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced
+                                during a strategic merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: matchLabels is a map of {key,value} pairs. A
+                          single {key,value} in the matchLabels map is equivalent
+                          to an element of matchExpressions, whose key field is "key",
+                          the operator is "In", and the values array contains only
+                          "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                  enabled:
+                    description: whether the receiver is enabled
+                    type: boolean
+                  profiles:
+                    description: The users profile.
+                    items:
+                      description: PushoverUserProfile includes userKey and other
+                        preferences
+                      properties:
+                        devices:
+                          description: Devices refers to device name to send the message
+                            directly to that device, rather than all of the user's
+                            devices
+                          items:
+                            type: string
+                          type: array
+                        sound:
+                          description: Sound refers to the name of one of the sounds
+                            (https://pushover.net/api#sounds) supported by device
+                            clients
+                          type: string
+                        title:
+                          description: Title refers to message's title, otherwise
+                            your app's name is used.
+                          type: string
+                        userKey:
+                          description: UserKey is the user (Pushover User Key) to
+                            send notifications to.
+                          pattern: ^[A-Za-z0-9]{30}$
+                          type: string
+                      required:
+                      - userKey
+                      type: object
+                    type: array
+                  pushoverConfigSelector:
+                    description: PushoverConfig to be selected for this receiver
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: A label selector requirement is a selector
+                            that contains values, a key, and an operator that relates
+                            the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: operator represents a key's relationship
+                                to a set of values. Valid operators are In, NotIn,
+                                Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: values is an array of string values. If
+                                the operator is In or NotIn, the values array must
+                                be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced
+                                during a strategic merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: matchLabels is a map of {key,value} pairs. A
+                          single {key,value} in the matchLabels map is equivalent
+                          to an element of matchExpressions, whose key field is "key",
+                          the operator is "In", and the values array contains only
+                          "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                  template:
+                    description: The name of the template to generate DingTalk message.
+                      If the global template is not set, it will use default.
+                    type: string
+                required:
+                - profiles
+                type: object
               slack:
                 properties:
                   alertSelector:

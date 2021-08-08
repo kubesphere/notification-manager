@@ -17,6 +17,10 @@ limitations under the License.
 package v2beta2
 
 import (
+	"fmt"
+	"regexp"
+	"unicode/utf8"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -24,6 +28,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
+
+var (
+	PushoverDeviceRegex = regexp.MustCompile(`^[A-Za-z0-9_-]{1,25}$`)
+	PushoverSounds = map[string]bool{"pushover": true, "bike": true, "bugle": true, "cashregister": true, "classical": true, "cosmic": true, "falling": true, "gamelan": true, "incoming": true, "intermission": true, "magic": true, "mechanical": true, "pianobar": true, "siren": true, "spacealarm": true, "tugboat": true, "alien": true, "climb": true, "persistent": true, "echo": true, "updown": true, "vibrate": true, "none": true}
+)
+
 
 func (r *Receiver) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -161,6 +171,45 @@ func (r *Receiver) validateReceiver() error {
 			if *wechat.TmplType != "text" && *wechat.TmplType != "markdown" {
 				allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("wechat").Child("tmplType"),
 					"must be one of: `text` or `html`"))
+			}
+		}
+	}
+
+	if r.Spec.Pushover != nil {
+		// validate User Profile
+		if len(r.Spec.Pushover.Profiles) == 0 {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("profiles"),
+				"must be specified"))
+		} else {
+			// requirements
+			// validate each profile
+			for i, profile := range r.Spec.Pushover.Profiles {
+				// validate UserKeys
+				if profile.UserKey == nil {
+					allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("profiles").Child("userKey"),
+						fmt.Sprintf("found invalid Pushover User Key: %s, profile: %d", *profile.UserKey, i)))
+				}
+				// validate Devices
+				for _, device := range profile.Devices {
+					if !PushoverDeviceRegex.MatchString(device) {
+						allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("devices"),
+							fmt.Sprintf("found invalid Pushover device name: %s, profile: %d", device, i)))
+					}
+				}
+				// Validate Title
+				if profile.Title != nil {
+					if l := utf8.RuneCountInString(*profile.Title); l > 250 {
+						allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("title"),
+							fmt.Sprintf("found invalid Pushover title: %s, please limit your title within 250 characters, profile: %d", *profile.Title, i)))
+					}
+				}
+				// Validate Sound
+				if profile.Sound != nil {
+					if !PushoverSounds[*profile.Sound] {
+						allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("title"),
+							fmt.Sprintf("found invalid Pushover sound: %s, please refer to https://pushover.net/api#sounds, profile: %d", *profile.Sound, i)))
+					}
+				}
 			}
 		}
 	}

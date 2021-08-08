@@ -96,6 +96,10 @@ func NewReceiver(c *Config, obj interface{}) Receiver {
 		return NewSmsReceiver(c, obj.(*v2beta2.SmsReceiver))
 	case *v2beta2.SmsConfig:
 		return NewSmsConfig(obj.(*v2beta2.SmsConfig))
+	case *v2beta2.PushoverReceiver:
+		return NewPushoverReceiver(c, obj.(*v2beta2.PushoverReceiver))
+	case *v2beta2.PushoverConfig:
+		return NewPushoverConfig(obj.(*v2beta2.PushoverConfig))
 	default:
 		return nil
 	}
@@ -120,6 +124,8 @@ func getOpType(obj interface{}) string {
 		return wechat
 	case *v2beta2.SmsReceiver, *v2beta2.SmsConfig:
 		return sms
+	case *v2beta2.PushoverReceiver, *v2beta2.PushoverConfig:
+		return pushover
 	default:
 		return ""
 	}
@@ -788,6 +794,121 @@ func (w *Wechat) Clone() *Wechat {
 		TmplType: w.TmplType,
 		Template: w.Template,
 	}
+}
+
+type Pushover struct {
+	Template string
+	// Profiles are users to send notifications to.
+	Profiles       []*v2beta2.PushoverUserProfile
+	PushoverConfig *PushoverConfig
+	Selector       *metav1.LabelSelector
+	userKeyRegex   *regexp.Regexp // for an User Key's validation
+	*common
+}
+
+type PushoverConfig struct {
+	// The token of a Pushover application.
+	Token *v2beta2.Credential
+}
+
+func NewPushoverReceiver(c *Config, pr *v2beta2.PushoverReceiver) Receiver {
+	p := &Pushover{
+		common: &common{
+			enabled:        pr.Enabled,
+			receiverType:   pushover,
+			configSelector: pr.PushoverConfigSelector,
+		},
+		Profiles: pr.Profiles,
+		Selector: pr.AlertSelector,
+		// User keys are 30 characters long, case-sensitive, and may contain the character set [A-Za-z0-9].
+		userKeyRegex: regexp.MustCompile(`^[A-Za-z0-9]{30}$`),
+	}
+
+	if pr.Template != nil {
+		p.Template = *pr.Template
+	}
+
+	configs := listConfigs(c, pr.PushoverConfigSelector)
+	if configs == nil {
+		return p
+	}
+
+	for _, item := range configs {
+		p.generateConfig(item.Spec.Pushover)
+		if p.PushoverConfig != nil {
+			break
+		}
+	}
+
+	return p
+}
+
+func NewPushoverConfig(sc *v2beta2.PushoverConfig) Receiver {
+	p := &Pushover{
+		common: &common{
+			receiverType: pushover,
+		},
+	}
+
+	p.generateConfig(sc)
+	return p
+}
+
+func (p *Pushover) generateConfig(sc *v2beta2.PushoverConfig) {
+
+	if sc == nil || sc.PushoverTokenSecret == nil {
+		return
+	}
+
+	p.PushoverConfig = &PushoverConfig{
+		Token: sc.PushoverTokenSecret,
+	}
+
+	return
+}
+
+func (p *Pushover) GetConfig() interface{} {
+	return p.PushoverConfig
+}
+
+func (p *Pushover) SetConfig(obj interface{}) error {
+
+	if obj == nil {
+		p.PushoverConfig = nil
+		return nil
+	}
+
+	c, ok := obj.(*PushoverConfig)
+	if !ok {
+		return errors.New("set pushover config error, wrong config type")
+	}
+
+	p.PushoverConfig = c
+	return nil
+}
+
+func (p *Pushover) Validate() error {
+
+	if p.Profiles == nil || len(p.Profiles) == 0 {
+		return fmt.Errorf("user profiles must be specified")
+	}
+
+	// validate user keys with regex
+	for _, profile := range p.Profiles {
+		if profile.UserKey == nil || !p.userKeyRegex.MatchString(*profile.UserKey) {
+			return fmt.Errorf("invalid user key： %s", *profile.UserKey)
+		}
+	}
+
+	if p.PushoverConfig == nil {
+		return fmt.Errorf("config is nil")
+	}
+
+	if err := validateCredential(p.PushoverConfig.Token); err != nil {
+		return fmt.Errorf("pushover token error, %s", err.Error())
+	}
+
+	return nil
 }
 
 func listConfigs(c *Config, selector *metav1.LabelSelector) []v2beta2.Config {
