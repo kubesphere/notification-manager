@@ -50,11 +50,12 @@ For new minor and major releases, create the `release-<major>.<minor>` branch st
 From now on, all work happens on the `release-<major>.<minor>` branch.
 
 Bump the version in the `VERSION` file in the root of the repository.
-Build and push the container image:
+
+Make sure you've set up docker buildx environment, then run the following command to build and push amd64 and arm64 images at the same time:
+make build:
 
 ```bash
 make build
-make push
 ```
 > We'll add a CI pipeline in the future which will automatically push the container images to [docker hub](https://hub.docker.com/repository/docker/openfunction).
 
