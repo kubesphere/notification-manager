@@ -1,7 +1,7 @@
 VERSION?=$(shell cat VERSION | tr -d " \t\n\r")
 # Image URL to use all building/pushing image targets
-IMG ?= kubespheredev/notification-manager-operator:$(VERSION)
-NM_IMG ?= kubespheredev/notification-manager:$(VERSION)
+IMG ?= kubesphere/notification-manager-operator:$(VERSION)
+NM_IMG ?= kubesphere/notification-manager:$(VERSION)
 AMD64 ?= -amd64
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"

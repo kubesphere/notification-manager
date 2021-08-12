@@ -10,7 +10,6 @@ require (
 	github.com/go-kit/kit v0.9.0
 	github.com/go-logr/logr v0.1.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/google/uuid v1.3.0
 	github.com/json-iterator/go v1.1.10
 	github.com/modern-go/reflect2 v1.0.1
 	github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223
@@ -22,6 +21,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.194
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.194
+	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	golang.org/x/text v0.3.2
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	k8s.io/api v0.17.2

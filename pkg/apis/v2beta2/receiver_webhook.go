@@ -31,9 +31,8 @@ import (
 
 var (
 	PushoverDeviceRegex = regexp.MustCompile(`^[A-Za-z0-9_-]{1,25}$`)
-	PushoverSounds = map[string]bool{"pushover": true, "bike": true, "bugle": true, "cashregister": true, "classical": true, "cosmic": true, "falling": true, "gamelan": true, "incoming": true, "intermission": true, "magic": true, "mechanical": true, "pianobar": true, "siren": true, "spacealarm": true, "tugboat": true, "alien": true, "climb": true, "persistent": true, "echo": true, "updown": true, "vibrate": true, "none": true}
+	PushoverSounds      = map[string]bool{"pushover": true, "bike": true, "bugle": true, "cashregister": true, "classical": true, "cosmic": true, "falling": true, "gamelan": true, "incoming": true, "intermission": true, "magic": true, "mechanical": true, "pianobar": true, "siren": true, "spacealarm": true, "tugboat": true, "alien": true, "climb": true, "persistent": true, "echo": true, "updown": true, "vibrate": true, "none": true}
 )
-
 
 func (r *Receiver) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
