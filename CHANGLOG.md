@@ -1,17 +1,12 @@
-## v1.0.0 / 2021-04-22
+## v1.3.0 / 2021-08-10
 
 ### FEATURES
-- All config crds are aggregated into a crd named `Config`. 
-- All receivers crds are aggregated into a crd named `Receiver`.
-- Now the `Config`, `Receiver`, and `NotificationManager` are cluster scoped crd.
-- Now the namespace of the secret can be specified in `SecretKeySelector` .
-- Move the configuration of DingTalk chatbot from dingtalk config to dingtalk receiver.
-- Move the `chatid` of DingTalk conversation from dingtalk config to dingtalk receiver.
-- Now the `chatid` of DingTalk conversation is an array types, and renamed to `chatids`.
-- Now the `port` of email `smartHost` is an integer type.
-- Now the `channel` fo slack is an array types, and renamed to `channels`.
-- Move the configuration of webhook from webhook config to webhook receiver.
-- Now the `toUser`, `toParty`, `toTag` of wechat receiver are array type.
+- Add support to send notifications to Huawei SMS platform (#90 #94). @zhu733756
+- Add support to send notifications to Pushover (#91). @txfs19260817
+
+### CHANGE 
+- Adjust alertmanager integration guide.
+- Adjust hostpath host-time (mounts /etc/localtime) to read-only mode.
 
 ## v1.2.0 / 2021-07-15
 
@@ -29,11 +24,18 @@
 ### CHANGE
 - Upgrade the crd version to v2beta2.
 
-## v1.3.0 / 2021-08-10
+## v1.0.0 / 2021-04-22
 
 ### FEATURES
-- Add support to send notifications to Huawei SMS platform (#90 #94). @zhu733756
-- Add support to send notifications to Pushover (#91). @txfs19260817
+- All config crds are aggregated into a crd named `Config`. 
+- All receivers crds are aggregated into a crd named `Receiver`.
+- Now the `Config`, `Receiver`, and `NotificationManager` are cluster scoped crd.
+- Now the namespace of the secret can be specified in `SecretKeySelector` .
+- Move the configuration of DingTalk chatbot from dingtalk config to dingtalk receiver.
+- Move the `chatid` of DingTalk conversation from dingtalk config to dingtalk receiver.
+- Now the `chatid` of DingTalk conversation is an array types, and renamed to `chatids`.
+- Now the `port` of email `smartHost` is an integer type.
+- Now the `channel` fo slack is an array types, and renamed to `channels`.
+- Move the configuration of webhook from webhook config to webhook receiver.
+- Now the `toUser`, `toParty`, `toTag` of wechat receiver are array type.
 
-### CHANGE 
-- Adjust alertmanager integration guide.
