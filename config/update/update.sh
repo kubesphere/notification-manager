@@ -178,7 +178,7 @@ update_v1alpha1() {
 
       if [ "$(echo "$resource" | jq '.spec' | jq 'has("volumeMounts")')" != "true" ]; then
         resource=$(echo "$resource" |
-          jq 'setpath(["spec", "volumeMounts"]; [{"mountPath": "/etc/notification-manager/","name": "notification-manager-template"}])')
+          jq 'setpath(["spec", "volumeMounts"]; [{"mountPath": "/etc/notification-manager/","name": "notification-manager-template","readOnly": true}])')
       fi
 
       echo "$resource" | jq >"${output_dir}/notification-manager-$(echo "$resource" | jq -r '.metadata.name').json"
