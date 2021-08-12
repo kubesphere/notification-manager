@@ -193,6 +193,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 				{
 					Name:      "host-time",
 					MountPath: "/etc/localtime",
+					ReadOnly:  true,
 				},
 			},
 		}
