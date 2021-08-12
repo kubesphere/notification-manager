@@ -23,6 +23,7 @@ spec:
           volumeMounts:
             - mountPath: /etc/localtime
               name: host-time
+              readOnly: true
           lifecycle:
             preStop:
               httpGet:

@@ -44,6 +44,7 @@ spec:
         volumeMounts:
           - mountPath: /etc/localtime
             name: host-time
+            readOnly: true
         env:
           - name: NAMESPACE
             valueFrom:

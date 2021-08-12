@@ -211,7 +211,7 @@ type PushoverUserProfile struct {
 	// Title refers to message's title, otherwise your app's name is used.
 	Title *string `json:"title,omitempty"`
 	// Sound refers to the name of one of the sounds (https://pushover.net/api#sounds) supported by device clients
-	Sound  *string `json:"sound,omitempty"`
+	Sound *string `json:"sound,omitempty"`
 }
 
 type PushoverReceiver struct {
@@ -223,7 +223,7 @@ type PushoverReceiver struct {
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	// The name of the template to generate DingTalk message.
 	// If the global template is not set, it will use default.
-	Template             *string `json:"template,omitempty"`
+	Template *string `json:"template,omitempty"`
 	// The users profile.
 	Profiles []*PushoverUserProfile `json:"profiles"`
 }

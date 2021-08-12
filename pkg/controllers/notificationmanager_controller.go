@@ -293,6 +293,7 @@ func (r *NotificationManagerReconciler) generateKubesphereSidecar(sidecar *v2bet
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      "host-time",
 		MountPath: "/etc/localtime",
+		ReadOnly:  true,
 	})
 	return container
 }
