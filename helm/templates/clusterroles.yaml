@@ -38,18 +38,9 @@ rules:
 - apiGroups:
   - notification.kubesphere.io
   resources:
-  - dingtalkconfigs
-  - dingtalkreceivers
-  - emailconfigs
-  - emailreceivers
+  - configs
   - notificationmanagers
   - receivers
-  - slackconfigs
-  - slackreceivers
-  - webhookconfigs
-  - webhookreceivers
-  - wechatconfigs
-  - wechatreceivers
   verbs:
   - create
   - delete
@@ -74,7 +65,7 @@ rules:
   - get
   - list
   - watch
-  
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -85,7 +76,7 @@ rules:
   - /metrics
   verbs:
   - get
-  
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
