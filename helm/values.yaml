@@ -16,7 +16,7 @@ operator:
     operator:
       image:
         repo: kubesphere/notification-manager-operator
-        tag: v1.0.0
+        tag: v1.3.0
         pullPolicy: IfNotPresent
       resources:
         limits:
@@ -33,7 +33,7 @@ operator:
 # value of notification-manager
 notificationmanager:
   image:
-    tag: v1.0.0
+    tag: v1.3.0
     pullPolicy: IfNotPresent
   replicas: 1
   resources:
@@ -71,8 +71,6 @@ notificationmanager:
         notificationTimeout: 5
       wechat:
         notificationTimeout: 5
-  notificationManagerNamespaces:
-    - kubesphere-monitoring-system
   volumeMounts:
     - mountPath: /etc/notification-manager/
       name: notification-manager-template

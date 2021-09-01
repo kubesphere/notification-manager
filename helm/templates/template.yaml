@@ -1,6 +1,7 @@
 apiVersion: v1
 data:
-  template: |
+  template: |2
+
     {{ "{{ define \"nm.default.subject\" }}{{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}s{{ end }} for {{ range .GroupLabels.SortedPairs }} {{ .Name }}={{ .Value }} {{ end }}" }}
     {{ "{{- end }}" }}
 
@@ -21,7 +22,7 @@ data:
     {{ "{{- end }}" }}
     {{ "{{- end }}" }}
 
-    {{ "{{ define \"__nm_alert_list_markdown\" }}# {{ range . }}### Labels:" }}
+    {{ "{{ define \"__nm_alert_list_markdown\" }}{{ range . }}### Labels:" }}
     {{ "{{ range .Labels.SortedPairs }}{{ if ne .Name \"runbook_url\" }}- {{ .Name }} = {{ .Value }}{{ end }}" }}
     {{ "{{ end }}### Annotations:" }}
     {{ "{{ range .Annotations.SortedPairs }}{{ if ne .Name \"runbook_url\"}}- {{ .Name }} = {{ .Value }}{{ end }}" }}
@@ -102,13 +103,13 @@ data:
     {{ "                        {{ range .Labels.SortedPairs }}{{ if ne .Name \"runbook_url\" }}{{ .Name }} = {{ .Value }}{{ end }}<br style=\"font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;\" />{{ end }}" }}
     {{ "                        {{ if gt (len .Annotations) 0 }}<strong style=\"font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;\">Annotations</strong><br style=\"font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;\" />{{ end }}" }}
     {{ "                        {{ range .Annotations.SortedPairs }}{{ if ne .Name \"runbook_url\" }}{{ .Name }} = {{ .Value }}{{ end }}<br style=\"font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;\" />{{ end }}" }}
-    {{ "                       </td>" }}
-    {{ "                     </tr>" }}
-    {{ "                   {{ end }}" }}
-    {{ "                 </table>" }}
-    {{ "               </td>" }}
-    {{ "             </tr>" }}
-    {{ "           </table>" }}
+    {{ "                      </td>" }}
+    {{ "                    </tr>" }}
+    {{ "                  {{ end }}" }}
+    {{ "                </table>" }}
+    {{ "              </td>" }}
+    {{ "            </tr>" }}
+    {{ "          </table>" }}
     {{ "        </div>" }}
     {{ "      </td>" }}
     {{ "      <td style=\"font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0;\" valign=\"top\"></td>" }}

@@ -193,6 +193,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 				{
 					Name:      "host-time",
 					MountPath: "/etc/localtime",
+					ReadOnly:  true,
 				},
 			},
 		}
@@ -293,6 +294,7 @@ func (r *NotificationManagerReconciler) generateKubesphereSidecar(sidecar *v2bet
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      "host-time",
 		MountPath: "/etc/localtime",
+		ReadOnly:  true,
 	})
 	return container
 }
