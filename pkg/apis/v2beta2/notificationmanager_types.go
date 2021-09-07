@@ -51,7 +51,7 @@ type Credential struct {
 	ValueFrom *ValueSource `json:"valueFrom,omitempty" protobuf:"bytes,3,opt,name=valueFrom"`
 }
 
-// Sidecar defines a sidecar container which will be add to the notification manager deployment pod.
+// Sidecar defines a sidecar container which will be added to the notification manager deployment pod.
 type Sidecar struct {
 	// The type of sidecar, it can be specified to any value.
 	// Notification manager built-in sidecar for KubeSphere,
@@ -59,6 +59,12 @@ type Sidecar struct {
 	Type string `json:"type" protobuf:"bytes,2,opt,name=type"`
 	// Container of sidecar.
 	*v1.Container `json:",inline"`
+}
+
+// HistoryReceiver used to collect notification history.
+type HistoryReceiver struct {
+	// Use a webhook to collect notification history, it will create a virtual receiver.
+	Webhook *WebhookReceiver `json:"webhook"`
 }
 
 // NotificationManagerSpec defines the desired state of NotificationManager
@@ -84,7 +90,7 @@ type NotificationManagerSpec struct {
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 	// Port name used for the pods and service, defaults to webhook
 	PortName string `json:"portName,omitempty"`
-	// Default Email/Wechat/Slack/Webhook Config to be selected
+	// Default Email/WeChat/Slack/Webhook Config to be selected
 	DefaultConfigSelector *metav1.LabelSelector `json:"defaultConfigSelector,omitempty"`
 	// Receivers to send notifications to
 	Receivers *ReceiversSpec `json:"receivers"`
@@ -104,6 +110,8 @@ type NotificationManagerSpec struct {
 	// It needs to provide the API `/api/v2/tenant` at port `19094`, this api receives
 	// a parameter `namespace` and return all tenants which need to receive notifications in this namespace.
 	Sidecars map[string]*Sidecar `json:"sidecars,omitempty"`
+	// History used to collect notification history.
+	History *HistoryReceiver `json:"history,omitempty"`
 }
 
 type ReceiversSpec struct {
@@ -121,7 +129,7 @@ type ReceiversSpec struct {
 }
 
 type GlobalOptions struct {
-	// Template file path, must be a absolute path.
+	// Template file path, must be an absolute path.
 	TemplateFiles []string `json:"templateFile,omitempty"`
 	// The name of the template to generate message.
 	// If the receiver dose not setup template, it will use this.
@@ -149,7 +157,7 @@ type EmailOptions struct {
 type WechatOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
-	// The name of the template to generate wechat message.
+	// The name of the template to generate WeChat message.
 	Template string `json:"template,omitempty"`
 	// template type: text or markdown, default type is text
 	TmplType string `json:"tmplType,omitempty"`
@@ -162,7 +170,7 @@ type WechatOptions struct {
 type SlackOptions struct {
 	// Notification Sending Timeout
 	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
-	// The name of the template to generate slack message.
+	// The name of the template to generate Slack message.
 	// If the global template is not set, it will use default.
 	Template string `json:"template,omitempty"`
 }
@@ -181,7 +189,7 @@ type Throttle struct {
 	Threshold int           `json:"threshold,omitempty"`
 	Unit      time.Duration `json:"unit,omitempty"`
 	// The maximum tolerable waiting time when the calls trigger flow control, if the actual waiting time is more than this time, it will
-	// return a error, else it will wait for the flow restriction lifted, and send the message.
+	// return an error, else it will wait for the flow restriction lifted, and send the message.
 	// Nil means do not wait, the maximum value is `Unit`.
 	MaxWaitTime time.Duration `json:"maxWaitTime,omitempty"`
 }
