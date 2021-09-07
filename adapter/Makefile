@@ -2,7 +2,7 @@
 # Use of this source code is governed by a Apache license
 # that can be found in the LICENSE file.
 
-IMG ?= kubespheredev/notification-adapter:v0.1.1
+IMG ?= kubespheredev/notification-adapter:v0.2.0
 AMD64 ?= -amd64
 
 all: docker-build

@@ -76,6 +76,7 @@ type Config struct {
 	ch chan *param
 	// The pod's namespace
 	namespace string
+	history   *v2beta2.HistoryReceiver
 	// Dose the notification manager crd add.
 	nmAdd bool
 }
@@ -95,6 +96,7 @@ type param struct {
 	isConfig               bool
 	ReceiverOpts           *v2beta2.Options
 	tenantSidecar          bool
+	history                *v2beta2.HistoryReceiver
 	done                   chan interface{}
 }
 
@@ -410,6 +412,7 @@ func (c *Config) nmChange(p *param) {
 		c.globalReceiverSelector = p.globalReceiverSelector
 		c.ReceiverOpts = p.ReceiverOpts
 		c.tenantSidecar = p.tenantSidecar
+		c.history = p.history
 		c.nmAdd = true
 	} else if p.op == opDel {
 		c.tenantKey = defaultTenantKey
@@ -499,6 +502,12 @@ func (c *Config) RcvsFromNs(namespace *string) []Receiver {
 		rcvs = append(rcvs, c.RcvsFromTenantID(t)...)
 	}
 
+	// If notification history is enabled and there are receivers to receive notification,
+	// a virtual receiver will be created to receive notification history.
+	if rcvs != nil && len(rcvs) > 0 && c.history != nil {
+		rcvs = append(rcvs, NewReceiver(c, c.history.Webhook))
+	}
+
 	return rcvs
 }
 
@@ -520,6 +529,7 @@ func (c *Config) onNmAdd(obj interface{}) {
 				p.tenantSidecar = true
 			}
 		}
+		p.history = nm.Spec.History
 		p.done = make(chan interface{}, 1)
 		c.ch <- p
 		<-p.done
