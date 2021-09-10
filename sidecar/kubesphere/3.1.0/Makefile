@@ -2,14 +2,14 @@
 # Use of this source code is governed by a Apache license
 # that can be found in the LICENSE file.
 
-IMG ?= kubespheredev/kubesphere-sidecar:v3.1.0
+IMG ?= kubesphere/notification-tenant-sidecar:v3.1.0
 AMD64 ?= -amd64
 
 all: docker-build
 
-# Build kubernetes sidecar binary
-kubesphere-sidecar:
-	go build -o kubesphere-sidecar cmd/main.go
+# Build tenant sidecar binary
+tenant-sidecar:
+	go build -o tenant-sidecar cmd/main.go
 
 # Build the docker image
 docker-build:

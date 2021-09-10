@@ -39,12 +39,12 @@ func (e *exporter) Close() error {
 
 func alertToString(a *common.Alert) string {
 
-	m := make(map[string]string)
+	m := make(map[string]interface{})
 
 	m[Status] = a.Status
-	m[StartsAt] = a.StartsAt.Local().String()
-	m[EndsAt] = a.EndsAt.Local().String()
-	m[NotificationTime] = a.NotificationTime.Local().String()
+	m[StartsAt] = a.StartsAt
+	m[EndsAt] = a.EndsAt
+	m[NotificationTime] = a.NotificationTime
 
 	for k, v := range a.Labels {
 		m[k] = v

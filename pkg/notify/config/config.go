@@ -485,27 +485,25 @@ func (c *Config) RcvsFromNs(namespace *string) []Receiver {
 	// Get all global receiver first, global receiver should receive all notifications.
 	rcvs := c.RcvsFromTenantID(globalTenantID)
 
-	// Return global receiver if namespace is nil.
-	if namespace == nil || len(*namespace) == 0 {
-		return rcvs
-	}
-
-	// Get all tenants which need to receive the notifications in this namespace.
-	tenantIDs, err := c.tenantIDFromNs(*namespace)
-	if err != nil {
-		_ = level.Error(c.logger).Log("msg", "get tenantID error", "err", err, "namespace", *namespace)
-		return rcvs
-	}
-
-	// Get receivers for each tenant.
-	for _, t := range tenantIDs {
-		rcvs = append(rcvs, c.RcvsFromTenantID(t)...)
+	// Get tenant receivers.
+	if namespace != nil && len(*namespace) > 0 {
+		// Get all tenants which need to receive the notifications in this namespace.
+		tenantIDs, err := c.tenantIDFromNs(*namespace)
+		if err != nil {
+			_ = level.Error(c.logger).Log("msg", "get tenantID error", "err", err, "namespace", *namespace)
+		} else {
+			// Get receivers for each tenant.
+			for _, t := range tenantIDs {
+				rcvs = append(rcvs, c.RcvsFromTenantID(t)...)
+			}
+		}
 	}
 
 	// If notification history is enabled and there are receivers to receive notification,
 	// a virtual receiver will be created to receive notification history.
 	if rcvs != nil && len(rcvs) > 0 && c.history != nil {
 		rcvs = append(rcvs, NewReceiver(c, c.history.Webhook))
+		_ = level.Debug(c.logger).Log("msg", "Add history receiver")
 	}
 
 	return rcvs
