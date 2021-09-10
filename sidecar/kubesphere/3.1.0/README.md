@@ -1,3 +1,3 @@
-# kubesphere tenant sidecar
+# Notification tenant sidecar
 
-kubesphere-sidecar is a tenant sidecar for kubesphere v3.1.0.
+It is a tenant sidecar for kubesphere v3.1.0.
