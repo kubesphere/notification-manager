@@ -2,13 +2,13 @@ package sms
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	openapi "github.com/alibabacloud-go/darabonba-openapi/client"
 	dysmsapi "github.com/alibabacloud-go/dysmsapi-20170525/v2/client"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
-	"github.com/kubesphere/notification-manager/pkg/notify/config"
+	"github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 )
 
 const (
@@ -36,21 +36,21 @@ func NewAliyunProvider(c *config.Config, providers *v2beta2.Providers, phoneNumb
 	}
 }
 
-func (a *AliyunNotifier) MakeRequest(ctx context.Context, messages string) error {
+func (a *AliyunNotifier) MakeRequest(_ context.Context, messages string) error {
 	accessKeyId, err := a.NotifierCfg.GetCredential(a.AccessKeyId)
 	if err != nil {
-		return fmt.Errorf("[Aliyun  SendSms] cannot get accessKeyId: %s", err.Error())
+		return utils.Errorf("[Aliyun  SendSms] cannot get accessKeyId: %s", err.Error())
 	}
 	accessKeySecret, err := a.NotifierCfg.GetCredential(a.AccessKeySecret)
 	if err != nil {
-		return fmt.Errorf("[Aliyun  SendSms] cannot get accessKeySecret: %s", err.Error())
+		return utils.Errorf("[Aliyun  SendSms] cannot get accessKeySecret: %s", err.Error())
 	}
-	config := &openapi.Config{}
-	config.AccessKeyId = &accessKeyId
-	config.AccessKeySecret = &accessKeySecret
-	client, err := dysmsapi.NewClient(config)
+	c := &openapi.Config{}
+	c.AccessKeyId = &accessKeyId
+	c.AccessKeySecret = &accessKeySecret
+	client, err := dysmsapi.NewClient(c)
 	if err != nil {
-		return fmt.Errorf("[Aliyun  SendSms] cannot make a client with accessKeyId:%s,accessKeySecret:%s",
+		return utils.Errorf("[Aliyun  SendSms] cannot make a client with accessKeyId:%s,accessKeySecret:%s",
 			a.AccessKeyId.ValueFrom.SecretKeyRef.Name, a.AccessKeySecret.ValueFrom.SecretKeyRef.Name)
 	}
 
@@ -63,11 +63,11 @@ func (a *AliyunNotifier) MakeRequest(ctx context.Context, messages string) error
 	}
 	resp, err := client.SendSms(req)
 	if err != nil {
-		return fmt.Errorf("[Aliyun  SendSms] An API error occurs: %s", err.Error())
+		return utils.Errorf("[Aliyun  SendSms] An API error occurs: %s", err.Error())
 	}
 
 	if stringValue(resp.Body.Code) != "OK" {
-		return fmt.Errorf("[Aliyun  SendSms] Send failed: %s", fmt.Errorf(stringValue(resp.Body.Message)))
+		return utils.Errorf("[Aliyun  SendSms] Send failed: %s", stringValue(resp.Body.Message))
 	}
 
 	return nil

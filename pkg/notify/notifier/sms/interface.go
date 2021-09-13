@@ -2,10 +2,11 @@ package sms
 
 import (
 	"context"
-	"errors"
+
+	"github.com/kubesphere/notification-manager/pkg/utils"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
-	"github.com/kubesphere/notification-manager/pkg/notify/config"
+	"github.com/kubesphere/notification-manager/pkg/config"
 )
 
 type Provider interface {
@@ -35,7 +36,7 @@ func GetProviderFunc(name string) (ProviderFactory, error) {
 		// check whether the default provider is registered
 		p, ok := availableFactoryFuncs[name]
 		if !ok {
-			return nil, errors.New("the given default sms provider not registered")
+			return nil, utils.Error("the given default sms provider not registered")
 		}
 		return p, nil
 	} else {
@@ -50,6 +51,6 @@ func GetProviderFunc(name string) (ProviderFactory, error) {
 		if providerFunc != nil {
 			return providerFunc, nil
 		}
-		return nil, errors.New("cannot find a registered provider")
+		return nil, utils.Error("cannot find a registered provider")
 	}
 }

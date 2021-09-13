@@ -9,7 +9,9 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	"github.com/kubesphere/notification-manager/pkg/notify/config"
+	"github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/internal"
+	"github.com/kubesphere/notification-manager/pkg/internal/sms"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
@@ -22,14 +24,14 @@ const (
 
 type Notifier struct {
 	notifierCfg  *config.Config
-	smss         []*config.Sms
+	receivers    []*sms.Receiver
 	timeout      time.Duration
 	logger       log.Logger
 	template     *notifier.Template
 	templateName string
 }
 
-func NewSmsNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg *config.Config) notifier.Notifier {
+func NewSmsNotifier(logger log.Logger, receivers []internal.Receiver, notifierCfg *config.Config) notifier.Notifier {
 
 	var path []string
 	opts := notifierCfg.ReceiverOpts
@@ -66,12 +68,12 @@ func NewSmsNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg 
 	}
 
 	for _, r := range receivers {
-		receiver, ok := r.(*config.Sms)
+		receiver, ok := r.(*sms.Receiver)
 		if !ok || receiver == nil {
 			continue
 		}
 
-		if receiver.SmsConfig == nil {
+		if receiver.Config == nil {
 			_ = level.Warn(logger).Log("msg", "SmsNotifier: ignore receiver because of empty config")
 			continue
 		}
@@ -80,7 +82,7 @@ func NewSmsNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg 
 			receiver.Template = n.templateName
 		}
 
-		n.smss = append(n.smss, receiver)
+		n.receivers = append(n.receivers, receiver)
 	}
 
 	return n
@@ -88,33 +90,33 @@ func NewSmsNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg 
 
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	send := func(s *config.Sms) error {
+	send := func(r *sms.Receiver) error {
 
 		start := time.Now()
 		defer func() {
 			_ = level.Debug(n.logger).Log("msg", "SmsNotifier: send message", "used", time.Since(start).String())
 		}()
 
-		newData := utils.FilterAlerts(data, s.Selector, n.logger)
+		newData := utils.FilterAlerts(data, r.AlertSelector, n.logger)
 		if len(newData.Alerts) == 0 {
 			return nil
 		}
 
-		msg, err := n.template.TempleText(s.Template, newData, n.logger)
+		msg, err := n.template.TempleText(r.Template, newData, n.logger)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "SmsNotifier: generate message error", "error", err.Error())
 			return err
 		}
 
 		// select an available provider function
-		providerFunc, err := GetProviderFunc(s.SmsConfig.DefaultProvider)
+		providerFunc, err := GetProviderFunc(r.DefaultProvider)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "SmsNotifier: no available provider function", "error", err.Error())
 			return err
 		}
 
 		// new a provider
-		provider := providerFunc(n.notifierCfg, s.SmsConfig.Providers, s.PhoneNumbers)
+		provider := providerFunc(n.notifierCfg, r.Providers, r.PhoneNumbers)
 
 		// make request by the provider
 		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
@@ -131,10 +133,10 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	}
 
 	group := async.NewGroup(ctx)
-	for _, sms := range n.smss {
-		s := sms
+	for _, receiver := range n.receivers {
+		r := receiver
 		group.Add(func(stopCh chan interface{}) {
-			stopCh <- send(s)
+			stopCh <- send(r)
 		})
 	}
 

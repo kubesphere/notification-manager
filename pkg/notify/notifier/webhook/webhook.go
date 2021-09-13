@@ -13,7 +13,9 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	"github.com/kubesphere/notification-manager/pkg/notify/config"
+	"github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/internal"
+	"github.com/kubesphere/notification-manager/pkg/internal/webhook"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/mwitkow/go-conntrack"
@@ -27,14 +29,14 @@ const (
 
 type Notifier struct {
 	notifierCfg  *config.Config
-	webhooks     []*config.Webhook
+	receivers    []*webhook.Receiver
 	timeout      time.Duration
 	logger       log.Logger
 	template     *notifier.Template
 	templateName string
 }
 
-func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg *config.Config) notifier.Notifier {
+func NewWebhookNotifier(logger log.Logger, receivers []internal.Receiver, notifierCfg *config.Config) notifier.Notifier {
 
 	var path []string
 	opts := notifierCfg.ReceiverOpts
@@ -71,7 +73,7 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 	}
 
 	for _, r := range receivers {
-		receiver, ok := r.(*config.Webhook)
+		receiver, ok := r.(*webhook.Receiver)
 		if !ok || receiver == nil {
 			continue
 		}
@@ -85,7 +87,7 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 			receiver.Template = n.templateName
 		}
 
-		n.webhooks = append(n.webhooks, receiver)
+		n.receivers = append(n.receivers, receiver)
 	}
 
 	return n
@@ -93,20 +95,21 @@ func NewWebhookNotifier(logger log.Logger, receivers []config.Receiver, notifier
 
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	send := func(w *config.Webhook) error {
+	send := func(r *webhook.Receiver) error {
 
 		start := time.Now()
 		defer func() {
 			_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "used", time.Since(start).String())
 		}()
 
-		newData := utils.FilterAlerts(data, w.Selector, n.logger)
+		newData := utils.FilterAlerts(data, r.AlertSelector, n.logger)
 		if len(newData.Alerts) == 0 {
 			return nil
 		}
+
 		var value interface{} = newData
-		if w.Template != DefaultTemplate {
-			msg, err := n.template.TempleText(w.Template, newData, n.logger)
+		if r.Template != DefaultTemplate {
+			msg, err := n.template.TempleText(r.Template, newData, n.logger)
 			if err != nil {
 				_ = level.Error(n.logger).Log("msg", "WebhookNotifier: generate message error", "error", err.Error())
 				return err
@@ -121,25 +124,25 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return err
 		}
 
-		request, err := http.NewRequest(http.MethodPost, w.URL, &buf)
+		request, err := http.NewRequest(http.MethodPost, r.URL, &buf)
 		if err != nil {
 			return err
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		if w.HttpConfig != nil {
-			if w.HttpConfig.BearerToken != nil {
-				bearer, err := n.notifierCfg.GetCredential(w.HttpConfig.BearerToken)
+		if r.HttpConfig != nil {
+			if r.HttpConfig.BearerToken != nil {
+				bearer, err := n.notifierCfg.GetCredential(r.HttpConfig.BearerToken)
 				if err != nil {
 					_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get bearer token error", "error", err.Error())
 					return err
 				}
 
 				request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", bearer))
-			} else if w.HttpConfig.BasicAuth != nil {
+			} else if r.HttpConfig.BasicAuth != nil {
 				pass := ""
-				if w.HttpConfig.BasicAuth.Password != nil {
-					p, err := n.notifierCfg.GetCredential(w.HttpConfig.BasicAuth.Password)
+				if r.HttpConfig.BasicAuth.Password != nil {
+					p, err := n.notifierCfg.GetCredential(r.HttpConfig.BasicAuth.Password)
 					if err != nil {
 						_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get password error", "error", err.Error())
 						return err
@@ -147,11 +150,11 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 					pass = p
 				}
-				request.SetBasicAuth(w.HttpConfig.BasicAuth.Username, pass)
+				request.SetBasicAuth(r.HttpConfig.BasicAuth.Username, pass)
 			}
 		}
 
-		transport, err := n.getTransport(w)
+		transport, err := n.getTransport(r)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get transport error", "error", err.Error())
 			return err
@@ -168,39 +171,39 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return err
 		}
 
-		_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "to", w.URL)
+		_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "to", r.URL)
 
 		return nil
 	}
 
 	group := async.NewGroup(ctx)
-	for _, webhook := range n.webhooks {
-		w := webhook
+	for _, receiver := range n.receivers {
+		r := receiver
 		group.Add(func(stopCh chan interface{}) {
-			stopCh <- send(w)
+			stopCh <- send(r)
 		})
 	}
 
 	return group.Wait()
 }
 
-func (n *Notifier) getTransport(w *config.Webhook) (http.RoundTripper, error) {
+func (n *Notifier) getTransport(r *webhook.Receiver) (http.RoundTripper, error) {
 
 	transport := &http.Transport{
 		DisableKeepAlives:  false,
 		DisableCompression: true,
 		DialContext: conntrack.NewDialContextFunc(
 			conntrack.DialWithTracing(),
-			conntrack.DialWithName(w.URL),
+			conntrack.DialWithName(r.URL),
 		),
 	}
 
-	if c := w.HttpConfig; c != nil {
+	if c := r.HttpConfig; c != nil {
 
 		if c.TLSConfig != nil {
 			tlsConfig := &tls.Config{InsecureSkipVerify: c.TLSConfig.InsecureSkipVerify}
 
-			// If a CA cert is provided then let's read it in so we can validate the
+			// If a CA cert is provided then let's read it in, so we can validate the
 			// scrape target's certificate properly.
 			if c.TLSConfig.RootCA != nil {
 				if ca, err := n.notifierCfg.GetCredential(c.TLSConfig.RootCA); err != nil {
@@ -221,9 +224,9 @@ func (n *Notifier) getTransport(w *config.Webhook) (http.RoundTripper, error) {
 			// If a client cert & key is provided then configure TLS config accordingly.
 			if c.TLSConfig.ClientCertificate != nil {
 				if c.TLSConfig.Cert != nil && c.TLSConfig.Key == nil {
-					return nil, fmt.Errorf("client cert file specified without client key file")
+					return nil, utils.Error("Client cert file specified without client key file")
 				} else if c.TLSConfig.Cert == nil && c.TLSConfig.Key != nil {
-					return nil, fmt.Errorf("client key file specified without client cert file")
+					return nil, utils.Error("Client key file specified without client cert file")
 				} else if c.TLSConfig.Cert != nil && c.TLSConfig.Key != nil {
 					key, err := n.notifierCfg.GetCredential(c.TLSConfig.Key)
 					if err != nil {

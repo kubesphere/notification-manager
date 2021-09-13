@@ -2,7 +2,6 @@ package email
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"strconv"
 	"time"
@@ -10,12 +9,15 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	nmconfig "github.com/kubesphere/notification-manager/pkg/notify/config"
+	nmconfig "github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/constants"
+	"github.com/kubesphere/notification-manager/pkg/internal"
+	"github.com/kubesphere/notification-manager/pkg/internal/email"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
-	"github.com/prometheus/alertmanager/config"
+	amconfig "github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/alertmanager/notify"
-	"github.com/prometheus/alertmanager/notify/email"
+	amemail "github.com/prometheus/alertmanager/notify/email"
 	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/alertmanager/types"
 	commoncfg "github.com/prometheus/common/config"
@@ -32,7 +34,7 @@ const (
 
 type Notifier struct {
 	notifierCfg *nmconfig.Config
-	email       []*nmconfig.Email
+	receivers   []*email.Receiver
 	template    *notifier.Template
 	// The name of template to generate email message.
 	templateName string
@@ -47,7 +49,7 @@ type Notifier struct {
 	maxEmailReceivers int
 }
 
-func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifierCfg *nmconfig.Config) notifier.Notifier {
+func NewEmailNotifier(logger log.Logger, receivers []internal.Receiver, notifierCfg *nmconfig.Config) notifier.Notifier {
 
 	var path []string
 	opts := notifierCfg.ReceiverOpts
@@ -67,7 +69,7 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 		maxEmailReceivers:   MaxEmailReceivers,
 		template:            tmpl,
 		subjectTemplateName: DefaultTSubjectTemplate,
-		tmplType:            nmconfig.HTML,
+		tmplType:            constants.HTML,
 	}
 
 	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
@@ -97,12 +99,12 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 	}
 
 	for _, r := range receivers {
-		receiver, ok := r.(*nmconfig.Email)
+		receiver, ok := r.(*email.Receiver)
 		if !ok || receiver == nil {
 			continue
 		}
 
-		if receiver.EmailConfig == nil {
+		if receiver.Config == nil {
 			_ = level.Warn(logger).Log("msg", "EmailNotifier: ignore receiver because of empty config")
 			continue
 		}
@@ -115,21 +117,19 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 			if n.templateName != "" {
 				receiver.Template = n.templateName
 			} else {
-				if receiver.TmplType == nmconfig.HTML {
+				if receiver.TmplType == constants.HTML {
 					receiver.Template = DefaultHTMLTemplate
-				} else if receiver.TmplType == nmconfig.Text {
+				} else if receiver.TmplType == constants.Text {
 					receiver.Template = DefaultTextTemplate
 				}
 			}
 		}
 
-		if utils.StringIsNil(receiver.SubjectTemplate) {
-			receiver.SubjectTemplate = n.subjectTemplateName
+		if utils.StringIsNil(receiver.TitleTemplate) {
+			receiver.TitleTemplate = n.subjectTemplateName
 		}
 
-		e := nmconfig.NewEmail(receiver)
-		_ = e.SetConfig(n.clone(receiver.EmailConfig))
-		n.email = append(n.email, e)
+		n.receivers = append(n.receivers, receiver)
 	}
 
 	return n
@@ -137,7 +137,7 @@ func NewEmailNotifier(logger log.Logger, receivers []nmconfig.Receiver, notifier
 
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	sendEmail := func(e *nmconfig.Email, to string) error {
+	sendEmail := func(r *email.Receiver, to string) error {
 
 		start := time.Now()
 		defer func() {
@@ -145,10 +145,11 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}()
 
 		var as []*types.Alert
-		newData := utils.FilterAlerts(data, e.Selector, n.logger)
+		newData := utils.FilterAlerts(data, r.AlertSelector, n.logger)
 		if len(newData.Alerts) == 0 {
 			return nil
 		}
+
 		for _, a := range newData.Alerts {
 			as = append(as, &types.Alert{
 				Alert: model.Alert{
@@ -161,7 +162,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			})
 		}
 
-		emailConfig, err := n.getEmailConfig(e)
+		emailConfig, err := n.getEmailConfig(r)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "EmailNotifier: get email config error", "error", err.Error())
 			return err
@@ -169,19 +170,18 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 		emailConfig.To = to
 
-		if e.TmplType == nmconfig.Text {
-			emailConfig.Text = e.Template
-		} else if e.TmplType == nmconfig.HTML {
-			emailConfig.HTML = e.Template
+		if r.TmplType == constants.Text {
+			emailConfig.Text = r.Template
+		} else if r.TmplType == constants.HTML {
+			emailConfig.HTML = r.Template
 		} else {
-			err = fmt.Errorf("unkown message type, %s", e.TmplType)
-			_ = level.Error(n.logger).Log("msg", "EmailNotifier: get email config error", "error", err.Error())
-			return err
+			_ = level.Error(n.logger).Log("msg", "EmailNotifier: unknown message type", "type", r.TmplType)
+			return utils.Errorf("Unknown message type, %s", r.TmplType)
 		}
 
-		emailConfig.HTML = e.Template
-		emailConfig.Headers["Subject"] = e.SubjectTemplate
-		sender := email.New(emailConfig, n.template.Tmpl, n.logger)
+		emailConfig.HTML = r.Template
+		emailConfig.Headers["Subject"] = r.TitleTemplate
+		sender := amemail.New(emailConfig, n.template.Tmpl, n.logger)
 
 		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
 		ctx = notify.WithGroupLabels(ctx, utils.KvToLabelSet(data.GroupLabels))
@@ -198,11 +198,12 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	}
 
 	group := async.NewGroup(ctx)
-	for _, e := range n.email {
-		for _, t := range e.To {
+	for _, receiver := range n.receivers {
+		r := receiver
+		for _, t := range r.To {
 			to := t
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- sendEmail(e, to)
+				stopCh <- sendEmail(r, to)
 			})
 		}
 	}
@@ -210,70 +211,51 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	return group.Wait()
 }
 
-func (n *Notifier) clone(ec *nmconfig.EmailConfig) *nmconfig.EmailConfig {
+func (n *Notifier) getEmailConfig(r *email.Receiver) (*amconfig.EmailConfig, error) {
 
-	if ec == nil {
-		return nil
-	}
-
-	return &nmconfig.EmailConfig{
-		From:         ec.From,
-		SmartHost:    ec.SmartHost,
-		Hello:        ec.Hello,
-		AuthUsername: ec.AuthUsername,
-		AuthIdentify: ec.AuthIdentify,
-		AuthPassword: ec.AuthPassword,
-		AuthSecret:   ec.AuthSecret,
-		RequireTLS:   ec.RequireTLS,
-		TLS:          ec.TLS,
-	}
-}
-
-func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error) {
-
-	ec := &config.EmailConfig{
-		From:  e.EmailConfig.From,
-		Hello: e.EmailConfig.Hello,
-		Smarthost: config.HostPort{
-			Host: e.EmailConfig.SmartHost.Host,
-			Port: strconv.Itoa(e.EmailConfig.SmartHost.Port),
+	ec := &amconfig.EmailConfig{
+		From:  r.From,
+		Hello: r.Hello,
+		Smarthost: amconfig.HostPort{
+			Host: r.SmartHost.Host,
+			Port: strconv.Itoa(r.SmartHost.Port),
 		},
-		AuthUsername: e.EmailConfig.AuthUsername,
+		AuthUsername: r.AuthUsername,
 		AuthPassword: "",
 		AuthSecret:   "",
-		AuthIdentity: e.EmailConfig.AuthIdentify,
-		RequireTLS:   &e.EmailConfig.RequireTLS,
+		AuthIdentity: r.AuthIdentify,
+		RequireTLS:   &r.RequireTLS,
 		Headers:      make(map[string]string),
 	}
 
-	if e.EmailConfig.AuthPassword != nil {
-		pass, err := n.notifierCfg.GetCredential(e.EmailConfig.AuthPassword)
+	if r.AuthPassword != nil {
+		pass, err := n.notifierCfg.GetCredential(r.AuthPassword)
 		if err != nil {
 			return nil, err
 		}
 
-		ec.AuthPassword = config.Secret(pass)
+		ec.AuthPassword = amconfig.Secret(pass)
 	}
 
-	if e.EmailConfig.AuthSecret != nil {
-		secret, err := n.notifierCfg.GetCredential(e.EmailConfig.AuthSecret)
+	if r.AuthSecret != nil {
+		secret, err := n.notifierCfg.GetCredential(r.AuthSecret)
 		if err != nil {
 			return nil, err
 		}
 
-		ec.AuthSecret = config.Secret(secret)
+		ec.AuthSecret = amconfig.Secret(secret)
 	}
 
-	if e.EmailConfig.TLS != nil {
+	if r.TLS != nil {
 		tlsConfig := commoncfg.TLSConfig{
-			InsecureSkipVerify: e.EmailConfig.TLS.InsecureSkipVerify,
-			ServerName:         e.EmailConfig.TLS.ServerName,
+			InsecureSkipVerify: r.TLS.InsecureSkipVerify,
+			ServerName:         r.TLS.ServerName,
 		}
 
-		// If a CA cert is provided then let's read it in so we can validate the
+		// If a CA cert is provided then let's read it in,  so we can validate the
 		// scrape target's certificate properly.
-		if e.EmailConfig.TLS.RootCA != nil {
-			if ca, err := n.notifierCfg.GetCredential(e.EmailConfig.TLS.RootCA); err != nil {
+		if r.TLS.RootCA != nil {
+			if ca, err := n.notifierCfg.GetCredential(r.TLS.RootCA); err != nil {
 				return nil, err
 			} else {
 				tlsConfig.CAFile = ca
@@ -281,18 +263,18 @@ func (n *Notifier) getEmailConfig(e *nmconfig.Email) (*config.EmailConfig, error
 		}
 
 		// If a client cert & key is provided then configure TLS config accordingly.
-		if e.EmailConfig.TLS.ClientCertificate != nil {
-			if e.EmailConfig.TLS.Cert != nil && e.EmailConfig.TLS.Key == nil {
-				return nil, fmt.Errorf("client cert file specified without client key file")
-			} else if e.EmailConfig.TLS.Cert == nil && e.EmailConfig.TLS.Key != nil {
-				return nil, fmt.Errorf("client key file specified without client cert file")
-			} else if e.EmailConfig.TLS.Cert != nil && e.EmailConfig.TLS.Key != nil {
-				key, err := n.notifierCfg.GetCredential(e.EmailConfig.TLS.Key)
+		if r.TLS.ClientCertificate != nil {
+			if r.TLS.Cert != nil && r.TLS.Key == nil {
+				return nil, utils.Error("Client cert file specified without client key file")
+			} else if r.TLS.Cert == nil && r.TLS.Key != nil {
+				return nil, utils.Error("Client key file specified without client cert file")
+			} else if r.TLS.Cert != nil && r.TLS.Key != nil {
+				key, err := n.notifierCfg.GetCredential(r.TLS.Key)
 				if err != nil {
 					return nil, err
 				}
 
-				cert, err := n.notifierCfg.GetCredential(e.EmailConfig.TLS.Cert)
+				cert, err := n.notifierCfg.GetCredential(r.TLS.Cert)
 				if err != nil {
 					return nil, err
 				}

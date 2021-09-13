@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/notify/config"
+	"github.com/kubesphere/notification-manager/pkg/config"
 	whv1 "github.com/kubesphere/notification-manager/pkg/webhook/v1"
 )
 
@@ -44,7 +44,9 @@ func New(logger log.Logger, notifierCfg *config.Config, o *Options) *Webhook {
 	// h.router.Use(middleware.Logger)
 	h.router.Use(middleware.Recoverer)
 	h.router.Use(middleware.Timeout(2 * webhookTimeout))
-	h.router.Get("/receivers", h.handler.GetReceivers)
+	h.router.Get("/receivers", h.handler.ListReceivers)
+	h.router.Get("/configs", h.handler.ListConfigs)
+	h.router.Get("/receiverWithConfig", h.handler.ListReceiverWithConfig)
 	h.router.Post("/api/v2/alerts", h.handler.CreateNotificationFromAlerts)
 	h.router.Post("/api/v2/verify", h.handler.Verify)
 	h.router.Post("/api/v2/notifications", h.handler.Notification)

@@ -14,7 +14,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
-	"github.com/kubesphere/notification-manager/pkg/notify/config"
+	"github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
@@ -59,14 +60,14 @@ func NewHuaweiProvider(c *config.Config, providers *v2beta2.Providers, phoneNumb
 	}
 }
 
-func (h *HuaweiNotifier) MakeRequest(ctx context.Context, messages string) error {
+func (h *HuaweiNotifier) MakeRequest(_ context.Context, messages string) error {
 	appKey, err := h.NotifierCfg.GetCredential(h.AppKey)
 	if err != nil {
-		return fmt.Errorf("[Huawei SendSms]cannot get appKey: %s", err.Error())
+		return utils.Errorf("[Huawei SendSms]cannot get appKey: %s", err.Error())
 	}
 	appSecret, err := h.NotifierCfg.GetCredential(h.AppSecret)
 	if err != nil {
-		return fmt.Errorf("[Huawei SendSms]cannot get appSecret: %s", err.Error())
+		return utils.Errorf("[Huawei SendSms]cannot get appSecret: %s", err.Error())
 	}
 
 	m := strings.Join(generateParams(messages), ",")
@@ -87,7 +88,7 @@ func (h *HuaweiNotifier) MakeRequest(ctx context.Context, messages string) error
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", h.Url, body)
 	if err != nil {
-		return fmt.Errorf("[Huawei SendSms] Create request failed: %s", err.Error())
+		return utils.Errorf("[Huawei SendSms] Create request failed: %s", err.Error())
 	}
 	req.Header.Set("Authorization", `WSSE realm="SDP",profile="UsernameToken",type="Appkey"`)
 	req.Header.Set("X-WSSE", xheader)
@@ -95,22 +96,24 @@ func (h *HuaweiNotifier) MakeRequest(ctx context.Context, messages string) error
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("[Huawei SendSms] An API error occurs: %s", err.Error())
+		return utils.Errorf("[Huawei SendSms] An API error occurs: %s", err.Error())
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	res, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("[Huawei  SendSms] read body failed: %s", fmt.Errorf(err.Error()))
+		return utils.Errorf("[Huawei  SendSms] read body failed: %s", err.Error())
 	}
 
 	var r HuaweiResponse
 	if err = json.Unmarshal(res, &r); err != nil {
-		return fmt.Errorf("[Huawei  SendSms] unmarshal failed: %s", fmt.Errorf(err.Error()))
+		return utils.Errorf("[Huawei  SendSms] unmarshal failed: %s", err.Error())
 	}
 	if r.Code != "000000" {
-		return fmt.Errorf("[Huawei  SendSms] send failed: %s, code: %s, raw messages: %s, handled messages: %s", r.Description, r.Code, messages, m)
+		return utils.Errorf("[Huawei  SendSms] send failed: %s, code: %s, raw messages: %s, handled messages: %s", r.Description, r.Code, messages, m)
 	}
 	return nil
 }
