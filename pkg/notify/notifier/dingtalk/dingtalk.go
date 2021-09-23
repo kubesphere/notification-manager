@@ -495,7 +495,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 
 		if res.Code != 0 {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to conversation error", "conversation", chatID, "errcode", res.Code, "errmsg", res.Message)
-			return err
+			return fmt.Errorf("send message to conversation error, errcode %d, errmsg %s", res.Code, res.Message)
 		}
 
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: send message to conversation", "conversation", chatID)

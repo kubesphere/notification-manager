@@ -259,7 +259,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 				"toUser", utils.ArrayToString(w.ToUser, "|"),
 				"toParty", utils.ArrayToString(w.ToParty, "|"),
 				"toTag", utils.ArrayToString(w.ToTag, "|"))
-			return false, nil
+			return false, fmt.Errorf("send to wechat error, %s", weResp.ErrorMsg)
 		}
 
 		retry, err := sendMessage()
