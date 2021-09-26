@@ -1,3 +1,6 @@
+# Whether Notification manager is running at the kubesphere.
+kubesphere: false
+
 # value of notification-manager-operator
 operator: 
   containers:
