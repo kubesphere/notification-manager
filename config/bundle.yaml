@@ -6599,7 +6599,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        image: kubesphere/notification-manager-operator:latest
+        image: kubesphere/notification-manager-operator:v1.4.0-alpha0
         imagePullPolicy: Always
         name: notification-manager-operator
         ports:
