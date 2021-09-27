@@ -135,7 +135,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 					return err
 				}
 
-				request.Header.Set("Authorization", bearer)
+				request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", bearer))
 			} else if w.HttpConfig.BasicAuth != nil {
 				pass := ""
 				if w.HttpConfig.BasicAuth.Password != nil {
