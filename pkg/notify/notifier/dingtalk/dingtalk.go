@@ -349,7 +349,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, d *config.DingTalk, data t
 		}
 
 		if res.Status != 0 {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "name", "status", res.Status, "punish", res.Punish)
+			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to chatbot error", "status", res.Status, "punish", res.Punish)
 			return fmt.Errorf("send message to chatbot error, status %d, punish %s", res.Status, res.Punish)
 		}
 
@@ -495,7 +495,12 @@ func (n *Notifier) sendToConversation(ctx context.Context, d *config.DingTalk, d
 
 		if res.Code != 0 {
 			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to conversation error", "conversation", chatID, "errcode", res.Code, "errmsg", res.Message)
-			return err
+			return fmt.Errorf("send message to conversation '%s' error, errcode %d, errmsg %s", chatID, res.Code, res.Message)
+		}
+
+		if res.Status != 0 {
+			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: send message to conversation error", "conversation", chatID, "status", res.Status, "punish", res.Punish)
+			return fmt.Errorf("send message to conversation '%s' error, status %d, punish %s", chatID, res.Status, res.Punish)
 		}
 
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: send message to conversation", "conversation", chatID)
