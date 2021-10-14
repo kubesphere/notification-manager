@@ -793,6 +793,7 @@ func (w *Wechat) Clone() *Wechat {
 		ToTag:    w.ToTag,
 		TmplType: w.TmplType,
 		Template: w.Template,
+		Selector: w.Selector,
 	}
 }
 
