@@ -13,7 +13,7 @@
           "severity": "warning"
         },
         "annotations": {
-          "message": "Congratulations! Pull request notification triggered, your pr has passed the helm deployment test.",
+          "message": "Congratulations! Pull request notification triggered, your pr has passed.",
           "runbook_url": ""
         },
         "startsAt": "2021-10-21T05:45:44.782098546Z",
@@ -23,11 +23,11 @@
       }
     ],
     "groupLabels": {
-      "alertname": "PullRequestTest",
+      "alertname": "PullRequestNotification",
       "namespace": "kubesphere-monitoring-system"
     },
     "commonLabels": {
-      "alertname": "PullRequestTest",
+      "alertname": "PullRequestNotification",
       "namespace": "kubesphere-monitoring-system",
       "prometheus": "kubesphere-monitoring-system/k8s",
       "severity": "warning"
