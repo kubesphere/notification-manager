@@ -1,0 +1,39 @@
+{
+    "receiver": "Default",
+    "status": "firing",
+    "alerts": [
+      {
+        "status": "firing",
+        "labels": {
+          "alertname": "PullRequestNotification",
+          "container": "pull-request-notification",
+          "namespace": "kubsphere-monitoring-system",
+          "pod": "pull-request-notification-67f5689d7-sqg89",
+          "prometheus": "kubesphere-monitoring-system/k8s",
+          "severity": "warning"
+        },
+        "annotations": {
+          "message": "Congratulations! Pull request notification triggered, your pr has passed the helm deployment test.",
+          "runbook_url": ""
+        },
+        "startsAt": "2021-10-21T05:45:44.782098546Z",
+        "endsAt": "0001-01-01T00:00:00Z",
+        "generatorURL": "",
+        "fingerprint": "83fb3d34d52108b0"
+      }
+    ],
+    "groupLabels": {
+      "alertname": "PullRequestTest",
+      "namespace": "kubesphere-monitoring-system"
+    },
+    "commonLabels": {
+      "alertname": "PullRequestTest",
+      "namespace": "kubesphere-monitoring-system",
+      "prometheus": "kubesphere-monitoring-system/k8s",
+      "severity": "warning"
+    },
+    "commonAnnotations": {
+      "runbook_url": ""
+    },
+    "externalURL": "http://alertmanager-main-1:9093"
+}

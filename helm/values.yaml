@@ -36,6 +36,7 @@ operator:
 # value of notification-manager
 notificationmanager:
   image:
+    repo: kubesphere/notification-manager
     tag: v1.3.0
     pullPolicy: IfNotPresent
   replicas: 1

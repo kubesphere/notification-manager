@@ -19,6 +19,22 @@ all: manager
 test: generate fmt vet manifests
 	go test ./... -coverprofile cover.out
 
+# Build binary
+binary:
+	go build -o bin/notification-manager-operator cmd/operator/main.go
+	go build -o bin/notification-manager cmd/notification-manager/main.go
+
+# Verify CRDs
+verify: verify-crds
+
+verify-crds: generate
+	@if !(git diff --quiet HEAD config/crd); then \
+		echo "generated files located at config/crd are out of date, run make generate"; exit 1; \
+	fi
+	@if !(git diff --quiet HEAD helm/crds); then \
+		echo "generated files located at helm/crds are out of date, run make generate and copy it to there"; exit 1; \
+	fi
+
 # Build manager binary
 manager: generate fmt vet
 	go build -o bin/notification-manager-operator cmd/operator/main.go

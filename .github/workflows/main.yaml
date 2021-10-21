@@ -1,0 +1,167 @@
+name: Main CI WorkFlow
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'release-*'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - 'master'
+      - 'release-*'
+env:
+  OP_IMAGE: kubesphere/notification-manager-operator:latest
+  NM_IMAGE: kubesphere/notification-manager:latest
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    name: Basic test and verify
+    env:
+      GO111MODULE: "on"
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.x
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install kubebuilder-2.3.2
+        run: |
+          curl -L "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.2/kubebuilder_2.3.2_linux_amd64.tar.gz" | tar -xz -C /tmp/
+          sudo mv /tmp/kubebuilder_2.3.2_linux_amd64 /usr/local/kubebuilder
+
+      - name: Run basic test
+        run: make test
+
+      - name: Run verify crds test
+        run:  make verify
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    name: Binary build
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.x
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - run: make binary
+        name: Run build all binaries
+       
+  docker_build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    name: Docker image build
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.x
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: build image
+        run: |
+          docker build . -t ${{ env.OP_IMAGE }} -f cmd/operator/Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
+          docker build . -t ${{ env.NM_IMAGE }} -f cmd/notification-manager/Dockerfile --build-arg GOPROXY="https://proxy.golang.org"
+
+
+  helm_deployment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    name: Install and uninstall notification manager by helm
+    steps:
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.4.0
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.2.0
+        with:
+          config: .github/workflows/kind/kind.yaml
+
+      - name: Setting up notification manager
+        run: |
+          kubectl create ns kubesphere-monitoring-system
+          helm install notification-manager ./helm -n kubesphere-monitoring-system
+
+      - name: Waiting for 30 seconds to keep the notification manager installed
+        uses: jakejarvis/wait-action@master
+        with:
+          time: '30s'
+
+      - name: Check the related resources
+        run: |
+          echo "list release:"
+          echo "-----"
+          helm list -n kubesphere-monitoring-system
+          echo "-----"
+
+          echo "list pods:"
+          echo "-----"
+          kubectl get pods -n kubesphere-monitoring-system
+          echo "-----"
+      
+      - name: Deploy the default SlackConfig and global SlackReceiver
+        run: |
+          cat config/ci/slack-pr.yaml | sed -e 's/SLACK_SECRET/${{ secrets.SLACK_SECRET }}/g' | kubectl apply -f -
+
+      - name: Expose service port as nodeport
+        run: |
+          kubectl -n kubesphere-monitoring-system patch svc notification-manager-svc --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"},{"op":"replace","path":"/spec/ports/0/nodePort","value":30008}]'
+
+      - name: Send alerts
+        run: | 
+          NODE_IP=$(kubectl get nodes -o jsonpath={.items[0].status.addresses[0].address})
+          curl -XPOST -d @./config/ci/alerts.json "http://$NODE_IP:30008/api/v2/alerts"
+
+      - name: Waiting for 2 seconds
+        uses: jakejarvis/wait-action@master
+        with:
+          time: '2s'
+
+      - name: Check the related logs
+        run: |
+          kubectl -n kubesphere-monitoring-system logs -l app=notification-manager | grep -i "error" || true
+        
+      - name: Uninstall notification manager
+        run: |
+          helm uninstall notification-manager -n kubesphere-monitoring-system
