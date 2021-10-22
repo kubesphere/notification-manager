@@ -129,9 +129,14 @@ jobs:
           kubectl get pods -n kubesphere-monitoring-system
           echo "-----"
       
-      - name: Deploy the default SlackConfig and global SlackReceiver
+      - name: Deploy the default SlackConfig and global SlackReceiver if the slack secret is set
         run: |
-          cat config/ci/slack-pr.yaml | sed -e 's/SLACK_SECRET/${{ secrets.SLACK_SECRET }}/g' | kubectl apply -f -
+          if [ '${{ secrets.SLACK_SECRET }}' != '' ] ; then
+              cat config/ci/slack-pr.yaml | sed -e 's/SLACK_SECRET/${{ secrets.SLACK_SECRET }}/g' | kubectl apply -f -
+          fi
+          else
+              echo "No Slack secret is set, skipped..."
+          fi
 
       - name: Expose service port as nodeport
         run: |
