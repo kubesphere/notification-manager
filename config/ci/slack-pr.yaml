@@ -1,0 +1,38 @@
+apiVersion: notification.kubesphere.io/v2beta2
+kind: Config
+metadata:
+  name: default-slack-config
+  labels:
+    app: notification-manager
+    type: default
+spec:
+  slack:
+    slackTokenSecret: 
+      valueFrom:
+        secretKeyRef:
+          namespace: kubesphere-monitoring-system
+          key: token
+          name: slack-token-secret
+---
+apiVersion: notification.kubesphere.io/v2beta2
+kind: Receiver
+metadata:
+  name: global-slack-receiver
+  labels:
+    app: notification-manager
+    type: global
+spec:
+  slack:
+    channels: 
+      - sig-observability
+---
+apiVersion: v1
+data:
+  token: SLACK_SECRET
+kind: Secret
+metadata:
+  labels:
+    app: notification-manager
+  name: slack-token-secret
+  namespace: kubesphere-monitoring-system
+type: Opaque
