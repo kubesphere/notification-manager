@@ -24,7 +24,7 @@ metadata:
 spec:
   slack:
     channels: 
-      - sig-observability
+      - notifications
 ---
 apiVersion: v1
 data:
