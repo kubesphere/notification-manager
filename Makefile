@@ -31,9 +31,6 @@ verify-crds: generate
 	@if !(git diff --quiet HEAD config/crd); then \
 		echo "generated files located at config/crd are out of date, run make generate"; exit 1; \
 	fi
-	@if !(git diff --quiet HEAD helm/crds); then \
-		echo "generated files located at helm/crds are out of date, run make generate and copy it to there"; exit 1; \
-	fi
 
 # Build manager binary
 manager: generate fmt vet
@@ -75,6 +72,7 @@ manifests: controller-gen
 	cd config/manager && kustomize edit set image controller=${IMG} && cd ../../
 	kustomize build config/default | sed -e '/creationTimestamp/d' > config/bundle.yaml
 	kustomize build config/samples | sed -e '/creationTimestamp/d' > config/samples/bundle.yaml
+	cp -r ./config/crd/bases/* ./helm/crds/
 
 # Run go fmt against code
 fmt:
