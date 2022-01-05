@@ -3,9 +3,8 @@ package stdout
 import (
 	"adapter/pkg/common"
 	"adapter/pkg/export"
+	"encoding/json"
 	"fmt"
-
-	jsoniter "github.com/json-iterator/go"
 )
 
 const (
@@ -56,7 +55,7 @@ func alertToString(a *common.Alert) string {
 		}
 	}
 
-	bs, err := jsoniter.Marshal(m)
+	bs, err := json.Marshal(m)
 	if err != nil {
 		fmt.Println(err)
 		return ""

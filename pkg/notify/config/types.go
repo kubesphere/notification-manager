@@ -28,6 +28,7 @@ type Receiver interface {
 	GetConfigSelector() *metav1.LabelSelector
 	GetConfig() interface{}
 	SetConfig(c interface{}) error
+	GetAlertSelector() *metav1.LabelSelector
 	Validate() error
 }
 
@@ -264,6 +265,10 @@ func (d *DingTalk) SetConfig(obj interface{}) error {
 	return nil
 }
 
+func (d *DingTalk) GetAlertSelector() *metav1.LabelSelector {
+	return d.Selector
+}
+
 func (d *DingTalk) Validate() error {
 
 	if d.TmplType != "" && d.TmplType != Text && d.TmplType != Markdown {
@@ -442,6 +447,10 @@ func (e *Email) SetConfig(obj interface{}) error {
 	return nil
 }
 
+func (e *Email) GetAlertSelector() *metav1.LabelSelector {
+	return e.Selector
+}
+
 func (e *Email) Validate() error {
 
 	if e.TmplType != "" && e.TmplType != Text && e.TmplType != HTML {
@@ -547,6 +556,10 @@ func (s *Slack) SetConfig(obj interface{}) error {
 	return nil
 }
 
+func (s *Slack) GetAlertSelector() *metav1.LabelSelector {
+	return s.Selector
+}
+
 func (s *Slack) Validate() error {
 
 	if s.Channels == nil || len(s.Channels) == 0 {
@@ -640,6 +653,10 @@ func (w *Webhook) SetConfig(obj interface{}) error {
 
 	w.WebhookConfig = c
 	return nil
+}
+
+func (w *Webhook) GetAlertSelector() *metav1.LabelSelector {
+	return w.Selector
 }
 
 func (w *Webhook) Validate() error {
@@ -745,6 +762,10 @@ func (w *Wechat) SetConfig(obj interface{}) error {
 
 	w.WechatConfig = c
 	return nil
+}
+
+func (w *Wechat) GetAlertSelector() *metav1.LabelSelector {
+	return w.Selector
 }
 
 func (w *Wechat) Validate() error {
@@ -888,6 +909,10 @@ func (p *Pushover) SetConfig(obj interface{}) error {
 	return nil
 }
 
+func (p *Pushover) GetAlertSelector() *metav1.LabelSelector {
+	return p.Selector
+}
+
 func (p *Pushover) Validate() error {
 
 	if p.Profiles == nil || len(p.Profiles) == 0 {
@@ -1011,6 +1036,10 @@ func (s *Sms) SetConfig(obj interface{}) error {
 
 	s.SmsConfig = c
 	return nil
+}
+
+func (s *Sms) GetAlertSelector() *metav1.LabelSelector {
+	return s.Selector
 }
 
 func (s *Sms) Validate() error {
