@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/kubesphere/notification-manager/pkg/history"
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	wh "github.com/kubesphere/notification-manager/pkg/webhook"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -47,6 +48,11 @@ var (
 		"worker.queue",
 		"Notification worker queue capacity",
 	).Default("1000").Int()
+
+	historyQueue = kingpin.Flag(
+		"history.queue",
+		"Notification history worker queue capacity",
+	).Default("10000").Int()
 
 	logLevels = []string{
 		logLevelDebug,
@@ -98,9 +104,11 @@ func Main() int {
 	ctxHttp, cancelHttp := context.WithCancel(context.Background())
 	defer cancelHttp()
 
+	ch := make(chan interface{}, *historyQueue)
+
 	// Setup notification manager config
 	var err error
-	if cfg, err = config.New(ctxHttp, logger); err != nil {
+	if cfg, err = config.New(ctxHttp, logger, ch); err != nil {
 		_ = level.Error(logger).Log("msg", "Failed to create notification manager config")
 		return -1
 	}
@@ -109,6 +117,9 @@ func Main() int {
 		_ = level.Error(logger).Log("msg", "Failed to create sync notification manager config")
 		return -1
 	}
+
+	// Start history backend to handle notification history
+	history.StartBackend(ch, cfg, logger, wkrTimeout)
 
 	// Setup webhook to receive alert/notification msg
 	webhook := wh.New(
