@@ -2,6 +2,8 @@ package history
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-kit/kit/log"
@@ -11,8 +13,11 @@ import (
 )
 
 const (
-	defaultTimeout  = 30 * time.Second
-	historyRecorded = "history/recorded"
+	defaultTimeout      = 30 * time.Second
+	notificationHistory = "notification/history"
+	historyRetry        = "history/retry"
+	retryMax            = 10
+	requeueDelayTime    = 5 * time.Second
 )
 
 type backend struct {
@@ -50,13 +55,13 @@ func (b *backend) run() {
 		}
 
 		if len(data.Alerts) == 0 {
-			return
+			continue
 		}
 
 		if data.CommonAnnotations != nil {
-			// History had sent, return
-			if data.CommonAnnotations[historyRecorded] == "true" {
-				return
+			// The purpose of this annotation is to avoid the notification history being sent in a loop.
+			if _, ok := data.CommonAnnotations[notificationHistory]; ok {
+				continue
 			}
 		}
 
@@ -69,9 +74,15 @@ func (b *backend) run() {
 			if data.CommonAnnotations == nil {
 				data.CommonAnnotations = make(map[string]string)
 			}
-			data.CommonAnnotations[historyRecorded] = "true"
+			data.CommonAnnotations[notificationHistory] = "true"
 
-			n := notify.NewNotification(b.logger, receivers, b.notifierCfg, data)
+			retry := getRetryTimes(data)
+			logger := b.logger
+			if retry != 0 {
+				logger = log.With(b.logger, "retry", retry)
+			}
+
+			n := notify.NewNotification(logger, receivers, b.notifierCfg, data)
 			ctx, cancel := context.WithTimeout(context.Background(), b.timeout)
 			defer cancel()
 			err := n.Notify(ctx)
@@ -83,6 +94,24 @@ func (b *backend) run() {
 }
 
 func (b *backend) requeue(data template.Data) {
-	time.Sleep(time.Second)
+	time.Sleep(requeueDelayTime)
+
+	delete(data.CommonAnnotations, notificationHistory)
+	retry := getRetryTimes(data)
+	if retry >= retryMax {
+		return
+	}
+	data.CommonAnnotations[historyRetry] = fmt.Sprintf("%d", retry+1)
+
 	b.ch <- data
+}
+
+func getRetryTimes(data template.Data) int {
+	str, ok := data.CommonAnnotations[historyRetry]
+	if !ok {
+		return 0
+	} else {
+		retry, _ := strconv.Atoi(str)
+		return retry
+	}
 }
