@@ -149,6 +149,11 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		if len(newData.Alerts) == 0 {
 			return nil
 		}
+
+		if err := n.notifierCfg.EnqueueHistory(newData); err != nil {
+			_ = level.Error(n.logger).Log("msg", "Notification history in queue error", "error", err.Error())
+		}
+
 		for _, a := range newData.Alerts {
 			as = append(as, &types.Alert{
 				Alert: model.Alert{

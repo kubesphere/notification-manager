@@ -75,8 +75,9 @@ type Config struct {
 	// Channel to receive receiver create/update/delete operations and then update receivers
 	ch chan *param
 	// The pod's namespace
-	namespace string
-	history   *v2beta2.HistoryReceiver
+	namespace    string
+	history      *v2beta2.HistoryReceiver
+	historyQueue chan interface{}
 	// Dose the notification manager crd add.
 	nmAdd bool
 }
@@ -100,7 +101,7 @@ type param struct {
 	done                   chan interface{}
 }
 
-func New(ctx context.Context, logger log.Logger) (*Config, error) {
+func New(ctx context.Context, logger log.Logger, historyQueue chan interface{}) (*Config, error) {
 	scheme := runtime.NewScheme()
 	_ = v2beta2.AddToScheme(scheme)
 	_ = v1.AddToScheme(scheme)
@@ -146,6 +147,7 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		ReceiverOpts:           nil,
 		ch:                     make(chan *param, ChannelCapacity),
 		namespace:              ns,
+		historyQueue:           historyQueue,
 	}, nil
 }
 
@@ -499,13 +501,6 @@ func (c *Config) RcvsFromNs(namespace *string) []Receiver {
 		}
 	}
 
-	// If notification history is enabled and there are receivers to receive notification,
-	// a virtual receiver will be created to receive notification history.
-	if rcvs != nil && len(rcvs) > 0 && c.history != nil {
-		rcvs = append(rcvs, NewReceiver(c, c.history.Webhook))
-		_ = level.Debug(c.logger).Log("msg", "Add history receiver")
-	}
-
 	return rcvs
 }
 
@@ -821,4 +816,29 @@ func (c *Config) getConfigFromCRD(config *v2beta2.Config, receiverType string) i
 	}
 
 	return nil
+}
+
+func (c *Config) EnqueueHistory(val interface{}) error {
+	rcvs := c.GetHistoryReceivers()
+	if rcvs == nil || len(rcvs) == 0 {
+		return nil
+	}
+
+	select {
+	case c.historyQueue <- val:
+		return nil
+	case <-time.After(time.Second):
+		return fmt.Errorf("history in queue timeout")
+	}
+}
+
+func (c *Config) GetHistoryReceivers() []Receiver {
+
+	var rcvs []Receiver
+
+	if c.history != nil {
+		rcvs = append(rcvs, NewReceiver(c, c.history.Webhook))
+	}
+
+	return rcvs
 }

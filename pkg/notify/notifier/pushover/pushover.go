@@ -151,6 +151,10 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return nil
 		}
 
+		if err := n.notifierCfg.EnqueueHistory(filteredData); err != nil {
+			_ = level.Error(n.logger).Log("msg", "Notification history in queue error", "error", err.Error())
+		}
+
 		// split new data along with its Alerts to ensure each message is small enough to fit the Pushover's message length limit
 		messages, _, err := n.template.Split(filteredData, MessageMaxLength, c.Template, "", n.logger)
 		if err != nil {
