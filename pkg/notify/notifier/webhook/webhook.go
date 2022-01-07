@@ -105,7 +105,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return nil
 		}
 
-		if err := n.notifierCfg.HistoryInQueue(newData); err != nil {
+		if err := n.notifierCfg.EnqueueHistory(newData); err != nil {
 			_ = level.Error(n.logger).Log("msg", "Notification history in queue error", "error", err.Error())
 		}
 

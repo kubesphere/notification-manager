@@ -818,7 +818,7 @@ func (c *Config) getConfigFromCRD(config *v2beta2.Config, receiverType string) i
 	return nil
 }
 
-func (c *Config) HistoryInQueue(val interface{}) error {
+func (c *Config) EnqueueHistory(val interface{}) error {
 	rcvs := c.GetHistoryReceivers()
 	if rcvs == nil || len(rcvs) == 0 {
 		return nil
