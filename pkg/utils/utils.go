@@ -87,3 +87,20 @@ func FilterAlerts(data template.Data, selector *v1.LabelSelector, logger log.Log
 
 	return newData
 }
+
+func SelectorMatchesAlert(alert template.Alert, selector *v1.LabelSelector) bool {
+	if selector == nil {
+		return true
+	}
+
+	labelSelector, err := v1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		return true
+	}
+
+	if labelSelector.Empty() {
+		return true
+	}
+
+	return labelSelector.Matches(labels.Set(alert.Labels))
+}

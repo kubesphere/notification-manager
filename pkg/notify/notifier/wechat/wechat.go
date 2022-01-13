@@ -278,10 +278,6 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			continue
 		}
 
-		if err := n.notifierCfg.EnqueueHistory(newData); err != nil {
-			_ = level.Error(n.logger).Log("msg", "Notification history in queue error", "error", err.Error())
-		}
-
 		messages, _, err := n.template.Split(newData, MessageMaxSize, w.Template, "", n.logger)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "WechatNotifier: split message error", "error", err.Error())

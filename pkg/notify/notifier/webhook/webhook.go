@@ -105,10 +105,6 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return nil
 		}
 
-		if err := n.notifierCfg.EnqueueHistory(newData); err != nil {
-			_ = level.Error(n.logger).Log("msg", "Notification history in queue error", "error", err.Error())
-		}
-
 		var value interface{} = newData
 		if w.Template != DefaultTemplate {
 			msg, err := n.template.TempleText(w.Template, newData, n.logger)

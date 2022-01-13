@@ -243,25 +243,16 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			continue
 		}
 
-		flag := false
 		if d.ChatBot != nil {
 			group.Add(func(stopCh chan interface{}) {
 				stopCh <- n.sendToChatBot(ctx, d, newData)
 			})
-			flag = true
 		}
 
 		if d.ChatIDs != nil && len(d.ChatIDs) > 0 {
 			group.Add(func(stopCh chan interface{}) {
 				stopCh <- n.sendToConversation(ctx, d, newData)
 			})
-			flag = true
-		}
-
-		if flag {
-			if err := n.notifierCfg.EnqueueHistory(newData); err != nil {
-				_ = level.Error(n.logger).Log("msg", "Notification history in queue error", "error", err.Error())
-			}
 		}
 	}
 

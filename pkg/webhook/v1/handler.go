@@ -16,6 +16,12 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	historyRetryMax   = 10
+	historyRetryDelay = time.Second * 5
 )
 
 type HttpHandler struct {
@@ -138,6 +144,13 @@ func (h *HttpHandler) CreateNotificationFromAlerts(w http.ResponseWriter, r *htt
 				group.Add(func(stopCh chan interface{}) {
 					stopCh <- n.Notify(ctx)
 				})
+
+				// Export notification history.
+				var selectors []*metav1.LabelSelector
+				for _, receiver := range receivers {
+					selectors = append(selectors, receiver.GetAlertSelector())
+				}
+				h.SendNotificationHistory(d, selectors)
 			}
 
 			errs := group.Wait()
@@ -270,7 +283,7 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		ExternalURL:       "kubesphere.io",
 	}
 
-	if msg := h.send(receivers, d); msg != "" {
+	if msg := h.send(receivers, d, h.logger); msg != "" {
 		h.handle(w, &response{http.StatusBadRequest, msg})
 		return
 	}
@@ -310,7 +323,7 @@ func (h *HttpHandler) Notification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if msg := h.send(receivers, d); msg != "" {
+	if msg := h.send(receivers, d, h.logger); msg != "" {
 		h.handle(w, &response{http.StatusBadRequest, msg})
 		return
 	}
@@ -346,8 +359,8 @@ func (h *HttpHandler) getReceiversFromRequest(m map[string]interface{}) ([]confi
 	return receivers, nil
 }
 
-func (h *HttpHandler) send(receivers []config.Receiver, d template.Data) string {
-	n := notify.NewNotification(h.logger, receivers, h.notifierCfg, d)
+func (h *HttpHandler) send(receivers []config.Receiver, d template.Data, logger log.Logger) string {
+	n := notify.NewNotification(logger, receivers, h.notifierCfg, d)
 	ctx, cancel := context.WithTimeout(context.Background(), h.wkrTimeout)
 	defer cancel()
 	errs := n.Notify(ctx)
@@ -361,4 +374,55 @@ func (h *HttpHandler) send(receivers []config.Receiver, d template.Data) string 
 	}
 
 	return ""
+}
+
+func (h *HttpHandler) SendNotificationHistory(data template.Data, selectors []*metav1.LabelSelector) {
+
+	go func() {
+
+		receivers := h.notifierCfg.GetHistoryReceivers()
+		if receivers == nil || len(receivers) == 0 {
+			return
+		}
+
+		newData := template.Data{
+			Receiver:          data.Receiver,
+			Status:            data.Status,
+			GroupLabels:       data.GroupLabels,
+			CommonLabels:      data.CommonLabels,
+			CommonAnnotations: data.CommonAnnotations,
+			ExternalURL:       data.ExternalURL,
+		}
+
+		for _, alert := range data.Alerts {
+			flag := false
+			for _, selector := range selectors {
+				if utils.SelectorMatchesAlert(alert, selector) {
+					flag = true
+					break
+				}
+			}
+
+			if flag {
+				newData.Alerts = append(newData.Alerts, alert)
+			}
+		}
+
+		if len(newData.Alerts) == 0 {
+			return
+		}
+
+		for retry := 0; retry <= historyRetryMax; retry++ {
+			logger := log.With(h.logger, "type", "history")
+			if retry != 0 {
+				logger = log.With(logger, "retry", retry)
+			}
+
+			if errMsg := h.send(receivers, newData, logger); errMsg == "" {
+				return
+			}
+
+			time.Sleep(historyRetryDelay)
+		}
+	}()
 }
