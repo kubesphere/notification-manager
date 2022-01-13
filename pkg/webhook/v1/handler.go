@@ -399,6 +399,7 @@ func (h *HttpHandler) SendNotificationHistory(data template.Data, selectors []*m
 			for _, selector := range selectors {
 				if utils.SelectorMatchesAlert(alert, selector) {
 					flag = true
+					break
 				}
 			}
 
