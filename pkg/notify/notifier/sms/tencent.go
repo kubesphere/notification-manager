@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
-	"github.com/kubesphere/notification-manager/pkg/notify/config"
-
+	"github.com/kubesphere/notification-manager/pkg/controller"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/regions"
@@ -20,7 +20,7 @@ const (
 
 type TencentNotifier struct {
 	Sign        string
-	NotifierCfg *config.Config
+	notifierCtl *controller.Controller
 	TemplateID  string
 	SecretId    *v2beta2.Credential
 	SecretKey   *v2beta2.Credential
@@ -28,11 +28,11 @@ type TencentNotifier struct {
 	SmsSdkAppid string
 }
 
-func NewTencentProvider(c *config.Config, providers *v2beta2.Providers, phoneNumbers []string) Provider {
+func NewTencentProvider(c *controller.Controller, providers *v2beta2.Providers, phoneNumbers []string) Provider {
 	phoneNum := handleTencentPhoneNum(phoneNumbers)
 	return &TencentNotifier{
 		Sign:        providers.Tencent.Sign,
-		NotifierCfg: c,
+		notifierCtl: c,
 		TemplateID:  providers.Tencent.TemplateID,
 		SecretId:    providers.Tencent.SecretId,
 		SecretKey:   providers.Tencent.SecretKey,
@@ -41,14 +41,14 @@ func NewTencentProvider(c *config.Config, providers *v2beta2.Providers, phoneNum
 	}
 }
 
-func (t *TencentNotifier) MakeRequest(ctx context.Context, messages string) error {
-	secretId, err := t.NotifierCfg.GetCredential(t.SecretId)
+func (t *TencentNotifier) MakeRequest(_ context.Context, messages string) error {
+	secretId, err := t.notifierCtl.GetCredential(t.SecretId)
 	if err != nil {
-		return fmt.Errorf("[Tencent SendSms]cannot get accessKeyId: %s", err.Error())
+		return utils.Errorf("[Tencent SendSms]cannot get accessKeyId: %s", err.Error())
 	}
-	secretKey, err := t.NotifierCfg.GetCredential(t.SecretKey)
+	secretKey, err := t.notifierCtl.GetCredential(t.SecretKey)
 	if err != nil {
-		return fmt.Errorf("[Tencent SendSms] cannot get secretKey: %s", err.Error())
+		return utils.Errorf("[Tencent SendSms] cannot get secretKey: %s", err.Error())
 	}
 	credential := common.NewCredential(secretId, secretKey)
 	client, _ := smsApi.NewClient(credential, regions.Guangzhou, profile.NewClientProfile())
@@ -66,7 +66,7 @@ func (t *TencentNotifier) MakeRequest(ctx context.Context, messages string) erro
 	resp, err := client.SendSms(req)
 
 	if err != nil {
-		return fmt.Errorf("[Tencent SendSms] An API error occurs: %s", err.Error())
+		return utils.Errorf("[Tencent SendSms] An API error occurs: %s", err.Error())
 	}
 
 	sendStatusSet := resp.Response.SendStatusSet
@@ -80,7 +80,7 @@ func (t *TencentNotifier) MakeRequest(ctx context.Context, messages string) erro
 	}
 
 	if len(failedPhoneNums) != 0 {
-		return fmt.Errorf("[Tencent SendSms] Some phonenums send failed: %s", strings.Join(failedPhoneNums, ","))
+		return utils.Errorf("[Tencent SendSms] Some phonenums send failed: %s", strings.Join(failedPhoneNums, ","))
 	}
 
 	return nil

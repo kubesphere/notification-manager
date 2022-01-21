@@ -10,13 +10,13 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/notify/config"
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	wh "github.com/kubesphere/notification-manager/pkg/webhook"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	cfg *config.Config
+	ctl *controller.Controller
 
 	logLevel = kingpin.Flag(
 		"log.level",
@@ -100,20 +100,20 @@ func Main() int {
 
 	// Setup notification manager config
 	var err error
-	if cfg, err = config.New(ctxHttp, logger); err != nil {
-		_ = level.Error(logger).Log("msg", "Failed to create notification manager config")
+	if ctl, err = controller.New(ctxHttp, logger); err != nil {
+		_ = level.Error(logger).Log("msg", "Failed to create notification manager controller")
 		return -1
 	}
 	// Sync notification manager config
-	if err := cfg.Run(); err != nil {
-		_ = level.Error(logger).Log("msg", "Failed to create sync notification manager config")
+	if err := ctl.Run(); err != nil {
+		_ = level.Error(logger).Log("msg", "Failed to create sync notification manager controller")
 		return -1
 	}
 
 	// Setup webhook to receive alert/notification msg
 	webhook := wh.New(
 		logger,
-		cfg,
+		ctl,
 		&wh.Options{
 			ListenAddress:  *listenAddress,
 			WebhookTimeout: *webhookTimeout,

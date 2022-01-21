@@ -3,14 +3,16 @@ package slack
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/kubesphere/notification-manager/pkg/controller"
+	"github.com/kubesphere/notification-manager/pkg/internal"
+	"github.com/kubesphere/notification-manager/pkg/internal/slack"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
@@ -23,8 +25,8 @@ const (
 )
 
 type Notifier struct {
-	notifierCfg  *config.Config
-	slack        []*config.Slack
+	notifierCtl  *controller.Controller
+	receivers    []*slack.Receiver
 	timeout      time.Duration
 	logger       log.Logger
 	template     *notifier.Template
@@ -41,10 +43,10 @@ type slackResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
-func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg *config.Config) notifier.Notifier {
+func NewSlackNotifier(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier {
 
 	var path []string
-	opts := notifierCfg.ReceiverOpts
+	opts := notifierCtl.ReceiverOpts
 	if opts != nil && opts.Global != nil {
 		path = opts.Global.TemplateFiles
 	}
@@ -55,7 +57,7 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 	}
 
 	n := &Notifier{
-		notifierCfg:  notifierCfg,
+		notifierCtl:  notifierCtl,
 		timeout:      DefaultSendTimeout,
 		logger:       logger,
 		template:     tmpl,
@@ -78,12 +80,12 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 	}
 
 	for _, r := range receivers {
-		receiver, ok := r.(*config.Slack)
+		receiver, ok := r.(*slack.Receiver)
 		if !ok || receiver == nil {
 			continue
 		}
 
-		if receiver.SlackConfig == nil {
+		if receiver.Config == nil {
 			_ = level.Warn(logger).Log("msg", "SlackNotifier: ignore receiver because of empty config")
 			continue
 		}
@@ -92,7 +94,7 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 			receiver.Template = n.templateName
 		}
 
-		n.slack = append(n.slack, receiver)
+		n.receivers = append(n.receivers, receiver)
 	}
 
 	return n
@@ -100,19 +102,19 @@ func NewSlackNotifier(logger log.Logger, receivers []config.Receiver, notifierCf
 
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	send := func(channel string, c *config.Slack) error {
+	send := func(channel string, r *slack.Receiver) error {
 
 		start := time.Now()
 		defer func() {
 			_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "channel", channel, "used", time.Since(start).String())
 		}()
 
-		newData := utils.FilterAlerts(data, c.Selector, n.logger)
+		newData := utils.FilterAlerts(data, r.AlertSelector, n.logger)
 		if len(newData.Alerts) == 0 {
 			return nil
 		}
 
-		msg, err := n.template.TempleText(c.Template, newData, n.logger)
+		msg, err := n.template.TempleText(r.Template, newData, n.logger)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "SlackNotifier: generate message error", "channel", channel, "error", err.Error())
 			return err
@@ -135,7 +137,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}
 		request.Header.Set("Content-Type", "application/json")
 
-		token, err := n.notifierCfg.GetCredential(c.SlackConfig.Token)
+		token, err := n.notifierCtl.GetCredential(r.Token)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "SlackNotifier: get token secret", "channel", channel, "error", err.Error())
 			return err
@@ -156,8 +158,8 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}
 
 		if !slResp.OK {
-			_ = level.Error(n.logger).Log("msg", "SlackNotifier: slack error", "channel", channel, "error", slResp.Error)
-			return fmt.Errorf("%s", slResp.Error)
+			_ = level.Error(n.logger).Log("msg", "SlackNotifier: send message error", "channel", channel, "error", slResp.Error)
+			return utils.Error(slResp.Error)
 		}
 
 		_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "channel", channel)
@@ -166,12 +168,12 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	}
 
 	group := async.NewGroup(ctx)
-	for _, slack := range n.slack {
-		s := slack
-		for _, channel := range s.Channels {
+	for _, receiver := range n.receivers {
+		r := receiver
+		for _, channel := range r.Channels {
 			ch := channel
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- send(ch, s)
+				stopCh <- send(ch, r)
 			})
 		}
 	}

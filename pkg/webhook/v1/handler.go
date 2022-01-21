@@ -2,7 +2,6 @@ package v1
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -12,10 +11,17 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/async"
+	"github.com/kubesphere/notification-manager/pkg/controller"
+	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/notify"
-	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	historyRetryMax   = 10
+	historyRetryDelay = time.Second * 5
 )
 
 type HttpHandler struct {
@@ -23,7 +29,7 @@ type HttpHandler struct {
 	semCh          chan struct{}
 	webhookTimeout time.Duration
 	wkrTimeout     time.Duration
-	notifierCfg    *config.Config
+	notifierCtl    *controller.Controller
 }
 
 type response struct {
@@ -31,13 +37,13 @@ type response struct {
 	Message string
 }
 
-func New(logger log.Logger, semCh chan struct{}, webhookTimeout time.Duration, wkrTimeout time.Duration, cfg *config.Config) *HttpHandler {
+func New(logger log.Logger, semCh chan struct{}, webhookTimeout time.Duration, wkrTimeout time.Duration, ctl *controller.Controller) *HttpHandler {
 	h := &HttpHandler{
 		logger:         logger,
 		semCh:          semCh,
 		webhookTimeout: webhookTimeout,
 		wkrTimeout:     wkrTimeout,
-		notifierCfg:    cfg,
+		notifierCtl:    ctl,
 	}
 	return h
 }
@@ -81,14 +87,16 @@ func (h *HttpHandler) CreateNotificationFromAlerts(w http.ResponseWriter, r *htt
 			defer close(wkrCh)
 
 			cluster := "default"
-			if h.notifierCfg != nil && h.notifierCfg.ReceiverOpts != nil && h.notifierCfg.ReceiverOpts.Global != nil {
-				if h.notifierCfg.ReceiverOpts.Global.Cluster != "" {
-					cluster = h.notifierCfg.ReceiverOpts.Global.Cluster
+			if h.notifierCtl != nil && h.notifierCtl.ReceiverOpts != nil && h.notifierCtl.ReceiverOpts.Global != nil {
+				if h.notifierCtl.ReceiverOpts.Global.Cluster != "" {
+					cluster = h.notifierCtl.ReceiverOpts.Global.Cluster
 				}
 			}
 
 			for _, alert := range data.Alerts {
-				alert.Labels["cluster"] = cluster
+				if v := alert.Labels["cluster"]; v == "" {
+					alert.Labels["cluster"] = cluster
+				}
 			}
 
 			dm := make(map[string]template.Data)
@@ -133,11 +141,18 @@ func (h *HttpHandler) CreateNotificationFromAlerts(w http.ResponseWriter, r *htt
 				if len(k) > 0 {
 					ns = &k
 				}
-				receivers := h.notifierCfg.RcvsFromNs(ns)
-				n := notify.NewNotification(h.logger, receivers, h.notifierCfg, d)
+				receivers := h.notifierCtl.RcvsFromNs(ns)
+				n := notify.NewNotification(h.logger, receivers, h.notifierCtl, d)
 				group.Add(func(stopCh chan interface{}) {
 					stopCh <- n.Notify(ctx)
 				})
+
+				// Export notification history.
+				var selectors []*metav1.LabelSelector
+				for _, receiver := range receivers {
+					selectors = append(selectors, receiver.GetAlertSelector())
+				}
+				h.SendNotificationHistory(d, selectors)
 			}
 
 			errs := group.Wait()
@@ -223,10 +238,26 @@ func (h *HttpHandler) handle(w http.ResponseWriter, resp *response) {
 	}
 }
 
-func (h *HttpHandler) GetReceivers(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) ListReceivers(w http.ResponseWriter, r *http.Request) {
 
 	_ = r.ParseForm()
-	bs, _ := utils.JsonMarshalIndent(h.notifierCfg.OutputReceiver(r.FormValue("tenant"), r.FormValue("type")), "", "  ")
+	bs, _ := utils.JsonMarshalIndent(h.notifierCtl.ListReceiver(r.FormValue("tenant"), r.FormValue("type")), "", "  ")
+	_, _ = w.Write(bs)
+	return
+}
+
+func (h *HttpHandler) ListConfigs(w http.ResponseWriter, r *http.Request) {
+
+	_ = r.ParseForm()
+	bs, _ := utils.JsonMarshalIndent(h.notifierCtl.ListConfig(r.FormValue("tenant"), r.FormValue("type")), "", "  ")
+	_, _ = w.Write(bs)
+	return
+}
+
+func (h *HttpHandler) ListReceiverWithConfig(w http.ResponseWriter, r *http.Request) {
+
+	_ = r.ParseForm()
+	bs, _ := utils.JsonMarshalIndent(h.notifierCtl.ListReceiverWithConfig(r.FormValue("tenant"), r.FormValue("name"), r.FormValue("type")), "", "  ")
 	_, _ = w.Write(bs)
 	return
 }
@@ -270,7 +301,7 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		ExternalURL:       "kubesphere.io",
 	}
 
-	if msg := h.send(receivers, d); msg != "" {
+	if msg := h.send(receivers, d, h.logger); msg != "" {
 		h.handle(w, &response{http.StatusBadRequest, msg})
 		return
 	}
@@ -310,7 +341,7 @@ func (h *HttpHandler) Notification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if msg := h.send(receivers, d); msg != "" {
+	if msg := h.send(receivers, d, h.logger); msg != "" {
 		h.handle(w, &response{http.StatusBadRequest, msg})
 		return
 	}
@@ -318,11 +349,11 @@ func (h *HttpHandler) Notification(w http.ResponseWriter, r *http.Request) {
 	h.handle(w, &response{http.StatusOK, "Send alerts successfully"})
 }
 
-func (h *HttpHandler) getReceiversFromRequest(m map[string]interface{}) ([]config.Receiver, error) {
+func (h *HttpHandler) getReceiversFromRequest(m map[string]interface{}) ([]internal.Receiver, error) {
 
 	nr := v2beta2.Receiver{}
 	if _, ok := m["receiver"]; !ok {
-		return nil, fmt.Errorf("receiver is nil")
+		return nil, utils.Error("Receiver is nil")
 	}
 
 	if err := utils.MapToStruct(m["receiver"].(map[string]interface{}), &nr); err != nil {
@@ -338,7 +369,7 @@ func (h *HttpHandler) getReceiversFromRequest(m map[string]interface{}) ([]confi
 		nc = &tmp
 	}
 
-	receivers, err := h.notifierCfg.GenerateReceivers(&nr, nc)
+	receivers, err := h.notifierCtl.GenerateReceivers(&nr, nc)
 	if err != nil {
 		return nil, err
 	}
@@ -346,8 +377,8 @@ func (h *HttpHandler) getReceiversFromRequest(m map[string]interface{}) ([]confi
 	return receivers, nil
 }
 
-func (h *HttpHandler) send(receivers []config.Receiver, d template.Data) string {
-	n := notify.NewNotification(h.logger, receivers, h.notifierCfg, d)
+func (h *HttpHandler) send(receivers []internal.Receiver, d template.Data, logger log.Logger) string {
+	n := notify.NewNotification(logger, receivers, h.notifierCtl, d)
 	ctx, cancel := context.WithTimeout(context.Background(), h.wkrTimeout)
 	defer cancel()
 	errs := n.Notify(ctx)
@@ -361,4 +392,55 @@ func (h *HttpHandler) send(receivers []config.Receiver, d template.Data) string 
 	}
 
 	return ""
+}
+
+func (h *HttpHandler) SendNotificationHistory(data template.Data, selectors []*metav1.LabelSelector) {
+
+	go func() {
+
+		receivers := h.notifierCtl.GetHistoryReceivers()
+		if receivers == nil || len(receivers) == 0 {
+			return
+		}
+
+		newData := template.Data{
+			Receiver:          data.Receiver,
+			Status:            data.Status,
+			GroupLabels:       data.GroupLabels,
+			CommonLabels:      data.CommonLabels,
+			CommonAnnotations: data.CommonAnnotations,
+			ExternalURL:       data.ExternalURL,
+		}
+
+		for _, alert := range data.Alerts {
+			flag := false
+			for _, selector := range selectors {
+				if utils.LabelMatchSelector(alert.Labels, selector) {
+					flag = true
+					break
+				}
+			}
+
+			if flag {
+				newData.Alerts = append(newData.Alerts, alert)
+			}
+		}
+
+		if len(newData.Alerts) == 0 {
+			return
+		}
+
+		for retry := 0; retry <= historyRetryMax; retry++ {
+			logger := log.With(h.logger, "type", "history")
+			if retry != 0 {
+				logger = log.With(logger, "retry", retry)
+			}
+
+			if errMsg := h.send(receivers, newData, logger); utils.StringIsNil(errMsg) {
+				return
+			}
+
+			time.Sleep(historyRetryDelay)
+		}
+	}()
 }

@@ -2,9 +2,10 @@ package notifier
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
+
+	"github.com/kubesphere/notification-manager/pkg/utils"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -89,7 +90,7 @@ func (ats *AccessTokenService) GetToken(ctx context.Context, key string, getToke
 
 	select {
 	case <-ctx.Done():
-		return "", fmt.Errorf("get token timeout")
+		return "", utils.Error("get token timeout")
 	case val := <-ch:
 		switch val.(type) {
 		case error:
@@ -97,7 +98,7 @@ func (ats *AccessTokenService) GetToken(ctx context.Context, key string, getToke
 		case string:
 			return val.(string), nil
 		default:
-			return "", fmt.Errorf("wrong token type")
+			return "", utils.Error("wrong token type")
 		}
 	}
 }

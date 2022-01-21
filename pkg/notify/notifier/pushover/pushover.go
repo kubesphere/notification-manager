@@ -3,18 +3,20 @@ package pushover
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/kubesphere/notification-manager/pkg/controller"
+	"github.com/kubesphere/notification-manager/pkg/internal"
+	"github.com/kubesphere/notification-manager/pkg/internal/pushover"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	"github.com/kubesphere/notification-manager/pkg/notify/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
@@ -31,8 +33,8 @@ const (
 var client = &http.Client{Timeout: DefaultSendTimeout, Transport: &http.Transport{MaxConnsPerHost: 2}}
 
 type Notifier struct {
-	notifierCfg  *config.Config
-	pushover     []*config.Pushover
+	notifierCtl  *controller.Controller
+	receivers    []*pushover.Receiver
 	timeout      time.Duration
 	logger       log.Logger
 	template     *notifier.Template
@@ -65,10 +67,10 @@ type pushoverResponse struct {
 	Receipt string   `json:"receipt,omitempty"`
 }
 
-func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifierCfg *config.Config) notifier.Notifier {
+func NewPushoverNotifier(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier {
 
 	var path []string
-	opts := notifierCfg.ReceiverOpts
+	opts := notifierCtl.ReceiverOpts
 	if opts != nil && opts.Global != nil {
 		path = opts.Global.TemplateFiles
 	}
@@ -79,7 +81,7 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 	}
 
 	n := &Notifier{
-		notifierCfg:  notifierCfg,
+		notifierCtl:  notifierCtl,
 		timeout:      DefaultSendTimeout,
 		logger:       logger,
 		template:     tmpl,
@@ -103,12 +105,12 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 	}
 
 	for _, r := range receivers {
-		receiver, ok := r.(*config.Pushover)
+		receiver, ok := r.(*pushover.Receiver)
 		if !ok || receiver == nil {
 			continue
 		}
 
-		if receiver.PushoverConfig == nil {
+		if receiver.Config == nil {
 			_ = level.Warn(logger).Log("msg", "PushoverNotifier: ignore receiver because of empty config")
 			continue
 		}
@@ -117,21 +119,21 @@ func NewPushoverNotifier(logger log.Logger, receivers []config.Receiver, notifie
 			receiver.Template = n.templateName
 		}
 
-		n.pushover = append(n.pushover, receiver)
+		n.receivers = append(n.receivers, receiver)
 	}
 
 	return n
 }
 
 // Notify sends messages to Pushover server.
-// The preprocess logic of the pushover notification messages are as below:
+// The logic to preprocess the pushover notification messages are as below:
 // - The alert messages are filtered by AlertSelector first before sending to Pushover.
 // - Pushover has a limit of 1024 characters on the message length (the exceeded part will be truncated), and each message may contain more than one Alert. Thus, a strategy of splitting the message is applied here, i.e., a message should contain as many Alerts as possible, and each message is sent one after another to ensure that they can be received in an intact manner by the user.
 // - Render the message with a template, from which the Pushover message structure is constructed and its legitimacy is verified.
 // - The Pushover message structure is encoded as a JSON string, a POST method is called to send a request to the Endpoint (https://api.pushover.net/1/messages.json), and an error will be raised if the status code of the returned response is not successful.
 func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
-	send := func(profile *v2beta2.PushoverUserProfile, c *config.Pushover) error {
+	send := func(profile *v2beta2.PushoverUserProfile, r *pushover.Receiver) error {
 
 		start, userKey := time.Now(), *profile.UserKey
 		defer func() {
@@ -139,20 +141,20 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}()
 
 		// retrieve app's token
-		token, err := n.notifierCfg.GetCredential(c.PushoverConfig.Token)
+		token, err := n.notifierCtl.GetCredential(r.Token)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "PushoverNotifier: get token secret", "userKey", userKey, "error", err.Error())
 			return err
 		}
 
 		// filter data by selector
-		filteredData := utils.FilterAlerts(data, c.Selector, n.logger)
+		filteredData := utils.FilterAlerts(data, r.AlertSelector, n.logger)
 		if len(filteredData.Alerts) == 0 {
 			return nil
 		}
 
 		// split new data along with its Alerts to ensure each message is small enough to fit the Pushover's message length limit
-		messages, _, err := n.template.Split(filteredData, MessageMaxLength, c.Template, "", n.logger)
+		messages, _, err := n.template.Split(filteredData, MessageMaxLength, r.Template, "", n.logger)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "PushoverNotifier: split alerts error", "userKey", userKey, "error", err.Error())
 			return err
@@ -209,8 +211,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 				// check status code, but not return error if it is not 2xx, since we will do this later
 				if response.StatusCode != http.StatusOK {
 					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: got non-2xx response", "userKey", userKey, "StatusCode", response.StatusCode)
-					body, _ := ioutil.ReadAll(response.Body)
-					return fmt.Errorf("PushoverNotifier: got non-2xx response, StatusCode: %d, response: %s", response.StatusCode, string(body))
+					return utils.Errorf("%d, %s", response.StatusCode, response.Status)
 				}
 
 				// decode the response
@@ -229,8 +230,8 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 				// handle errors if any
 				if pResp.Status != 1 {
 					errStr := strings.Join(pResp.Errors, "; ")
-					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: pushover error", "userKey", userKey, "error", errStr)
-					return fmt.Errorf(errStr)
+					_ = level.Error(n.logger).Log("msg", "PushoverNotifier: send message error", "userKey", userKey, "error", errStr)
+					return utils.Errorf("%d, %s", pResp.Status, errStr)
 				}
 
 				_ = level.Debug(n.logger).Log("msg", "PushoverNotifier: sent message", "userKey", userKey)
@@ -246,12 +247,12 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	}
 
 	group := async.NewGroup(ctx)
-	for _, pushover := range n.pushover {
-		po := pushover
-		for _, profiles := range po.Profiles {
+	for _, receiver := range n.receivers {
+		r := receiver
+		for _, profiles := range r.Profiles {
 			pf := profiles
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- send(pf, po)
+				stopCh <- send(pf, r)
 			})
 		}
 	}

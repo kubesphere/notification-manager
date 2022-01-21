@@ -14,6 +14,7 @@ RUN GOPROXY=$GOPROXY go mod download
 
 # Copy the go source
 COPY cmd/operator/main.go main.go
+COPY controllers/ controllers/
 COPY pkg/ pkg/
 
 # Build

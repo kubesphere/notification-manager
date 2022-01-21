@@ -1,47 +1,14 @@
 package utils
 
 import (
-	"crypto/md5"
-	"fmt"
-	"strings"
-
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	json "github.com/json-iterator/go"
 	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/common/model"
+	"k8s.io/apimachinery/pkg/api/meta"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
-
-func StringIsNil(s string) bool {
-	return s == ""
-}
-
-func ArrayToString(array []string, sep string) string {
-
-	if array == nil || len(array) == 0 {
-		return ""
-	}
-
-	s := ""
-	for _, elem := range array {
-		s = s + elem + sep
-	}
-
-	return strings.TrimSuffix(s, sep)
-}
-
-func Md5key(val interface{}) (string, error) {
-
-	bs, err := json.Marshal(val)
-	if err != nil {
-		return "", err
-	}
-
-	data := md5.Sum(bs)
-	return fmt.Sprintf("%x", data), nil
-}
 
 func KvToLabelSet(obj template.KV) model.LabelSet {
 
@@ -86,4 +53,39 @@ func FilterAlerts(data template.Data, selector *v1.LabelSelector, logger log.Log
 	}
 
 	return newData
+}
+
+func LabelMatchSelector(label map[string]string, selector *v1.LabelSelector) bool {
+
+	if selector == nil {
+		return true
+	}
+
+	labelSelector, err := v1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		return false
+	}
+	if labelSelector.Empty() {
+		return true
+	}
+
+	return labelSelector.Matches(labels.Set(label))
+}
+
+func GetObjectName(obj interface{}) string {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return ""
+	}
+
+	return accessor.GetName()
+}
+
+func GetObjectLabels(obj interface{}) map[string]string {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return nil
+	}
+
+	return accessor.GetLabels()
 }
