@@ -20,15 +20,14 @@ import (
 	"flag"
 	"os"
 
+	"github.com/kubesphere/notification-manager/controllers"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
-	"github.com/kubesphere/notification-manager/pkg/controllers"
 	// +kubebuilder:scaffold:imports
 )
 

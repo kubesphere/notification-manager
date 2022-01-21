@@ -9,8 +9,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	nmconfig "github.com/kubesphere/notification-manager/pkg/config"
 	"github.com/kubesphere/notification-manager/pkg/constants"
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/internal/email"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
@@ -33,7 +33,7 @@ const (
 )
 
 type Notifier struct {
-	notifierCfg *nmconfig.Config
+	notifierCtl *controller.Controller
 	receivers   []*email.Receiver
 	template    *notifier.Template
 	// The name of template to generate email message.
@@ -49,10 +49,10 @@ type Notifier struct {
 	maxEmailReceivers int
 }
 
-func NewEmailNotifier(logger log.Logger, receivers []internal.Receiver, notifierCfg *nmconfig.Config) notifier.Notifier {
+func NewEmailNotifier(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier {
 
 	var path []string
-	opts := notifierCfg.ReceiverOpts
+	opts := notifierCtl.ReceiverOpts
 	if opts != nil && opts.Global != nil {
 		path = opts.Global.TemplateFiles
 	}
@@ -63,7 +63,7 @@ func NewEmailNotifier(logger log.Logger, receivers []internal.Receiver, notifier
 	}
 
 	n := &Notifier{
-		notifierCfg:         notifierCfg,
+		notifierCtl:         notifierCtl,
 		logger:              logger,
 		timeout:             DefaultSendTimeout,
 		maxEmailReceivers:   MaxEmailReceivers,
@@ -229,7 +229,7 @@ func (n *Notifier) getEmailConfig(r *email.Receiver) (*amconfig.EmailConfig, err
 	}
 
 	if r.AuthPassword != nil {
-		pass, err := n.notifierCfg.GetCredential(r.AuthPassword)
+		pass, err := n.notifierCtl.GetCredential(r.AuthPassword)
 		if err != nil {
 			return nil, err
 		}
@@ -238,7 +238,7 @@ func (n *Notifier) getEmailConfig(r *email.Receiver) (*amconfig.EmailConfig, err
 	}
 
 	if r.AuthSecret != nil {
-		secret, err := n.notifierCfg.GetCredential(r.AuthSecret)
+		secret, err := n.notifierCtl.GetCredential(r.AuthSecret)
 		if err != nil {
 			return nil, err
 		}
@@ -255,7 +255,7 @@ func (n *Notifier) getEmailConfig(r *email.Receiver) (*amconfig.EmailConfig, err
 		// If a CA cert is provided then let's read it in,  so we can validate the
 		// scrape target's certificate properly.
 		if r.TLS.RootCA != nil {
-			if ca, err := n.notifierCfg.GetCredential(r.TLS.RootCA); err != nil {
+			if ca, err := n.notifierCtl.GetCredential(r.TLS.RootCA); err != nil {
 				return nil, err
 			} else {
 				tlsConfig.CAFile = ca
@@ -269,12 +269,12 @@ func (n *Notifier) getEmailConfig(r *email.Receiver) (*amconfig.EmailConfig, err
 			} else if r.TLS.Cert == nil && r.TLS.Key != nil {
 				return nil, utils.Error("Client key file specified without client cert file")
 			} else if r.TLS.Cert != nil && r.TLS.Key != nil {
-				key, err := n.notifierCfg.GetCredential(r.TLS.Key)
+				key, err := n.notifierCtl.GetCredential(r.TLS.Key)
 				if err != nil {
 					return nil, err
 				}
 
-				cert, err := n.notifierCfg.GetCredential(r.TLS.Cert)
+				cert, err := n.notifierCtl.GetCredential(r.TLS.Cert)
 				if err != nil {
 					return nil, err
 				}

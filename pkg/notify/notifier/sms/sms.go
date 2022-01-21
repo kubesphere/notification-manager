@@ -9,7 +9,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	"github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/internal/sms"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
@@ -23,7 +23,7 @@ const (
 )
 
 type Notifier struct {
-	notifierCfg  *config.Config
+	notifierCtl  *controller.Controller
 	receivers    []*sms.Receiver
 	timeout      time.Duration
 	logger       log.Logger
@@ -31,10 +31,10 @@ type Notifier struct {
 	templateName string
 }
 
-func NewSmsNotifier(logger log.Logger, receivers []internal.Receiver, notifierCfg *config.Config) notifier.Notifier {
+func NewSmsNotifier(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier {
 
 	var path []string
-	opts := notifierCfg.ReceiverOpts
+	opts := notifierCtl.ReceiverOpts
 	if opts != nil && opts.Global != nil {
 		path = opts.Global.TemplateFiles
 	}
@@ -45,7 +45,7 @@ func NewSmsNotifier(logger log.Logger, receivers []internal.Receiver, notifierCf
 	}
 
 	n := &Notifier{
-		notifierCfg:  notifierCfg,
+		notifierCtl:  notifierCtl,
 		timeout:      DefaultSendTimeout,
 		logger:       logger,
 		template:     tmpl,
@@ -116,7 +116,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}
 
 		// new a provider
-		provider := providerFunc(n.notifierCfg, r.Providers, r.PhoneNumbers)
+		provider := providerFunc(n.notifierCtl, r.Providers, r.PhoneNumbers)
 
 		// make request by the provider
 		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)

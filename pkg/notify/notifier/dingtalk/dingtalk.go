@@ -15,8 +15,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	"github.com/kubesphere/notification-manager/pkg/config"
 	"github.com/kubesphere/notification-manager/pkg/constants"
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/internal/dingtalk"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
@@ -41,7 +41,7 @@ const (
 )
 
 type Notifier struct {
-	notifierCfg                *config.Config
+	notifierCtl                *controller.Controller
 	receivers                  []*dingtalk.Receiver
 	timeout                    time.Duration
 	logger                     log.Logger
@@ -97,10 +97,10 @@ type response struct {
 	Punish  string `json:"punish"`
 }
 
-func NewDingTalkNotifier(logger log.Logger, receivers []internal.Receiver, notifierCfg *config.Config) notifier.Notifier {
+func NewDingTalkNotifier(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier {
 
 	var path []string
-	opts := notifierCfg.ReceiverOpts
+	opts := notifierCtl.ReceiverOpts
 	if opts != nil && opts.Global != nil {
 		path = opts.Global.TemplateFiles
 	}
@@ -111,7 +111,7 @@ func NewDingTalkNotifier(logger log.Logger, receivers []internal.Receiver, notif
 	}
 
 	n := &Notifier{
-		notifierCfg:                notifierCfg,
+		notifierCtl:                notifierCtl,
 		timeout:                    DefaultSendTimeout,
 		logger:                     logger,
 		titleTemplateName:          DefaultTitleTemplate,
@@ -266,7 +266,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, data
 
 	bot := r.ChatBot
 
-	webhook, err := n.notifierCfg.GetCredential(bot.Webhook)
+	webhook, err := n.notifierCtl.GetCredential(bot.Webhook)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get webhook secret error", "error", err.Error())
 		return []error{err}
@@ -306,7 +306,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, data
 
 		secret := ""
 		if bot.Secret != nil {
-			secret, err = n.notifierCfg.GetCredential(bot.Secret)
+			secret, err = n.notifierCtl.GetCredential(bot.Secret)
 			if err != nil {
 				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get chatbot secret error", "error", err.Error())
 				return err
@@ -419,13 +419,13 @@ func (n *Notifier) sendToConversation(ctx context.Context, r *dingtalk.Receiver,
 		return []error{utils.Error("DingTalkNotifier: config is nil")}
 	}
 
-	appkey, err := n.notifierCfg.GetCredential(r.AppKey)
+	appkey, err := n.notifierCtl.GetCredential(r.AppKey)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appkey error", "error", err)
 		return []error{err}
 	}
 
-	appsecret, err := n.notifierCfg.GetCredential(r.AppSecret)
+	appsecret, err := n.notifierCtl.GetCredential(r.AppSecret)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appsecret error", "error", err)
 		return []error{err}

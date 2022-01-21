@@ -3,17 +3,17 @@ package sms
 import (
 	"context"
 
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
-	"github.com/kubesphere/notification-manager/pkg/config"
 )
 
 type Provider interface {
 	MakeRequest(ctx context.Context, messages string) error
 }
 
-type ProviderFactory func(c *config.Config, providers *v2beta2.Providers, phoneNumbers []string) Provider
+type ProviderFactory func(c *controller.Controller, providers *v2beta2.Providers, phoneNumbers []string) Provider
 
 var availableFactoryFuncs = map[string]ProviderFactory{}
 

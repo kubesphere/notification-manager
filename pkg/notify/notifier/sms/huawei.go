@@ -14,7 +14,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
-	"github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
@@ -30,7 +30,7 @@ var (
 
 type HuaweiNotifier struct {
 	Signature     string
-	NotifierCfg   *config.Config
+	notifierCtl   *controller.Controller
 	TemplateId    string
 	AppKey        *v2beta2.Credential
 	AppSecret     *v2beta2.Credential
@@ -45,12 +45,12 @@ type HuaweiResponse struct {
 	Description string `json:"description,omitempty"`
 }
 
-func NewHuaweiProvider(c *config.Config, providers *v2beta2.Providers, phoneNumbers []string) Provider {
+func NewHuaweiProvider(c *controller.Controller, providers *v2beta2.Providers, phoneNumbers []string) Provider {
 	phoneNum := handleHuaweiPhoneNums(phoneNumbers)
 	u := handleHuaweiUrl(providers.Huawei.Url)
 	return &HuaweiNotifier{
 		Signature:   providers.Huawei.Signature,
-		NotifierCfg: c,
+		notifierCtl: c,
 		TemplateId:  providers.Huawei.TemplateId,
 		AppKey:      providers.Huawei.AppKey,
 		AppSecret:   providers.Huawei.AppSecret,
@@ -61,11 +61,11 @@ func NewHuaweiProvider(c *config.Config, providers *v2beta2.Providers, phoneNumb
 }
 
 func (h *HuaweiNotifier) MakeRequest(_ context.Context, messages string) error {
-	appKey, err := h.NotifierCfg.GetCredential(h.AppKey)
+	appKey, err := h.notifierCtl.GetCredential(h.AppKey)
 	if err != nil {
 		return utils.Errorf("[Huawei SendSms]cannot get appKey: %s", err.Error())
 	}
-	appSecret, err := h.NotifierCfg.GetCredential(h.AppSecret)
+	appSecret, err := h.notifierCtl.GetCredential(h.AppSecret)
 	if err != nil {
 		return utils.Errorf("[Huawei SendSms]cannot get appSecret: %s", err.Error())
 	}

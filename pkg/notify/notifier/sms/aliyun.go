@@ -7,7 +7,7 @@ import (
 	openapi "github.com/alibabacloud-go/darabonba-openapi/client"
 	dysmsapi "github.com/alibabacloud-go/dysmsapi-20170525/v2/client"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
-	"github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 )
 
@@ -17,18 +17,18 @@ const (
 
 type AliyunNotifier struct {
 	SignName        string
-	NotifierCfg     *config.Config
+	notifierCtl     *controller.Controller
 	TemplateCode    string
 	AccessKeyId     *v2beta2.Credential
 	AccessKeySecret *v2beta2.Credential
 	PhoneNums       string
 }
 
-func NewAliyunProvider(c *config.Config, providers *v2beta2.Providers, phoneNumbers []string) Provider {
+func NewAliyunProvider(c *controller.Controller, providers *v2beta2.Providers, phoneNumbers []string) Provider {
 	phoneNums := handleAliyunPhoneNums(phoneNumbers)
 	return &AliyunNotifier{
 		SignName:        providers.Aliyun.SignName,
-		NotifierCfg:     c,
+		notifierCtl:     c,
 		TemplateCode:    providers.Aliyun.TemplateCode,
 		AccessKeyId:     providers.Aliyun.AccessKeyId,
 		AccessKeySecret: providers.Aliyun.AccessKeySecret,
@@ -37,11 +37,11 @@ func NewAliyunProvider(c *config.Config, providers *v2beta2.Providers, phoneNumb
 }
 
 func (a *AliyunNotifier) MakeRequest(_ context.Context, messages string) error {
-	accessKeyId, err := a.NotifierCfg.GetCredential(a.AccessKeyId)
+	accessKeyId, err := a.notifierCtl.GetCredential(a.AccessKeyId)
 	if err != nil {
 		return utils.Errorf("[Aliyun  SendSms] cannot get accessKeyId: %s", err.Error())
 	}
-	accessKeySecret, err := a.NotifierCfg.GetCredential(a.AccessKeySecret)
+	accessKeySecret, err := a.notifierCtl.GetCredential(a.AccessKeySecret)
 	if err != nil {
 		return utils.Errorf("[Aliyun  SendSms] cannot get accessKeySecret: %s", err.Error())
 	}

@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	"github.com/kubesphere/notification-manager/pkg/config"
 	"github.com/kubesphere/notification-manager/pkg/constants"
 	"github.com/kubesphere/notification-manager/pkg/internal/wechat"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
@@ -33,7 +33,7 @@ const (
 )
 
 type Notifier struct {
-	notifierCfg    *config.Config
+	notifierCtl    *controller.Controller
 	receivers      []*wechat.Receiver
 	accessToken    string
 	timeout        time.Duration
@@ -70,10 +70,10 @@ type weChatResponse struct {
 	InvalidTag   string `json:"invalidTag,omitempty"`
 }
 
-func NewWechatNotifier(logger log.Logger, receivers []internal.Receiver, notifierCfg *config.Config) notifier.Notifier {
+func NewWechatNotifier(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier {
 
 	var path []string
-	opts := notifierCfg.ReceiverOpts
+	opts := notifierCtl.ReceiverOpts
 	if opts != nil && opts.Global != nil {
 		path = opts.Global.TemplateFiles
 	}
@@ -84,7 +84,7 @@ func NewWechatNotifier(logger log.Logger, receivers []internal.Receiver, notifie
 	}
 
 	n := &Notifier{
-		notifierCfg:    notifierCfg,
+		notifierCtl:    notifierCtl,
 		logger:         logger,
 		timeout:        DefaultSendTimeout,
 		template:       tmpl,
@@ -321,7 +321,7 @@ func (n *Notifier) getToken(ctx context.Context, r *wechat.Receiver) (string, er
 			return "", 0, err
 		}
 
-		apiSecret, err := n.notifierCfg.GetCredential(r.APISecret)
+		apiSecret, err := n.notifierCtl.GetCredential(r.APISecret)
 		if err != nil {
 			return "", 0, err
 		}

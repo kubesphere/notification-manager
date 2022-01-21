@@ -13,7 +13,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	"github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/internal/webhook"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
@@ -28,7 +28,7 @@ const (
 )
 
 type Notifier struct {
-	notifierCfg  *config.Config
+	notifierCtl  *controller.Controller
 	receivers    []*webhook.Receiver
 	timeout      time.Duration
 	logger       log.Logger
@@ -36,10 +36,10 @@ type Notifier struct {
 	templateName string
 }
 
-func NewWebhookNotifier(logger log.Logger, receivers []internal.Receiver, notifierCfg *config.Config) notifier.Notifier {
+func NewWebhookNotifier(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier {
 
 	var path []string
-	opts := notifierCfg.ReceiverOpts
+	opts := notifierCtl.ReceiverOpts
 	if opts != nil && opts.Global != nil {
 		path = opts.Global.TemplateFiles
 	}
@@ -50,7 +50,7 @@ func NewWebhookNotifier(logger log.Logger, receivers []internal.Receiver, notifi
 	}
 
 	n := &Notifier{
-		notifierCfg:  notifierCfg,
+		notifierCtl:  notifierCtl,
 		timeout:      DefaultSendTimeout,
 		logger:       logger,
 		template:     tmpl,
@@ -132,7 +132,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 
 		if r.HttpConfig != nil {
 			if r.HttpConfig.BearerToken != nil {
-				bearer, err := n.notifierCfg.GetCredential(r.HttpConfig.BearerToken)
+				bearer, err := n.notifierCtl.GetCredential(r.HttpConfig.BearerToken)
 				if err != nil {
 					_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get bearer token error", "error", err.Error())
 					return err
@@ -142,7 +142,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			} else if r.HttpConfig.BasicAuth != nil {
 				pass := ""
 				if r.HttpConfig.BasicAuth.Password != nil {
-					p, err := n.notifierCfg.GetCredential(r.HttpConfig.BasicAuth.Password)
+					p, err := n.notifierCtl.GetCredential(r.HttpConfig.BasicAuth.Password)
 					if err != nil {
 						_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get password error", "error", err.Error())
 						return err
@@ -206,7 +206,7 @@ func (n *Notifier) getTransport(r *webhook.Receiver) (http.RoundTripper, error) 
 			// If a CA cert is provided then let's read it in, so we can validate the
 			// scrape target's certificate properly.
 			if c.TLSConfig.RootCA != nil {
-				if ca, err := n.notifierCfg.GetCredential(c.TLSConfig.RootCA); err != nil {
+				if ca, err := n.notifierCtl.GetCredential(c.TLSConfig.RootCA); err != nil {
 					return nil, err
 				} else {
 					caCertPool := x509.NewCertPool()
@@ -228,12 +228,12 @@ func (n *Notifier) getTransport(r *webhook.Receiver) (http.RoundTripper, error) 
 				} else if c.TLSConfig.Cert == nil && c.TLSConfig.Key != nil {
 					return nil, utils.Error("Client key file specified without client cert file")
 				} else if c.TLSConfig.Cert != nil && c.TLSConfig.Key != nil {
-					key, err := n.notifierCfg.GetCredential(c.TLSConfig.Key)
+					key, err := n.notifierCtl.GetCredential(c.TLSConfig.Key)
 					if err != nil {
 						return nil, err
 					}
 
-					cert, err := n.notifierCfg.GetCredential(c.TLSConfig.Cert)
+					cert, err := n.notifierCtl.GetCredential(c.TLSConfig.Cert)
 					if err != nil {
 						return nil, err
 					}

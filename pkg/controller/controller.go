@@ -1,4 +1,4 @@
-package config
+package controller
 
 import (
 	"context"
@@ -50,7 +50,7 @@ var (
 	ChannelCapacity = 1000
 )
 
-type Config struct {
+type Controller struct {
 	logger log.Logger
 	ctx    context.Context
 	cache  cache.Cache
@@ -67,7 +67,7 @@ type Config struct {
 	tenantReceiverSelector *metav1.LabelSelector
 	// Receiver for each tenant user, in form of map[tenantID]map[type/name]Receiver
 	receivers map[string]map[string]internal.Receiver
-	// Config for each tenant user, in form of map[tenantID]map[type/name]Receiver
+	// Config for each tenant user, in form of map[tenantID]map[type/name]Config
 	configs      map[string]map[string]internal.Config
 	ReceiverOpts *v2beta2.Options
 	// Channel to receive receiver create/update/delete operations and then update receivers
@@ -87,7 +87,7 @@ type task struct {
 	done     chan interface{}
 }
 
-func New(ctx context.Context, logger log.Logger) (*Config, error) {
+func New(ctx context.Context, logger log.Logger) (*Controller, error) {
 	scheme := runtime.NewScheme()
 	_ = v2beta2.AddToScheme(scheme)
 	_ = v1.AddToScheme(scheme)
@@ -119,7 +119,7 @@ func New(ctx context.Context, logger log.Logger) (*Config, error) {
 		return nil, level.Error(logger).Log("msg", "namespace is empty")
 	}
 
-	return &Config{
+	return &Controller{
 		ctx:                    ctx,
 		logger:                 logger,
 		cache:                  informerCache,
@@ -160,7 +160,7 @@ func newClient(cfg *rest.Config, cache cache.Cache, scheme *runtime.Scheme) (cli
 	}, nil
 }
 
-func (c *Config) Run() error {
+func (c *Controller) Run() error {
 	go func(ctx context.Context) {
 		for {
 			select {
@@ -234,13 +234,13 @@ func (c *Config) Run() error {
 	return c.ctx.Err()
 }
 
-func (c *Config) onNmAdd(obj interface{}) {
+func (c *Controller) onNmAdd(obj interface{}) {
 
 	c.onChange(obj, opAdd, notificationManager)
 	c.updateReloadTimestamp()
 }
 
-func (c *Config) updateReloadTimestamp() {
+func (c *Controller) updateReloadTimestamp() {
 
 	receiverList := v2beta2.ReceiverList{}
 	if err := c.client.List(c.ctx, &receiverList, client.InNamespace("")); err != nil {
@@ -285,11 +285,11 @@ func (c *Config) updateReloadTimestamp() {
 	}
 }
 
-func (c *Config) onNmDel(obj interface{}) {
+func (c *Controller) onNmDel(obj interface{}) {
 	c.onChange(obj, opDel, notificationManager)
 }
 
-func (c *Config) onChange(obj interface{}, op, opType string) {
+func (c *Controller) onChange(obj interface{}, op, opType string) {
 
 	t := &task{
 		op:     op,
@@ -302,7 +302,7 @@ func (c *Config) onChange(obj interface{}, op, opType string) {
 	<-t.done
 }
 
-func (c *Config) sync(t *task) {
+func (c *Controller) sync(t *task) {
 
 	if t.op == opGet {
 		// Return all receivers of the specified tenant (map[opType/name]*Receiver)
@@ -321,7 +321,7 @@ func (c *Config) sync(t *task) {
 	close(t.done)
 }
 
-func (c *Config) tenantIDFromNs(namespace string) ([]string, error) {
+func (c *Controller) tenantIDFromNs(namespace string) ([]string, error) {
 	tenantIDs := make([]string, 0)
 	// Use namespace as TenantID directly if tenantSidecar not provided.
 	if !c.tenantSidecar {
@@ -357,7 +357,7 @@ func (c *Config) tenantIDFromNs(namespace string) ([]string, error) {
 	return res, nil
 }
 
-func (c *Config) RcvsFromTenantID(ids []string) []internal.Receiver {
+func (c *Controller) RcvsFromTenantID(ids []string) []internal.Receiver {
 
 	t := &task{
 		op:       opGet,
@@ -431,7 +431,7 @@ func getMatchedConfig(r internal.Receiver, configs map[string]map[string]interna
 	}
 }
 
-func (c *Config) RcvsFromNs(namespace *string) []internal.Receiver {
+func (c *Controller) RcvsFromNs(namespace *string) []internal.Receiver {
 
 	// Get all global receiver first, global receiver should receive all notifications.
 	rcvs := c.RcvsFromTenantID([]string{globalTenantID})
@@ -455,7 +455,7 @@ func (c *Config) RcvsFromNs(namespace *string) []internal.Receiver {
 	return rcvs
 }
 
-func (c *Config) nmChange(t *task) {
+func (c *Controller) nmChange(t *task) {
 	if t.op == opAdd {
 		spec := t.obj.(*v2beta2.NotificationManager).Spec
 		c.tenantKey = spec.Receivers.TenantKey
@@ -480,7 +480,7 @@ func (c *Config) nmChange(t *task) {
 	}
 }
 
-func (c *Config) getTenantID(label map[string]string) string {
+func (c *Controller) getTenantID(label map[string]string) string {
 	// If crd is a global receiver, tenantID should be set to a unique tenantID.
 	if c.isGlobal(label) {
 		return globalTenantID
@@ -504,7 +504,7 @@ func (c *Config) getTenantID(label map[string]string) string {
 
 // If the label matches globalSelector such as "type = global",
 // then the crd with this label is a global receiver.
-func (c *Config) isGlobal(label map[string]string) bool {
+func (c *Controller) isGlobal(label map[string]string) bool {
 
 	if c.globalReceiverSelector != nil {
 		for k, expected := range c.globalReceiverSelector.MatchLabels {
@@ -519,7 +519,7 @@ func (c *Config) isGlobal(label map[string]string) bool {
 
 // If the label matches defaultConfigSelector such as "type = default",
 // then the crd with this label is a default config.
-func (c *Config) isDefaultConfig(label map[string]string) bool {
+func (c *Controller) isDefaultConfig(label map[string]string) bool {
 
 	if c.defaultConfigSelector != nil {
 		sel, _ := metav1.LabelSelectorAsSelector(c.defaultConfigSelector)
@@ -533,7 +533,7 @@ func (c *Config) isDefaultConfig(label map[string]string) bool {
 
 // If the label matches tenantReceiverSelector such as "type = tenant",
 // then the crd with this label is a tenant receiver or config,
-func (c *Config) isTenant(label map[string]string) (bool, string) {
+func (c *Controller) isTenant(label map[string]string) (bool, string) {
 
 	if c.tenantReceiverSelector != nil {
 		for k, expected := range c.tenantReceiverSelector.MatchLabels {
@@ -549,7 +549,7 @@ func (c *Config) isTenant(label map[string]string) (bool, string) {
 	return false, ""
 }
 
-func (c *Config) resourceChanged(t *task) {
+func (c *Controller) resourceChanged(t *task) {
 	if !c.nmAdd {
 		return
 	}
@@ -596,7 +596,7 @@ func (c *Config) resourceChanged(t *task) {
 			}
 		}
 
-		_ = level.Info(c.logger).Log("msg", "Config changed", "op", t.op, "name", obj.Name)
+		_ = level.Info(c.logger).Log("msg", "Controller changed", "op", t.op, "name", obj.Name)
 	} else if t.opType == resourceReceiver {
 		obj, ok := t.obj.(*v2beta2.Receiver)
 		if !ok {
@@ -637,7 +637,7 @@ func (c *Config) resourceChanged(t *task) {
 	}
 }
 
-func (c *Config) ListReceiver(tenant, opType string) interface{} {
+func (c *Controller) ListReceiver(tenant, opType string) interface{} {
 
 	m := make(map[string]interface{})
 	for k, v := range c.receivers {
@@ -661,7 +661,7 @@ func (c *Config) ListReceiver(tenant, opType string) interface{} {
 	return m
 }
 
-func (c *Config) ListConfig(tenant, opType string) interface{} {
+func (c *Controller) ListConfig(tenant, opType string) interface{} {
 
 	m := make(map[string]interface{})
 	for k, v := range c.configs {
@@ -685,7 +685,7 @@ func (c *Config) ListConfig(tenant, opType string) interface{} {
 	return m
 }
 
-func (c *Config) ListReceiverWithConfig(tenantID, name, opType string) interface{} {
+func (c *Controller) ListReceiverWithConfig(tenantID, name, opType string) interface{} {
 
 	var rcvs []internal.Receiver
 	for k := range c.receivers {
@@ -703,7 +703,7 @@ func (c *Config) ListReceiverWithConfig(tenantID, name, opType string) interface
 	return rcvs
 }
 
-func (c *Config) GetCredential(credential *v2beta2.Credential) (string, error) {
+func (c *Controller) GetCredential(credential *v2beta2.Credential) (string, error) {
 
 	if credential == nil {
 		return "", utils.Error("credential is nil")
@@ -733,10 +733,10 @@ func (c *Config) GetCredential(credential *v2beta2.Credential) (string, error) {
 }
 
 // GenerateReceivers generate receivers from the given notification config and notification receiver.
-// If the notification config is nil, use the existed config.
+// If the notification config is nil, use the existing config.
 // If the notification config is not nil, the receiver will use the given config,
 // the notification config type must match the notification receiver type.
-func (c *Config) GenerateReceivers(nr *v2beta2.Receiver, nc *v2beta2.Config) ([]internal.Receiver, error) {
+func (c *Controller) GenerateReceivers(nr *v2beta2.Receiver, nc *v2beta2.Config) ([]internal.Receiver, error) {
 
 	tenantID := c.getTenantID(nr.Labels)
 	if len(tenantID) == 0 {
@@ -772,7 +772,7 @@ func (c *Config) GenerateReceivers(nr *v2beta2.Receiver, nc *v2beta2.Config) ([]
 	return rcvs, nil
 }
 
-func (c *Config) GetHistoryReceivers() []internal.Receiver {
+func (c *Controller) GetHistoryReceivers() []internal.Receiver {
 
 	var rcvs []internal.Receiver
 

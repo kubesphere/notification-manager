@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	"github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/dingtalk"
@@ -18,7 +18,7 @@ import (
 	"github.com/prometheus/alertmanager/template"
 )
 
-type Factory func(logger log.Logger, receivers []internal.Receiver, notifierCfg *config.Config) notifier.Notifier
+type Factory func(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier
 
 var (
 	factories map[string]Factory
@@ -47,7 +47,7 @@ type Notification struct {
 	Data      template.Data
 }
 
-func NewNotification(logger log.Logger, receivers []internal.Receiver, notifierCfg *config.Config, data template.Data) *Notification {
+func NewNotification(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller, data template.Data) *Notification {
 
 	n := &Notification{Data: data}
 
@@ -57,7 +57,7 @@ func NewNotification(logger log.Logger, receivers []internal.Receiver, notifierC
 
 	for _, f := range factories {
 		if f != nil {
-			n.Notifiers = append(n.Notifiers, f(logger, receivers, notifierCfg))
+			n.Notifiers = append(n.Notifiers, f(logger, receivers, notifierCtl))
 		}
 	}
 

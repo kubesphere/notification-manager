@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	whv1 "github.com/kubesphere/notification-manager/pkg/webhook/v1"
 )
 
@@ -27,7 +27,7 @@ type Webhook struct {
 	handler *whv1.HttpHandler
 }
 
-func New(logger log.Logger, notifierCfg *config.Config, o *Options) *Webhook {
+func New(logger log.Logger, notifierCtl *controller.Controller, o *Options) *Webhook {
 	webhookTimeout, _ := time.ParseDuration(o.WebhookTimeout)
 	wkrTimeout, _ := time.ParseDuration(o.WorkerTimeout)
 
@@ -37,7 +37,7 @@ func New(logger log.Logger, notifierCfg *config.Config, o *Options) *Webhook {
 	}
 
 	semCh := make(chan struct{}, h.options.WorkerQueue)
-	h.handler = whv1.New(logger, semCh, webhookTimeout, wkrTimeout, notifierCfg)
+	h.handler = whv1.New(logger, semCh, webhookTimeout, wkrTimeout, notifierCtl)
 	h.router = chi.NewRouter()
 
 	h.router.Use(middleware.RequestID)

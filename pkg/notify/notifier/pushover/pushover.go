@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/internal/pushover"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	"github.com/kubesphere/notification-manager/pkg/config"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
@@ -33,7 +33,7 @@ const (
 var client = &http.Client{Timeout: DefaultSendTimeout, Transport: &http.Transport{MaxConnsPerHost: 2}}
 
 type Notifier struct {
-	notifierCfg  *config.Config
+	notifierCtl  *controller.Controller
 	receivers    []*pushover.Receiver
 	timeout      time.Duration
 	logger       log.Logger
@@ -67,10 +67,10 @@ type pushoverResponse struct {
 	Receipt string   `json:"receipt,omitempty"`
 }
 
-func NewPushoverNotifier(logger log.Logger, receivers []internal.Receiver, notifierCfg *config.Config) notifier.Notifier {
+func NewPushoverNotifier(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier {
 
 	var path []string
-	opts := notifierCfg.ReceiverOpts
+	opts := notifierCtl.ReceiverOpts
 	if opts != nil && opts.Global != nil {
 		path = opts.Global.TemplateFiles
 	}
@@ -81,7 +81,7 @@ func NewPushoverNotifier(logger log.Logger, receivers []internal.Receiver, notif
 	}
 
 	n := &Notifier{
-		notifierCfg:  notifierCfg,
+		notifierCtl:  notifierCtl,
 		timeout:      DefaultSendTimeout,
 		logger:       logger,
 		template:     tmpl,
@@ -141,7 +141,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		}()
 
 		// retrieve app's token
-		token, err := n.notifierCfg.GetCredential(r.Token)
+		token, err := n.notifierCtl.GetCredential(r.Token)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "PushoverNotifier: get token secret", "userKey", userKey, "error", err.Error())
 			return err

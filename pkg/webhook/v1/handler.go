@@ -11,7 +11,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/async"
-	"github.com/kubesphere/notification-manager/pkg/config"
+	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/notify"
 	"github.com/kubesphere/notification-manager/pkg/utils"
@@ -29,7 +29,7 @@ type HttpHandler struct {
 	semCh          chan struct{}
 	webhookTimeout time.Duration
 	wkrTimeout     time.Duration
-	notifierCfg    *config.Config
+	notifierCtl    *controller.Controller
 }
 
 type response struct {
@@ -37,13 +37,13 @@ type response struct {
 	Message string
 }
 
-func New(logger log.Logger, semCh chan struct{}, webhookTimeout time.Duration, wkrTimeout time.Duration, cfg *config.Config) *HttpHandler {
+func New(logger log.Logger, semCh chan struct{}, webhookTimeout time.Duration, wkrTimeout time.Duration, ctl *controller.Controller) *HttpHandler {
 	h := &HttpHandler{
 		logger:         logger,
 		semCh:          semCh,
 		webhookTimeout: webhookTimeout,
 		wkrTimeout:     wkrTimeout,
-		notifierCfg:    cfg,
+		notifierCtl:    ctl,
 	}
 	return h
 }
@@ -87,9 +87,9 @@ func (h *HttpHandler) CreateNotificationFromAlerts(w http.ResponseWriter, r *htt
 			defer close(wkrCh)
 
 			cluster := "default"
-			if h.notifierCfg != nil && h.notifierCfg.ReceiverOpts != nil && h.notifierCfg.ReceiverOpts.Global != nil {
-				if h.notifierCfg.ReceiverOpts.Global.Cluster != "" {
-					cluster = h.notifierCfg.ReceiverOpts.Global.Cluster
+			if h.notifierCtl != nil && h.notifierCtl.ReceiverOpts != nil && h.notifierCtl.ReceiverOpts.Global != nil {
+				if h.notifierCtl.ReceiverOpts.Global.Cluster != "" {
+					cluster = h.notifierCtl.ReceiverOpts.Global.Cluster
 				}
 			}
 
@@ -141,8 +141,8 @@ func (h *HttpHandler) CreateNotificationFromAlerts(w http.ResponseWriter, r *htt
 				if len(k) > 0 {
 					ns = &k
 				}
-				receivers := h.notifierCfg.RcvsFromNs(ns)
-				n := notify.NewNotification(h.logger, receivers, h.notifierCfg, d)
+				receivers := h.notifierCtl.RcvsFromNs(ns)
+				n := notify.NewNotification(h.logger, receivers, h.notifierCtl, d)
 				group.Add(func(stopCh chan interface{}) {
 					stopCh <- n.Notify(ctx)
 				})
@@ -241,7 +241,7 @@ func (h *HttpHandler) handle(w http.ResponseWriter, resp *response) {
 func (h *HttpHandler) ListReceivers(w http.ResponseWriter, r *http.Request) {
 
 	_ = r.ParseForm()
-	bs, _ := utils.JsonMarshalIndent(h.notifierCfg.ListReceiver(r.FormValue("tenant"), r.FormValue("type")), "", "  ")
+	bs, _ := utils.JsonMarshalIndent(h.notifierCtl.ListReceiver(r.FormValue("tenant"), r.FormValue("type")), "", "  ")
 	_, _ = w.Write(bs)
 	return
 }
@@ -249,7 +249,7 @@ func (h *HttpHandler) ListReceivers(w http.ResponseWriter, r *http.Request) {
 func (h *HttpHandler) ListConfigs(w http.ResponseWriter, r *http.Request) {
 
 	_ = r.ParseForm()
-	bs, _ := utils.JsonMarshalIndent(h.notifierCfg.ListConfig(r.FormValue("tenant"), r.FormValue("type")), "", "  ")
+	bs, _ := utils.JsonMarshalIndent(h.notifierCtl.ListConfig(r.FormValue("tenant"), r.FormValue("type")), "", "  ")
 	_, _ = w.Write(bs)
 	return
 }
@@ -257,7 +257,7 @@ func (h *HttpHandler) ListConfigs(w http.ResponseWriter, r *http.Request) {
 func (h *HttpHandler) ListReceiverWithConfig(w http.ResponseWriter, r *http.Request) {
 
 	_ = r.ParseForm()
-	bs, _ := utils.JsonMarshalIndent(h.notifierCfg.ListReceiverWithConfig(r.FormValue("tenant"), r.FormValue("name"), r.FormValue("type")), "", "  ")
+	bs, _ := utils.JsonMarshalIndent(h.notifierCtl.ListReceiverWithConfig(r.FormValue("tenant"), r.FormValue("name"), r.FormValue("type")), "", "  ")
 	_, _ = w.Write(bs)
 	return
 }
@@ -369,7 +369,7 @@ func (h *HttpHandler) getReceiversFromRequest(m map[string]interface{}) ([]inter
 		nc = &tmp
 	}
 
-	receivers, err := h.notifierCfg.GenerateReceivers(&nr, nc)
+	receivers, err := h.notifierCtl.GenerateReceivers(&nr, nc)
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +378,7 @@ func (h *HttpHandler) getReceiversFromRequest(m map[string]interface{}) ([]inter
 }
 
 func (h *HttpHandler) send(receivers []internal.Receiver, d template.Data, logger log.Logger) string {
-	n := notify.NewNotification(logger, receivers, h.notifierCfg, d)
+	n := notify.NewNotification(logger, receivers, h.notifierCtl, d)
 	ctx, cancel := context.WithTimeout(context.Background(), h.wkrTimeout)
 	defer cancel()
 	errs := n.Notify(ctx)
@@ -398,7 +398,7 @@ func (h *HttpHandler) SendNotificationHistory(data template.Data, selectors []*m
 
 	go func() {
 
-		receivers := h.notifierCfg.GetHistoryReceivers()
+		receivers := h.notifierCtl.GetHistoryReceivers()
 		if receivers == nil || len(receivers) == 0 {
 			return
 		}
