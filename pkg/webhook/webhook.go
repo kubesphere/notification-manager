@@ -10,44 +10,41 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/controller"
-	whv1 "github.com/kubesphere/notification-manager/pkg/webhook/v1"
+	"github.com/kubesphere/notification-manager/pkg/store"
+	v1 "github.com/kubesphere/notification-manager/pkg/webhook/v1"
 )
 
 type Options struct {
 	ListenAddress  string
-	WebhookTimeout string
-	WorkerTimeout  string
-	WorkerQueue    int
+	WebhookTimeout time.Duration
+	WorkerTimeout  time.Duration
 }
 
 type Webhook struct {
-	router  chi.Router
-	options *Options
+	router chi.Router
+	*Options
 	logger  log.Logger
-	handler *whv1.HttpHandler
+	handler *v1.HttpHandler
 }
 
-func New(logger log.Logger, notifierCtl *controller.Controller, o *Options) *Webhook {
-	webhookTimeout, _ := time.ParseDuration(o.WebhookTimeout)
-	wkrTimeout, _ := time.ParseDuration(o.WorkerTimeout)
+func New(logger log.Logger, notifierCtl *controller.Controller, alerts *store.AlertStore, o *Options) *Webhook {
 
 	h := &Webhook{
-		options: o,
+		Options: o,
 		logger:  logger,
 	}
 
-	semCh := make(chan struct{}, h.options.WorkerQueue)
-	h.handler = whv1.New(logger, semCh, webhookTimeout, wkrTimeout, notifierCtl)
+	h.handler = v1.New(logger, h.WorkerTimeout, notifierCtl, alerts)
 	h.router = chi.NewRouter()
 
 	h.router.Use(middleware.RequestID)
 	// h.router.Use(middleware.Logger)
 	h.router.Use(middleware.Recoverer)
-	h.router.Use(middleware.Timeout(2 * webhookTimeout))
+	h.router.Use(middleware.Timeout(2 * h.WebhookTimeout))
 	h.router.Get("/receivers", h.handler.ListReceivers)
 	h.router.Get("/configs", h.handler.ListConfigs)
 	h.router.Get("/receiverWithConfig", h.handler.ListReceiverWithConfig)
-	h.router.Post("/api/v2/alerts", h.handler.CreateNotificationFromAlerts)
+	h.router.Post("/api/v2/alerts", h.handler.Alert)
 	h.router.Post("/api/v2/verify", h.handler.Verify)
 	h.router.Post("/api/v2/notifications", h.handler.Notification)
 	h.router.Get("/metrics", h.handler.ServeMetrics)
@@ -62,7 +59,7 @@ func New(logger log.Logger, notifierCtl *controller.Controller, o *Options) *Web
 func (h *Webhook) Run(ctx context.Context) error {
 	var err error
 	httpSrv := &http.Server{
-		Addr:    h.options.ListenAddress,
+		Addr:    h.ListenAddress,
 		Handler: h.router,
 	}
 

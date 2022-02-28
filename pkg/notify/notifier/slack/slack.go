@@ -15,7 +15,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
-	"github.com/prometheus/alertmanager/template"
 )
 
 const (
@@ -100,7 +99,7 @@ func NewSlackNotifier(logger log.Logger, receivers []internal.Receiver, notifier
 	return n
 }
 
-func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
+func (n *Notifier) Notify(ctx context.Context, alerts *notifier.Alerts) error {
 
 	send := func(channel string, r *slack.Receiver) error {
 
@@ -109,12 +108,7 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			_ = level.Debug(n.logger).Log("msg", "SlackNotifier: send message", "channel", channel, "used", time.Since(start).String())
 		}()
 
-		newData := utils.FilterAlerts(data, r.AlertSelector, n.logger)
-		if len(newData.Alerts) == 0 {
-			return nil
-		}
-
-		msg, err := n.template.TempleText(r.Template, newData, n.logger)
+		msg, err := n.template.TempleText(r.Template, alerts, n.logger)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "SlackNotifier: generate message error", "channel", channel, "error", err.Error())
 			return err

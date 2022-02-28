@@ -67,7 +67,7 @@ func (r *Receiver) Validate() error {
 		return fmt.Errorf("email receiver: tmplType must be one of: `text` or `html`")
 	}
 
-	if r.To == nil || len(r.To) == 0 {
+	if len(r.To) == 0 {
 		return fmt.Errorf("email receiver: receivers is empty")
 	}
 

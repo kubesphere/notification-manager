@@ -24,6 +24,7 @@ type Common struct {
 	Template       string                `json:"template,omitempty"`
 	TitleTemplate  string                `json:"titleTemplate,omitempty"`
 	TmplType       string                `json:"tmplType,omitempty"`
+	Hash           string                `json:"hash,omitempty"`
 }
 
 func (c *Common) GetName() string {
@@ -69,6 +70,14 @@ func (c *Common) GetAlertSelector() *metav1.LabelSelector {
 
 func (c *Common) GetConfigSelector() *metav1.LabelSelector {
 	return c.ConfigSelector
+}
+
+func (c *Common) SetHash(h string) {
+	c.Hash = h
+}
+
+func (c *Common) GetHash() string {
+	return c.Hash
 }
 
 func ValidateCredential(c *v2beta2.Credential) error {

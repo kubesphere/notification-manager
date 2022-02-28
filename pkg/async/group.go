@@ -3,6 +3,9 @@ package async
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/kubesphere/notification-manager/pkg/utils"
 )
 
 // Group has several workers, and the group can execute these workers concurrently,
@@ -25,9 +28,9 @@ func (g *Group) Add(w func(stopCh chan interface{})) {
 }
 
 // Wait execute all workers concurrently, and wait for all workers to end.
-func (g *Group) Wait() []error {
+func (g *Group) Wait() error {
 
-	if g.workers == nil || len(g.workers) == 0 {
+	if len(g.workers) == 0 {
 		return nil
 	}
 
@@ -42,10 +45,7 @@ func (g *Group) Wait() []error {
 	for {
 		select {
 		case <-g.ctx.Done():
-			return []error{
-				fmt.Errorf("time out"),
-			}
-
+			return utils.Error("timeout")
 		case val := <-g.stopCh:
 			switch val.(type) {
 			case error:
@@ -54,9 +54,18 @@ func (g *Group) Wait() []error {
 				errs = append(errs, val.([]error)...)
 			default:
 			}
+
 			res = res + 1
 			if res == len(g.workers) {
-				return errs
+				if len(errs) == 0 {
+					return nil
+				}
+
+				s := ""
+				for _, err := range errs {
+					s = fmt.Sprintf("%s%s,", s, err.Error())
+				}
+				return utils.Error(strings.TrimSuffix(s, ","))
 			}
 		}
 	}

@@ -3,9 +3,14 @@ package notifier
 import (
 	"context"
 
-	"github.com/prometheus/alertmanager/template"
+	"github.com/prometheus/common/model"
 )
 
+type Alerts struct {
+	Alerts     []*model.Alert
+	GroupLabel model.LabelSet
+}
+
 type Notifier interface {
-	Notify(ctx context.Context, data template.Data) []error
+	Notify(ctx context.Context, alerts *Alerts) error
 }

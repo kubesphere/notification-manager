@@ -41,6 +41,8 @@ rules:
   - configs
   - notificationmanagers
   - receivers
+  - routers
+  - silences
   verbs:
   - create
   - delete

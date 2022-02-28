@@ -94,7 +94,7 @@ func (r *Receiver) Validate() error {
 		return fmt.Errorf("DingTalk Receiver: tmplType must be one of: `text` or `markdown`")
 	}
 
-	if r.ChatBot == nil && (r.ChatIDs == nil || len(r.ChatIDs) == 0) {
+	if r.ChatBot == nil && len(r.ChatIDs) == 0 {
 		return fmt.Errorf("%s", "DingTalk Receiver: must specify one of: `chatbot` or `chatIDs`")
 	}
 
@@ -110,7 +110,7 @@ func (r *Receiver) Validate() error {
 		}
 	}
 
-	if r.ChatIDs != nil && len(r.ChatIDs) > 0 {
+	if len(r.ChatIDs) > 0 {
 		if r.Config == nil {
 			return fmt.Errorf("DingTalk Receiver: config is nil")
 		}

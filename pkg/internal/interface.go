@@ -7,11 +7,14 @@ type Receiver interface {
 	GetName() string
 	Enabled() bool
 	GetType() string
+	GetLabels() map[string]string
 	GetAlertSelector() *metav1.LabelSelector
 	GetConfigSelector() *metav1.LabelSelector
 	SetConfig(c Config)
 	Validate() error
 	Clone() Receiver
+	GetHash() string
+	SetHash(h string)
 }
 
 type Config interface {

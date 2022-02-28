@@ -93,6 +93,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&v2beta2.Router{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "router")
+		os.Exit(1)
+	}
+
+	if err = (&v2beta2.Silence{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "silence")
+		os.Exit(1)
+	}
+
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

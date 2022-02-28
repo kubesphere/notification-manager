@@ -11,6 +11,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/controller"
+	"github.com/kubesphere/notification-manager/pkg/dispatcher"
+	"github.com/kubesphere/notification-manager/pkg/store"
 	wh "github.com/kubesphere/notification-manager/pkg/webhook"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -36,17 +38,22 @@ var (
 	webhookTimeout = kingpin.Flag(
 		"webhook.timeout",
 		"Webhook timeout for each incoming request",
-	).Default("5s").String()
+	).Default("5s").Duration()
 
 	wkrTimeout = kingpin.Flag(
 		"worker.timeout",
 		"Processing timeout for each incoming alerts or notifications",
-	).Default("30s").String()
+	).Default("30s").Duration()
 
 	wkrQueue = kingpin.Flag(
 		"worker.queue",
 		"Notification worker queue capacity",
 	).Default("1000").Int()
+
+	storeType = kingpin.Flag(
+		"store.type",
+		"Type of store which used to cache the alerts",
+	).Default("memory").String()
 
 	logLevels = []string{
 		logLevelDebug,
@@ -95,12 +102,11 @@ func Main() int {
 	logger = log.With(logger, "caller", log.DefaultCaller)
 	_ = level.Info(logger).Log("msg", "Starting notification manager...", "addr", *listenAddress, "timeout", *webhookTimeout)
 
-	ctxHttp, cancelHttp := context.WithCancel(context.Background())
-	defer cancelHttp()
-
-	// Setup notification manager config
+	// Setup notification manager controller
 	var err error
-	if ctl, err = controller.New(ctxHttp, logger); err != nil {
+	ctlCtx, cancelCtl := context.WithCancel(context.Background())
+	defer cancelCtl()
+	if ctl, err = controller.New(ctlCtx, logger); err != nil {
 		_ = level.Error(logger).Log("msg", "Failed to create notification manager controller")
 		return -1
 	}
@@ -110,28 +116,35 @@ func Main() int {
 		return -1
 	}
 
+	alerts := store.NewAlertStore(*storeType)
+
 	// Setup webhook to receive alert/notification msg
 	webhook := wh.New(
 		logger,
 		ctl,
+		alerts,
 		&wh.Options{
 			ListenAddress:  *listenAddress,
 			WebhookTimeout: *webhookTimeout,
 			WorkerTimeout:  *wkrTimeout,
-			WorkerQueue:    *wkrQueue,
 		})
 
+	ctxHttp, cancelHttp := context.WithCancel(context.Background())
+	defer cancelHttp()
+
 	srvCh := make(chan error, 1)
+	go func() {
+		srvCh <- webhook.Run(ctxHttp)
+	}()
+
+	dispCh := make(chan error, 1)
+	disp := dispatcher.New(logger, ctl, alerts, *webhookTimeout, *wkrTimeout, *wkrQueue)
+	go func() {
+		dispCh <- disp.Run()
+	}()
+
 	termCh := make(chan os.Signal, 1)
 	signal.Notify(termCh, os.Interrupt, syscall.SIGTERM)
-
-	go func() {
-		defer close(srvCh)
-		if err := webhook.Run(ctxHttp); err != nil {
-			_ = level.Error(logger).Log("msg", "Run HTTP server", "err", err)
-			srvCh <- err
-		}
-	}()
 
 	for {
 		select {
@@ -141,8 +154,11 @@ func Main() int {
 		case err := <-srvCh:
 			if err != nil {
 				_ = level.Error(logger).Log("msg", "Abnormal exit", "error", err.Error())
-				return 1
 			}
+			_ = alerts.Close()
+			_ = level.Info(logger).Log("msg", "Store closed")
+		case <-dispCh:
+			_ = level.Info(logger).Log("msg", "Dispatcher closed")
 			return 0
 		}
 	}

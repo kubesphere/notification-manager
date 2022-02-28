@@ -16,7 +16,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/internal/wechat"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
-	"github.com/prometheus/alertmanager/template"
 )
 
 const (
@@ -159,7 +158,7 @@ func NewWechatNotifier(logger log.Logger, receivers []internal.Receiver, notifie
 	return n
 }
 
-func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
+func (n *Notifier) Notify(ctx context.Context, alerts *notifier.Alerts) error {
 
 	send := func(r *wechat.Receiver, msg string) error {
 
@@ -275,12 +274,8 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	group := async.NewGroup(ctx)
 	for _, receiver := range n.receivers {
 		r := receiver.Clone().(*wechat.Receiver)
-		newData := utils.FilterAlerts(data, r.AlertSelector, n.logger)
-		if len(newData.Alerts) == 0 {
-			continue
-		}
 
-		messages, _, err := n.template.Split(newData, MessageMaxSize, r.Template, "", n.logger)
+		messages, _, err := n.template.Split(alerts, MessageMaxSize, r.Template, "", n.logger)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "WechatNotifier: split message error", "error", err.Error())
 			return nil

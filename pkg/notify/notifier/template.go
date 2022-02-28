@@ -15,7 +15,6 @@ import (
 	"github.com/prometheus/alertmanager/notify"
 	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/alertmanager/types"
-	"github.com/prometheus/common/model"
 )
 
 type Template struct {
@@ -55,36 +54,30 @@ func NewTemplate(paths []string) (*Template, error) {
 	return notifierTemplate, nil
 }
 
-func (t *Template) TempleText(name string, data template.Data, l log.Logger) (string, error) {
-
-	name = t.transform(name)
-
+func (t *Template) NewTemplateData(alerts *Alerts, l log.Logger) *template.Data {
 	ctx := context.Background()
-	ctx = notify.WithGroupLabels(ctx, utils.KvToLabelSet(data.GroupLabels))
-	ctx = notify.WithReceiverName(ctx, data.Receiver)
+	ctx = notify.WithGroupLabels(ctx, alerts.GroupLabel)
+	ctx = notify.WithReceiverName(ctx, "notification manager")
 
 	var as []*types.Alert
-	for _, a := range data.Alerts {
+	for _, alert := range alerts.Alerts {
 		as = append(as, &types.Alert{
-			Alert: model.Alert{
-				Labels:       utils.KvToLabelSet(a.Labels),
-				Annotations:  utils.KvToLabelSet(a.Annotations),
-				StartsAt:     a.StartsAt,
-				EndsAt:       a.EndsAt,
-				GeneratorURL: a.GeneratorURL,
-			},
+			Alert: *alert,
 		})
 	}
 
-	d := notify.GetTemplateData(ctx, t.Tmpl, as, l)
+	return notify.GetTemplateData(ctx, t.Tmpl, as, l)
+}
+
+func (t *Template) TempleText(name string, alerts *Alerts, l log.Logger) (string, error) {
 
 	var e error
-	text := notify.TmplText(t.Tmpl, d, &e)
+	text := notify.TmplText(t.Tmpl, t.NewTemplateData(alerts, l), &e)
 	if e != nil {
 		return "", e
 	}
 
-	s := text(name)
+	s := text(t.transform(name))
 	if utils.StringIsNil(s) {
 		return s, utils.Errorf("template '%s' error or not exist", name)
 	}
@@ -118,26 +111,26 @@ func (t *Template) transform(name string) string {
 	return fmt.Sprintf("{{ template \"%s\" . }}", name)
 }
 
-func (t *Template) Split(data template.Data, maxSize int, templateName string, subjectTemplateName string, l log.Logger) ([]string, []string, error) {
-	d := template.Data{
-		Receiver:    data.Receiver,
-		GroupLabels: data.GroupLabels,
-	}
+func (t *Template) Split(alerts *Alerts, maxSize int, templateName string, subjectTemplateName string, l log.Logger) ([]string, []string, error) {
+
 	var messages []string
 	var subjects []string
 	lastMsg := ""
 	lastSubject := ""
-	for i := 0; i < len(data.Alerts); i++ {
+	as := &Alerts{
+		GroupLabel: alerts.GroupLabel,
+	}
+	for i := 0; i < len(alerts.Alerts); i++ {
 
-		d.Alerts = append(d.Alerts, data.Alerts[i])
-		msg, err := t.TempleText(templateName, d, l)
+		as.Alerts = append(as.Alerts, alerts.Alerts[i])
+		msg, err := t.TempleText(templateName, as, l)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		subject := ""
 		if subjectTemplateName != "" {
-			subject, err = t.TempleText(templateName, d, l)
+			subject, err = t.TempleText(templateName, as, l)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -150,9 +143,9 @@ func (t *Template) Split(data template.Data, maxSize int, templateName string, s
 		}
 
 		// If there is only alert, and the message length is greater than MaxMessageSize, drop this alert.
-		if len(d.Alerts) == 1 {
+		if len(as.Alerts) == 1 {
 			_ = level.Error(l).Log("msg", "alert is too large, drop it")
-			d.Alerts = nil
+			as.Alerts = nil
 			lastMsg = ""
 			lastSubject = ""
 			continue
@@ -161,7 +154,7 @@ func (t *Template) Split(data template.Data, maxSize int, templateName string, s
 		messages = append(messages, lastMsg)
 		subjects = append(subjects, subject)
 
-		d.Alerts = nil
+		as.Alerts = nil
 		i = i - 1
 		lastMsg = ""
 		lastSubject = ""

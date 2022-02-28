@@ -4,32 +4,27 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/kubesphere/notification-manager/pkg/aggregation"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
-	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/notify"
+	"github.com/kubesphere/notification-manager/pkg/stage"
+	"github.com/kubesphere/notification-manager/pkg/store"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/prometheus/alertmanager/template"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	historyRetryMax   = 10
-	historyRetryDelay = time.Second * 5
+	"github.com/prometheus/common/model"
 )
 
 type HttpHandler struct {
-	logger         log.Logger
-	semCh          chan struct{}
-	webhookTimeout time.Duration
-	wkrTimeout     time.Duration
-	notifierCtl    *controller.Controller
+	logger      log.Logger
+	wkrTimeout  time.Duration
+	notifierCtl *controller.Controller
+	alerts      *store.AlertStore
 }
 
 type response struct {
@@ -37,18 +32,17 @@ type response struct {
 	Message string
 }
 
-func New(logger log.Logger, semCh chan struct{}, webhookTimeout time.Duration, wkrTimeout time.Duration, ctl *controller.Controller) *HttpHandler {
+func New(logger log.Logger, wkrTimeout time.Duration, ctl *controller.Controller, alerts *store.AlertStore) *HttpHandler {
 	h := &HttpHandler{
-		logger:         logger,
-		semCh:          semCh,
-		webhookTimeout: webhookTimeout,
-		wkrTimeout:     wkrTimeout,
-		notifierCtl:    ctl,
+		logger:      logger,
+		wkrTimeout:  wkrTimeout,
+		notifierCtl: ctl,
+		alerts:      alerts,
 	}
 	return h
 }
 
-func (h *HttpHandler) CreateNotificationFromAlerts(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) Alert(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		_ = r.Body.Close()
 	}()
@@ -61,146 +55,27 @@ func (h *HttpHandler) CreateNotificationFromAlerts(w http.ResponseWriter, r *htt
 		return
 	}
 
-	//	if alerts, err := json.MarshalIndent(data, "", "  "); err != nil {
-	//		_ = level.Error(h.logger).Log("msg", "Failed to encode alerts:", "err", err)
-	//	} else {
-	//		os.Stdout.Write(alerts)
-	//		os.Stdout.Write([]byte("\n"))
-	//	}
+	//if alerts, err := utils.JsonMarshalIndent(data, "", "  "); err != nil {
+	//	_ = level.Error(h.logger).Log("msg", "Failed to encode alerts:", "err", err)
+	//} else {
+	//	fmt.Println(string(alerts))
+	//}
 
-	ctx, cancel := context.WithTimeout(context.Background(), h.webhookTimeout)
-	defer cancel()
-	select {
-	case h.semCh <- struct{}{}:
-		_ = level.Debug(h.logger).Log("msg", "Acquired worker queue lock...")
-	case <-ctx.Done():
-		_ = level.Warn(h.logger).Log("msg", "Running out of queue capacity in "+h.webhookTimeout.String(), "error", ctx.Err())
-		h.handle(w, &response{http.StatusInternalServerError, "Running out of queue capacity with error: " + ctx.Err().Error()})
+	cluster := "default"
+	if h.notifierCtl != nil && h.notifierCtl.ReceiverOpts != nil && h.notifierCtl.ReceiverOpts.Global != nil {
+		if h.notifierCtl.ReceiverOpts.Global.Cluster != "" {
+			cluster = h.notifierCtl.ReceiverOpts.Global.Cluster
+		}
 	}
 
-	worker := func(ctx context.Context, wkload template.Data, stopCh chan struct{}) error {
-		var err error
-		wkrCh := make(chan struct{})
-		defer close(stopCh)
-
-		go func() {
-			defer close(wkrCh)
-
-			cluster := "default"
-			if h.notifierCtl != nil && h.notifierCtl.ReceiverOpts != nil && h.notifierCtl.ReceiverOpts.Global != nil {
-				if h.notifierCtl.ReceiverOpts.Global.Cluster != "" {
-					cluster = h.notifierCtl.ReceiverOpts.Global.Cluster
-				}
-			}
-
-			for _, alert := range data.Alerts {
-				if v := alert.Labels["cluster"]; v == "" {
-					alert.Labels["cluster"] = cluster
-				}
-			}
-
-			dm := make(map[string]template.Data)
-			ns, ok := wkload.CommonLabels["namespace"]
-			if ok {
-				dm[ns] = wkload
-			} else {
-				for _, alert := range wkload.Alerts {
-					ns, ok = alert.Labels["namespace"]
-					if !ok {
-						ns = ""
-					}
-
-					d, ok := dm[ns]
-					if !ok {
-						d = template.Data{
-							Alerts:       template.Alerts{},
-							CommonLabels: map[string]string{},
-							GroupLabels:  map[string]string{},
-							Receiver:     wkload.Receiver,
-							ExternalURL:  wkload.ExternalURL,
-						}
-						for k, v := range wkload.CommonLabels {
-							d.CommonLabels[k] = v
-						}
-						if len(ns) > 0 {
-							d.CommonLabels["namespace"] = ns
-						}
-						for k, v := range wkload.GroupLabels {
-							d.GroupLabels[k] = v
-						}
-					}
-
-					d.Alerts = append(d.Alerts, alert)
-					dm[ns] = d
-				}
-			}
-
-			group := async.NewGroup(ctx)
-			for k, d := range dm {
-				var ns *string = nil
-				if len(k) > 0 {
-					ns = &k
-				}
-				receivers := h.notifierCtl.RcvsFromNs(ns)
-				n := notify.NewNotification(h.logger, receivers, h.notifierCtl, d)
-				group.Add(func(stopCh chan interface{}) {
-					stopCh <- n.Notify(ctx)
-				})
-
-				// Export notification history.
-				var selectors []*metav1.LabelSelector
-				for _, receiver := range receivers {
-					selectors = append(selectors, receiver.GetAlertSelector())
-				}
-				h.SendNotificationHistory(d, selectors)
-			}
-
-			errs := group.Wait()
-			if errs != nil && len(errs) > 0 {
-				_ = level.Error(h.logger).Log("msg", "Worker: notification sent error")
-			}
-
-			_ = level.Debug(h.logger).Log("msg", "Worker: notification sent")
-		}()
-
-		select {
-		case <-ctx.Done():
-			err = ctx.Err()
-			if err != nil {
-				_ = level.Warn(h.logger).Log("msg", "Worker: sending notification timeout in "+h.wkrTimeout.String(), "error", err.Error())
-			}
-		case <-wkrCh:
-			_ = level.Debug(h.logger).Log("msg", "Worker: exiting")
+	for _, alert := range data.Alerts {
+		if v := alert.Labels["cluster"]; v == "" {
+			alert.Labels["cluster"] = cluster
 		}
-
-		_ = level.Debug(h.logger).Log("msg", "Worker: exit")
-		return err
+		if err := h.alerts.Push(utils.AlertConvert(&alert)); err != nil {
+			_ = level.Error(h.logger).Log("msg", "push alert error", "error", err.Error())
+		}
 	}
-
-	// launch one worker goroutine for each received alert to create notification for it
-	go func(semCh chan struct{}, timeout time.Duration) {
-		_ = level.Debug(h.logger).Log("msg", "Begins to send notification...")
-
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		defer cancel()
-
-		stopCh := make(chan struct{})
-		wkloadCh := make(chan template.Data, 1)
-		wkloadCh <- data
-
-		t := time.Now()
-		for i := 0; i < 2; i += 1 {
-			select {
-			case wkload := <-wkloadCh:
-				_ = worker(ctx, wkload, stopCh)
-			case <-stopCh:
-				<-h.semCh
-				elapsed := time.Since(t).String()
-				_ = level.Debug(h.logger).Log("msg", "Worker exit after "+elapsed)
-				return
-			}
-		}
-	}(h.semCh, h.wkrTimeout)
 
 	h.handle(w, &response{http.StatusOK, "Notification request accepted"})
 }
@@ -276,32 +151,22 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	labels := template.KV{
-		"alertname": "Test",
-	}
-	annotations := template.KV{
-		"message": "Congratulations, your configuration is correct!",
-	}
-
-	d := template.Data{
-		Receiver: "Default",
-		Status:   "firing",
-		Alerts: template.Alerts{
-			{
-				Status:      "firing",
-				Labels:      labels,
-				Annotations: annotations,
-				StartsAt:    time.Now(),
-				EndsAt:      time.Now(),
+	alerts := []*model.Alert{
+		{
+			Labels: model.LabelSet{
+				"alertname": "verify",
+				"alerttype": "verify",
+				"time":      model.LabelValue(time.Now().Local().String()),
 			},
+			Annotations: model.LabelSet{
+				"message": "Congratulations, your notification configuration is correct!",
+			},
+			StartsAt: time.Now(),
+			EndsAt:   time.Now(),
 		},
-		GroupLabels:       labels,
-		CommonLabels:      labels,
-		CommonAnnotations: annotations,
-		ExternalURL:       "kubesphere.io",
 	}
 
-	if msg := h.send(receivers, d, h.logger); msg != "" {
+	if msg := h.send(receivers, alerts, "verify"); msg != "" {
 		h.handle(w, &response{http.StatusBadRequest, msg})
 		return
 	}
@@ -341,7 +206,18 @@ func (h *HttpHandler) Notification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if msg := h.send(receivers, d, h.logger); msg != "" {
+	var alerts []*model.Alert
+	for _, alert := range d.Alerts {
+		alerts = append(alerts, &model.Alert{
+			Labels:       utils.KvToLabelSet(alert.Labels),
+			Annotations:  utils.KvToLabelSet(alert.Annotations),
+			StartsAt:     alert.StartsAt,
+			EndsAt:       alert.EndsAt,
+			GeneratorURL: alert.GeneratorURL,
+		})
+	}
+
+	if msg := h.send(receivers, alerts, "notification"); msg != "" {
 		h.handle(w, &response{http.StatusBadRequest, msg})
 		return
 	}
@@ -377,70 +253,26 @@ func (h *HttpHandler) getReceiversFromRequest(m map[string]interface{}) ([]inter
 	return receivers, nil
 }
 
-func (h *HttpHandler) send(receivers []internal.Receiver, d template.Data, logger log.Logger) string {
-	n := notify.NewNotification(logger, receivers, h.notifierCtl, d)
+func (h *HttpHandler) send(receivers []internal.Receiver, alerts []*model.Alert, seq string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), h.wkrTimeout)
+	ctx = context.WithValue(ctx, "seq", seq)
 	defer cancel()
-	errs := n.Notify(ctx)
-	if errs != nil && len(errs) > 0 {
-		msg := ""
-		for _, err := range errs {
-			msg += err.Error() + ", "
-		}
-		msg = strings.TrimSuffix(msg, ", ")
-		return msg
+
+	pipeline := stage.MultiStage{}
+	// Aggregation stage
+	pipeline = append(pipeline, aggregation.NewStage(h.notifierCtl))
+	// Notify stage
+	pipeline = append(pipeline, notify.NewStage(h.notifierCtl))
+
+	data := make(map[internal.Receiver][]*model.Alert)
+	for _, receiver := range receivers {
+		data[receiver] = alerts
+	}
+
+	_, _, err := pipeline.Exec(ctx, h.logger, data)
+	if err != nil {
+		return err.Error()
 	}
 
 	return ""
-}
-
-func (h *HttpHandler) SendNotificationHistory(data template.Data, selectors []*metav1.LabelSelector) {
-
-	go func() {
-
-		receivers := h.notifierCtl.GetHistoryReceivers()
-		if receivers == nil || len(receivers) == 0 {
-			return
-		}
-
-		newData := template.Data{
-			Receiver:          data.Receiver,
-			Status:            data.Status,
-			GroupLabels:       data.GroupLabels,
-			CommonLabels:      data.CommonLabels,
-			CommonAnnotations: data.CommonAnnotations,
-			ExternalURL:       data.ExternalURL,
-		}
-
-		for _, alert := range data.Alerts {
-			flag := false
-			for _, selector := range selectors {
-				if utils.LabelMatchSelector(alert.Labels, selector) {
-					flag = true
-					break
-				}
-			}
-
-			if flag {
-				newData.Alerts = append(newData.Alerts, alert)
-			}
-		}
-
-		if len(newData.Alerts) == 0 {
-			return
-		}
-
-		for retry := 0; retry <= historyRetryMax; retry++ {
-			logger := log.With(h.logger, "type", "history")
-			if retry != 0 {
-				logger = log.With(logger, "retry", retry)
-			}
-
-			if errMsg := h.send(receivers, newData, logger); utils.StringIsNil(errMsg) {
-				return
-			}
-
-			time.Sleep(historyRetryDelay)
-		}
-	}()
 }

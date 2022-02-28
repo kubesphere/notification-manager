@@ -22,6 +22,7 @@ import (
 	"unicode/utf8"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -31,7 +32,31 @@ import (
 
 var (
 	PushoverDeviceRegex = regexp.MustCompile(`^[A-Za-z0-9_-]{1,25}$`)
-	PushoverSounds      = map[string]bool{"pushover": true, "bike": true, "bugle": true, "cashregister": true, "classical": true, "cosmic": true, "falling": true, "gamelan": true, "incoming": true, "intermission": true, "magic": true, "mechanical": true, "pianobar": true, "siren": true, "spacealarm": true, "tugboat": true, "alien": true, "climb": true, "persistent": true, "echo": true, "updown": true, "vibrate": true, "none": true}
+	PushoverSounds      = []string{
+		"pushover",
+		"bike",
+		"bugle",
+		"cashregister",
+		"classical",
+		"cosmic",
+		"falling",
+		"gamelan",
+		"incoming",
+		"intermission",
+		"magic",
+		"mechanical",
+		"pianobar",
+		"siren",
+		"spacealarm",
+		"tugboat",
+		"alien",
+		"climb",
+		"persistent",
+		"echo",
+		"updown",
+		"vibrate",
+		"none",
+	}
 )
 
 func (r *Receiver) SetupWebhookWithManager(mgr ctrl.Manager) error {
@@ -40,7 +65,7 @@ func (r *Receiver) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// +kubebuilder:webhook:verbs=create;update,mutating=false,failurePolicy=fail,groups=notification.kubesphere.io,resources=configs,versions=v2beta2
+// +kubebuilder:webhook:verbs=create;update,mutating=false,failurePolicy=fail,groups=notification.kubesphere.io,resources=receivers,versions=v2beta2
 var _ webhook.Validator = &Receiver{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
@@ -66,11 +91,11 @@ func (r *Receiver) validateReceiver() error {
 	if r.Spec.DingTalk != nil && r.Spec.DingTalk.ChatBot != nil {
 		credentials = append(credentials, map[string]interface{}{
 			"credential": r.Spec.DingTalk.ChatBot.Webhook,
-			"path":       field.NewPath("spec").Child("dingtalk").Child("chatbot").Child("webhook"),
+			"path":       field.NewPath("spec", "dingtalk", "chatbot", "webhook"),
 		})
 		credentials = append(credentials, map[string]interface{}{
 			"credential": r.Spec.DingTalk.ChatBot.Secret,
-			"path":       field.NewPath("spec").Child("dingtalk").Child("chatbot").Child("secret"),
+			"path":       field.NewPath("spec", "dingtalk", "chatbot", "secret"),
 		})
 	}
 
@@ -78,30 +103,30 @@ func (r *Receiver) validateReceiver() error {
 		httpConfig := r.Spec.Webhook.HTTPConfig
 		credentials = append(credentials, map[string]interface{}{
 			"credential": httpConfig.BearerToken,
-			"path":       field.NewPath("spec").Child("webhook").Child("httpConfig").Child("bearerToken"),
+			"path":       field.NewPath("spec", "webhook", "httpConfig", "bearerToken"),
 		})
 
 		if httpConfig.BasicAuth != nil {
 			credentials = append(credentials, map[string]interface{}{
 				"credential": httpConfig.BasicAuth.Password,
-				"path":       field.NewPath("spec").Child("webhook").Child("httpConfig").Child("basicAuth").Child("password"),
+				"path":       field.NewPath("spec", "webhook", "httpConfig", "basicAuth", "password"),
 			})
 		}
 
 		if httpConfig.TLSConfig != nil {
 			credentials = append(credentials, map[string]interface{}{
 				"credential": httpConfig.TLSConfig.RootCA,
-				"path":       field.NewPath("spec").Child("webhook").Child("httpConfig").Child("tlsConfig").Child("rootCA"),
+				"path":       field.NewPath("spec", "webhook", "httpConfig", "tlsConfig", "rootCA"),
 			})
 
 			if httpConfig.TLSConfig.ClientCertificate != nil {
 				credentials = append(credentials, map[string]interface{}{
 					"credential": httpConfig.TLSConfig.Cert,
-					"path":       field.NewPath("spec").Child("webhook").Child("httpConfig").Child("tlsConfig").Child("clientCertificate").Child("cert"),
+					"path":       field.NewPath("spec", "webhook", "httpConfig", "tlsConfig", "clientCertificate", "cert"),
 				})
 				credentials = append(credentials, map[string]interface{}{
 					"credential": httpConfig.TLSConfig.Key,
-					"path":       field.NewPath("spec").Child("webhook").Child("httpConfig").Child("tlsConfig").Child("clientCertificate").Child("key"),
+					"path":       field.NewPath("spec", "webhook", "httpConfig", "tlsConfig", "clientCertificate", "key"),
 				})
 			}
 		}
@@ -116,44 +141,79 @@ func (r *Receiver) validateReceiver() error {
 
 	if r.Spec.DingTalk != nil {
 		if r.Spec.DingTalk.Conversation != nil && len(r.Spec.DingTalk.Conversation.ChatIDs) == 0 {
-			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("dingtalk").Child("conversation").Child("chatids"),
-				"must be specified"))
+			allErrs = append(allErrs,
+				field.Required(field.NewPath("spec", "dingtalk", "conversation", "chatids"),
+					"must be specified"))
 		}
 
 		if r.Spec.DingTalk.TmplType != nil {
 			if *r.Spec.DingTalk.TmplType != "text" && *r.Spec.DingTalk.TmplType != "markdown" {
-				allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("dingtalk").Child("tmplType"),
-					"must be one of: `text` or `markdown`"))
+				allErrs = append(allErrs,
+					field.NotSupported(field.NewPath("spec", "dingtalk", "tmplType"),
+						*r.Spec.DingTalk.TmplType,
+						[]string{"text", "markdown"}))
 			}
+		}
+
+		if err := validateSelector(r.Spec.DingTalk.AlertSelector); err != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec", "dingtalk", "alertSelector"),
+					r.Spec.DingTalk.AlertSelector,
+					err.Error()))
 		}
 	}
 
 	if r.Spec.Email != nil {
 		if len(r.Spec.Email.To) == 0 {
-			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("email").Child("to"),
+			allErrs = append(allErrs, field.Required(field.NewPath("spec", "email", "to"),
 				"must be specified"))
 		}
 
 		if r.Spec.Email.TmplType != nil {
 			if *r.Spec.Email.TmplType != "text" && *r.Spec.Email.TmplType != "html" {
-				allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("email").Child("tmplType"),
-					"must be one of: `text` or `html`"))
+				allErrs = append(allErrs,
+					field.NotSupported(field.NewPath("spec", "email", "tmplType"),
+						*r.Spec.Email.TmplType,
+						[]string{"text", "html"}))
 			}
+		}
+
+		if err := validateSelector(r.Spec.Email.AlertSelector); err != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec", "email", "alertSelector"),
+					r.Spec.Email.AlertSelector,
+					err.Error()))
 		}
 	}
 
-	if r.Spec.Slack != nil && len(r.Spec.Slack.Channels) == 0 {
-		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("slack").Child("channels"),
-			"must be specified"))
+	if r.Spec.Slack != nil {
+		if len(r.Spec.Slack.Channels) == 0 {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("slack").Child("channels"),
+				"must be specified"))
+		}
+
+		if err := validateSelector(r.Spec.Slack.AlertSelector); err != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec", "slack", "alertSelector"),
+					r.Spec.Slack.AlertSelector,
+					err.Error()))
+		}
 	}
 
 	if r.Spec.Webhook != nil {
 		if r.Spec.Webhook.URL == nil && r.Spec.Webhook.Service == nil {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("webhook"), "",
+			allErrs = append(allErrs, field.Required(field.NewPath("spec", "webhook"),
 				"must specify one of: `url` or `service`"))
 		} else if r.Spec.Webhook.URL != nil && r.Spec.Webhook.Service != nil {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("webhook").Child("url"), "",
-				"may not be specified when `service` is not empty"))
+			allErrs = append(allErrs, field.Duplicate(field.NewPath("spec", "webhook", "url"),
+				"url should not set when service set"))
+		}
+
+		if err := validateSelector(r.Spec.Webhook.AlertSelector); err != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec", "webhook", "alertSelector"),
+					r.Spec.Webhook.AlertSelector,
+					err.Error()))
 		}
 	}
 
@@ -162,15 +222,24 @@ func (r *Receiver) validateReceiver() error {
 		if (wechat.ToUser == nil || len(wechat.ToUser) == 0) &&
 			(wechat.ToParty == nil || len(wechat.ToParty) == 0) &&
 			(wechat.ToTag == nil || len(wechat.ToTag) == 0) {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("wechat"), "",
+			allErrs = append(allErrs, field.Required(field.NewPath("spec", "wechat"),
 				"must specify one of: `toUser`, `toParty` or `toTag`"))
 		}
 
 		if wechat.TmplType != nil {
 			if *wechat.TmplType != "text" && *wechat.TmplType != "markdown" {
-				allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("wechat").Child("tmplType"),
-					"must be one of: `text` or `html`"))
+				allErrs = append(allErrs,
+					field.NotSupported(field.NewPath("spec", "wechat", "tmplType"),
+						*wechat.TmplType,
+						[]string{"text", "markdown"}))
 			}
+		}
+
+		if err := validateSelector(r.Spec.Wechat.AlertSelector); err != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec", "wechat", "alertSelector"),
+					r.Spec.Wechat.AlertSelector,
+					err.Error()))
 		}
 	}
 
@@ -185,31 +254,63 @@ func (r *Receiver) validateReceiver() error {
 			for i, profile := range r.Spec.Pushover.Profiles {
 				// validate UserKeys
 				if profile.UserKey == nil {
-					allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("profiles").Child("userKey"),
-						fmt.Sprintf("found invalid Pushover User Key: %s, profile: %d", *profile.UserKey, i)))
+					allErrs = append(allErrs,
+						field.Required(field.NewPath("spec", "pushover", fmt.Sprintf("profiles[%d]", i), "userKey"),
+							"must be specified"))
 				}
 				// validate Devices
 				for _, device := range profile.Devices {
 					if !PushoverDeviceRegex.MatchString(device) {
-						allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("devices"),
-							fmt.Sprintf("found invalid Pushover device name: %s, profile: %d", device, i)))
+						allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "pushover", fmt.Sprintf("profiles[%d]", i), "devices"),
+							device,
+							"length must less than 25 characters and can only contain character set [A-Za-z0-9_-]"))
 					}
 				}
 				// Validate Title
 				if profile.Title != nil {
 					if l := utf8.RuneCountInString(*profile.Title); l > 250 {
-						allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("title"),
-							fmt.Sprintf("found invalid Pushover title: %s, please limit your title within 250 characters, profile: %d", *profile.Title, i)))
+						allErrs = append(allErrs,
+							field.TooLong(field.NewPath("spec", "pushover", fmt.Sprintf("profiles[%d]", i), "title"),
+								*profile.Title,
+								250))
 					}
 				}
 				// Validate Sound
 				if profile.Sound != nil {
-					if !PushoverSounds[*profile.Sound] {
-						allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("pushover").Child("title"),
-							fmt.Sprintf("found invalid Pushover sound: %s, please refer to https://pushover.net/api#sounds, profile: %d", *profile.Sound, i)))
+					flag := false
+					for _, v := range PushoverSounds {
+						if v == *profile.Sound {
+							flag = true
+							break
+						}
+					}
+					if !flag {
+						allErrs = append(allErrs,
+							field.NotSupported(field.NewPath("spec", "pushover", fmt.Sprintf("profiles[%d]", i), "sound"),
+								*profile.Sound, PushoverSounds))
 					}
 				}
 			}
+		}
+
+		if err := validateSelector(r.Spec.Pushover.AlertSelector); err != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec", "pushover", "alertSelector"),
+					r.Spec.Pushover.AlertSelector,
+					err.Error()))
+		}
+	}
+
+	if r.Spec.Sms != nil {
+		if len(r.Spec.Sms.PhoneNumbers) == 0 {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec", "sms", "phoneNumbers"), "must be specified"))
+		}
+
+		if err := validateSelector(r.Spec.Sms.AlertSelector); err != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec", "sms", "alertSelector"),
+					r.Spec.Sms.AlertSelector,
+					err.Error()))
 		}
 	}
 
@@ -220,4 +321,14 @@ func (r *Receiver) validateReceiver() error {
 	return errors.NewInvalid(
 		schema.GroupKind{Group: "notification.kubesphere.io", Kind: "Receiver"},
 		r.Name, allErrs)
+}
+
+func validateSelector(selector *metav1.LabelSelector) error {
+
+	if selector == nil {
+		return nil
+	}
+
+	_, err := metav1.LabelSelectorAsSelector(selector)
+	return err
 }

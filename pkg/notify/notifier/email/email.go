@@ -18,10 +18,8 @@ import (
 	amconfig "github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/alertmanager/notify"
 	amemail "github.com/prometheus/alertmanager/notify/email"
-	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/alertmanager/types"
 	commoncfg "github.com/prometheus/common/config"
-	"github.com/prometheus/common/model"
 )
 
 const (
@@ -135,7 +133,7 @@ func NewEmailNotifier(logger log.Logger, receivers []internal.Receiver, notifier
 	return n
 }
 
-func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
+func (n *Notifier) Notify(ctx context.Context, alerts *notifier.Alerts) error {
 
 	sendEmail := func(r *email.Receiver, to string) error {
 
@@ -143,24 +141,6 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		defer func() {
 			_ = level.Debug(n.logger).Log("msg", "EmailNotifier: send message", "used", time.Since(start).String())
 		}()
-
-		var as []*types.Alert
-		newData := utils.FilterAlerts(data, r.AlertSelector, n.logger)
-		if len(newData.Alerts) == 0 {
-			return nil
-		}
-
-		for _, a := range newData.Alerts {
-			as = append(as, &types.Alert{
-				Alert: model.Alert{
-					Labels:       utils.KvToLabelSet(a.Labels),
-					Annotations:  utils.KvToLabelSet(a.Annotations),
-					StartsAt:     a.StartsAt,
-					EndsAt:       a.EndsAt,
-					GeneratorURL: a.GeneratorURL,
-				},
-			})
-		}
 
 		emailConfig, err := n.getEmailConfig(r)
 		if err != nil {
@@ -184,9 +164,16 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 		sender := amemail.New(emailConfig, n.template.Tmpl, n.logger)
 
 		ctx, cancel := context.WithTimeout(context.Background(), n.timeout)
-		ctx = notify.WithGroupLabels(ctx, utils.KvToLabelSet(data.GroupLabels))
-		ctx = notify.WithReceiverName(ctx, data.Receiver)
+		ctx = notify.WithGroupLabels(ctx, alerts.GroupLabel)
+		ctx = notify.WithReceiverName(ctx, "notification manager")
 		defer cancel()
+
+		var as []*types.Alert
+		for _, alert := range alerts.Alerts {
+			as = append(as, &types.Alert{
+				Alert: *alert,
+			})
+		}
 
 		_, err = sender.Notify(ctx, as...)
 		if err != nil {

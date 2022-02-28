@@ -5,6 +5,8 @@ resources:
   - bases/notification.kubesphere.io_notificationmanagers.yaml
   - bases/notification.kubesphere.io_configs.yaml
   - bases/notification.kubesphere.io_receivers.yaml
+  - bases/notification.kubesphere.io_silences.yaml
+  - bases/notification.kubesphere.io_routers.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

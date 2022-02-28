@@ -14,6 +14,9 @@ const (
 	EndsAt           = "endsAt"
 	NotificationTime = "notificationTime"
 	RunbookURL       = "runbook_url"
+	Message          = "message"
+	Summary          = "summary"
+	SummaryCn        = "summaryCn"
 )
 
 type exporter struct {
@@ -51,10 +54,19 @@ func alertToString(a *common.Alert) string {
 	}
 
 	for k, v := range a.Annotations {
-		if k != RunbookURL {
+		if k != RunbookURL && k != Message && k != Summary && k != SummaryCn {
 			m[k] = v
 		}
 	}
+
+	message := a.Annotations[Message]
+	if message == "" {
+		message = a.Annotations[Summary]
+		if message == "" {
+			message = a.Annotations[SummaryCn]
+		}
+	}
+	m[Message] = message
 
 	bs, err := jsoniter.Marshal(m)
 	if err != nil {
