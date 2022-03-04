@@ -21,7 +21,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/internal/dingtalk"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
-	"github.com/prometheus/alertmanager/template"
 )
 
 const (
@@ -235,26 +234,21 @@ func NewDingTalkNotifier(logger log.Logger, receivers []internal.Receiver, notif
 	return n
 }
 
-func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
+func (n *Notifier) Notify(ctx context.Context, alerts *notifier.Alerts) error {
 
 	group := async.NewGroup(ctx)
 	for _, receiver := range n.receivers {
 		r := receiver
 
-		newData := utils.FilterAlerts(data, r.AlertSelector, n.logger)
-		if len(newData.Alerts) == 0 {
-			continue
-		}
-
 		if r.ChatBot != nil {
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- n.sendToChatBot(ctx, r, newData)
+				stopCh <- n.sendToChatBot(ctx, r, alerts)
 			})
 		}
 
-		if r.ChatIDs != nil && len(r.ChatIDs) > 0 {
+		if len(r.ChatIDs) > 0 {
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- n.sendToConversation(ctx, r, newData)
+				stopCh <- n.sendToConversation(ctx, r, alerts)
 			})
 		}
 	}
@@ -262,14 +256,14 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 	return group.Wait()
 }
 
-func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, data template.Data) []error {
+func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, alerts *notifier.Alerts) error {
 
 	bot := r.ChatBot
 
 	webhook, err := n.notifierCtl.GetCredential(bot.Webhook)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: get webhook secret error", "error", err.Error())
-		return []error{err}
+		return err
 	}
 
 	send := func(title, msg string) error {
@@ -361,7 +355,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, data
 	}
 
 	keywords := ""
-	if bot.Keywords != nil && len(bot.Keywords) > 0 {
+	if len(bot.Keywords) > 0 {
 		keywords = "\n\n[Keywords] "
 		for _, k := range bot.Keywords {
 			keywords = fmt.Sprintf("%s%s, ", keywords, k)
@@ -371,7 +365,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, data
 	}
 
 	atMobiles := ""
-	if bot.AtMobiles != nil && len(bot.AtMobiles) > 0 {
+	if len(bot.AtMobiles) > 0 {
 		for _, mobile := range bot.AtMobiles {
 			atMobiles = fmt.Sprintf("%s@%s, ", atMobiles, mobile)
 		}
@@ -385,10 +379,10 @@ func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, data
 		maxSize = maxSize - len(atMobiles)
 	}
 
-	messages, titles, err := n.template.Split(data, n.chatbotMessageMaxSize-len(keywords)-len(atMobiles), r.Template, r.TitleTemplate, n.logger)
+	messages, titles, err := n.template.Split(alerts, n.chatbotMessageMaxSize-len(keywords)-len(atMobiles), r.Template, r.TitleTemplate, n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: split message error", "error", err.Error())
-		return []error{err}
+		return err
 	}
 
 	group := async.NewGroup(ctx)
@@ -412,23 +406,23 @@ func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, data
 	return group.Wait()
 }
 
-func (n *Notifier) sendToConversation(ctx context.Context, r *dingtalk.Receiver, data template.Data) []error {
+func (n *Notifier) sendToConversation(ctx context.Context, r *dingtalk.Receiver, alerts *notifier.Alerts) error {
 
 	if r.Config == nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: config is nil")
-		return []error{utils.Error("DingTalkNotifier: config is nil")}
+		return utils.Error("DingTalkNotifier: config is nil")
 	}
 
 	appkey, err := n.notifierCtl.GetCredential(r.AppKey)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appkey error", "error", err)
-		return []error{err}
+		return err
 	}
 
 	appsecret, err := n.notifierCtl.GetCredential(r.AppSecret)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appsecret error", "error", err)
-		return []error{err}
+		return err
 	}
 
 	send := func(chatID, title, msg string) error {
@@ -514,7 +508,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, r *dingtalk.Receiver,
 		return nil
 	}
 
-	messages, titles, err := n.template.Split(data, n.conversationMessageMaxSize, r.Template, r.TitleTemplate, n.logger)
+	messages, titles, err := n.template.Split(alerts, n.conversationMessageMaxSize, r.Template, r.TitleTemplate, n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: split message error", "error", err.Error())
 		return nil

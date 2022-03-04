@@ -19,7 +19,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
-	"github.com/prometheus/alertmanager/template"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -131,7 +130,7 @@ func NewPushoverNotifier(logger log.Logger, receivers []internal.Receiver, notif
 // - Pushover has a limit of 1024 characters on the message length (the exceeded part will be truncated), and each message may contain more than one Alert. Thus, a strategy of splitting the message is applied here, i.e., a message should contain as many Alerts as possible, and each message is sent one after another to ensure that they can be received in an intact manner by the user.
 // - Render the message with a template, from which the Pushover message structure is constructed and its legitimacy is verified.
 // - The Pushover message structure is encoded as a JSON string, a POST method is called to send a request to the Endpoint (https://api.pushover.net/1/messages.json), and an error will be raised if the status code of the returned response is not successful.
-func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
+func (n *Notifier) Notify(ctx context.Context, alerts *notifier.Alerts) error {
 
 	send := func(profile *v2beta2.PushoverUserProfile, r *pushover.Receiver) error {
 
@@ -147,14 +146,8 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			return err
 		}
 
-		// filter data by selector
-		filteredData := utils.FilterAlerts(data, r.AlertSelector, n.logger)
-		if len(filteredData.Alerts) == 0 {
-			return nil
-		}
-
 		// split new data along with its Alerts to ensure each message is small enough to fit the Pushover's message length limit
-		messages, _, err := n.template.Split(filteredData, MessageMaxLength, r.Template, "", n.logger)
+		messages, _, err := n.template.Split(alerts, MessageMaxLength, r.Template, "", n.logger)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "PushoverNotifier: split alerts error", "userKey", userKey, "error", err.Error())
 			return err

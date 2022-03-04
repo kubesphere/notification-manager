@@ -112,6 +112,26 @@ type NotificationManagerSpec struct {
 	Sidecars map[string]*Sidecar `json:"sidecars,omitempty"`
 	// History used to collect notification history.
 	History *HistoryReceiver `json:"history,omitempty"`
+	// Labels for grouping notifiations.
+	GroupLabels []string `json:"groupLabels,omitempty"`
+	// The maximum size of a batch. A batch used to buffer alerts and asynchronously process them.
+	//
+	// +kubebuilder:default=100
+	BatchMaxSize int `json:"batchMaxSize,omitempty"`
+	// The amount of time to wait before force processing the batch that hadn't reached the max size.
+	//
+	// +kubebuilder:default="1m"
+	BatchMaxWait metav1.Duration `json:"batchMaxWait,omitempty"`
+	// The RoutePolicy determines how to find receivers to which notifications will be sent.
+	// Valid RoutePolicy include All, RouterFirst, and RouterOnly.
+	// All: The alerts will be sent to the receivers that match any router,
+	// and also will be sent to the receivers of those tenants with the right to access the namespace to which the alert belongs.
+	// RouterFirst: The alerts will be sent to the receivers that match any router first.
+	// If no receivers match any router, alerts will send to the receivers of those tenants with the right to access the namespace to which the alert belongs.
+	// RouterOnly: The alerts will only be sent to the receivers that match any router.
+	//
+	// +kubebuilder:default=All
+	RoutePolicy string `json:"routePolicy,omitempty"`
 }
 
 type ReceiversSpec struct {

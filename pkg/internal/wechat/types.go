@@ -60,9 +60,7 @@ func (r *Receiver) SetConfig(c internal.Config) {
 
 func (r *Receiver) Validate() error {
 
-	if (r.ToUser == nil || len(r.ToUser) == 0) &&
-		(r.ToParty == nil || len(r.ToParty) == 0) &&
-		(r.ToTag == nil || len(r.ToTag) == 0) {
+	if len(r.ToUser) == 0 && len(r.ToParty) == 0 && len(r.ToTag) == 0 {
 		return fmt.Errorf("wechat receiver: must specify one of: `toUser`, `toParty` or `toTag`")
 	}
 

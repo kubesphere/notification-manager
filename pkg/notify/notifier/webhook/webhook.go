@@ -19,7 +19,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/mwitkow/go-conntrack"
-	"github.com/prometheus/alertmanager/template"
 )
 
 const (
@@ -93,7 +92,7 @@ func NewWebhookNotifier(logger log.Logger, receivers []internal.Receiver, notifi
 	return n
 }
 
-func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
+func (n *Notifier) Notify(ctx context.Context, alerts *notifier.Alerts) error {
 
 	send := func(r *webhook.Receiver) error {
 
@@ -102,26 +101,20 @@ func (n *Notifier) Notify(ctx context.Context, data template.Data) []error {
 			_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "used", time.Since(start).String())
 		}()
 
-		newData := utils.FilterAlerts(data, r.AlertSelector, n.logger)
-		if len(newData.Alerts) == 0 {
-			return nil
-		}
-
-		var value interface{} = newData
+		var buf bytes.Buffer
 		if r.Template != DefaultTemplate {
-			msg, err := n.template.TempleText(r.Template, newData, n.logger)
+			msg, err := n.template.TempleText(r.Template, alerts, n.logger)
 			if err != nil {
 				_ = level.Error(n.logger).Log("msg", "WebhookNotifier: generate message error", "error", err.Error())
 				return err
 			}
 
-			value = msg
-		}
-
-		var buf bytes.Buffer
-		if err := utils.JsonEncode(&buf, value); err != nil {
-			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: encode message error", "error", err.Error())
-			return err
+			buf.WriteString(msg)
+		} else {
+			if err := utils.JsonEncode(&buf, n.template.NewTemplateData(alerts, n.logger)); err != nil {
+				_ = level.Error(n.logger).Log("msg", "WebhookNotifier: encode message error", "error", err.Error())
+				return err
+			}
 		}
 
 		request, err := http.NewRequest(http.MethodPost, r.URL, &buf)

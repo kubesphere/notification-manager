@@ -14,4 +14,6 @@ const (
 	SMS      = "sms"
 	Webhook  = "webhook"
 	WeChat   = "wechat"
+
+	Namespace = "namespace"
 )

@@ -13,6 +13,7 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/internal/sms"
 	"github.com/kubesphere/notification-manager/pkg/internal/webhook"
 	"github.com/kubesphere/notification-manager/pkg/internal/wechat"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/modern-go/reflect2"
 )
 
@@ -51,6 +52,7 @@ func NewReceivers(tenantID string, obj *v2beta2.Receiver) map[string]internal.Re
 	m := make(map[string]internal.Receiver)
 	for k, fn := range receiverFactories {
 		if r := fn(tenantID, obj); !reflect2.IsNil(r) {
+			r.SetHash(utils.Hash(r))
 			m[fmt.Sprintf("%s/%s", k, obj.Name)] = r
 		}
 	}

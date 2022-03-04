@@ -31,17 +31,14 @@ import (
 )
 
 const (
-	globalTenantID      = "notification-manager/type/global"
-	defaultConfig       = "notification-manager/type/default"
-	defaultTenantKey    = "user"
-	notificationManager = "notification-manager"
-	resourceConfig      = "config"
-	resourceReceiver    = "receiver"
-	opAdd               = "add"
-	opUpdate            = "update"
-	opDel               = "delete"
-	opGet               = "get"
-	nsEnvironment       = "NAMESPACE"
+	globalTenantID   = "notification-manager/type/global"
+	defaultConfig    = "notification-manager/type/default"
+	defaultTenantKey = "user"
+
+	opAdd         = "add"
+	opUpdate      = "update"
+	opDel         = "delete"
+	nsEnvironment = "NAMESPACE"
 
 	tenantSidecarURL = "http://localhost:19094/api/v2/tenant"
 )
@@ -77,14 +74,19 @@ type Controller struct {
 	history   *v2beta2.HistoryReceiver
 	// Dose the notification manager crd add.
 	nmAdd bool
+
+	groupLabels  []string
+	batchMaxSize int
+	batchMaxWait metav1.Duration
+
+	routePolicy string
 }
 
 type task struct {
-	op       string
-	opType   string
-	obj      interface{}
-	tenantID []string
-	done     chan interface{}
+	op   string
+	obj  interface{}
+	run  func(t *task)
+	done chan interface{}
 }
 
 func New(ctx context.Context, logger log.Logger) (*Controller, error) {
@@ -166,11 +168,11 @@ func (c *Controller) Run() error {
 			select {
 			case <-ctx.Done():
 				return
-			case p, more := <-c.ch:
+			case t, more := <-c.ch:
 				if !more {
 					return
 				}
-				c.sync(p)
+				t.run(t)
 			}
 		}
 	}(c.ctx)
@@ -178,18 +180,27 @@ func (c *Controller) Run() error {
 		_ = c.cache.Start(c.ctx.Done())
 	}()
 
+	if ok := c.cache.WaitForCacheSync(c.ctx.Done()); !ok {
+		return utils.Error("NotificationManager cache failed")
+	}
+
 	// Setup informer for NotificationManager
 	nmInf, err := c.cache.GetInformer(&v2beta2.NotificationManager{})
 	if err != nil {
 		_ = level.Error(c.logger).Log("msg", "Failed to get informer for NotificationManager", "err", err)
 		return err
 	}
+
 	nmInf.AddEventHandler(kcache.ResourceEventHandlerFuncs{
-		AddFunc: c.onNmAdd,
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			c.onNmAdd(newObj)
+		AddFunc: func(Obj interface{}) {
+			c.onNmChange(Obj, opAdd)
 		},
-		DeleteFunc: c.onNmDel,
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			c.onNmChange(newObj, opAdd)
+		},
+		DeleteFunc: func(Obj interface{}) {
+			c.onNmChange(Obj, opDel)
+		},
 	})
 
 	receiverInformer, err := c.cache.GetInformer(&v2beta2.Receiver{})
@@ -199,13 +210,13 @@ func (c *Controller) Run() error {
 	}
 	receiverInformer.AddEventHandler(kcache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			c.onChange(obj, opAdd, resourceReceiver)
+			c.onResourceChange(obj, opAdd, c.receiverChanged)
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			c.onChange(newObj, opUpdate, resourceReceiver)
+			c.onResourceChange(newObj, opUpdate, c.receiverChanged)
 		},
 		DeleteFunc: func(obj interface{}) {
-			c.onChange(obj, opDel, resourceReceiver)
+			c.onResourceChange(obj, opDel, c.receiverChanged)
 		},
 	})
 
@@ -216,28 +227,59 @@ func (c *Controller) Run() error {
 	}
 	configInformer.AddEventHandler(kcache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			c.onChange(obj, opAdd, resourceConfig)
+			c.onResourceChange(obj, opAdd, c.configChanged)
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			c.onChange(newObj, opUpdate, resourceConfig)
+			c.onResourceChange(newObj, opUpdate, c.configChanged)
 		},
 		DeleteFunc: func(obj interface{}) {
-			c.onChange(obj, opDel, resourceConfig)
+			c.onResourceChange(obj, opDel, c.configChanged)
 		},
 	})
 
-	if ok := c.cache.WaitForCacheSync(c.ctx.Done()); !ok {
-		return utils.Error("NotificationManager cache failed")
-	}
-
-	_ = level.Info(c.logger).Log("msg", "Setting up informers successfully")
 	return c.ctx.Err()
 }
 
-func (c *Controller) onNmAdd(obj interface{}) {
+func (c *Controller) onNmChange(obj interface{}, op string) {
+	c.onResourceChange(obj, op, c.nmChange)
 
-	c.onChange(obj, opAdd, notificationManager)
-	c.updateReloadTimestamp()
+	if op == opAdd {
+		c.updateReloadTimestamp()
+	}
+}
+
+func (c *Controller) nmChange(t *task) {
+	defer close(t.done)
+
+	if t.op == opAdd {
+		spec := t.obj.(*v2beta2.NotificationManager).Spec
+		c.tenantKey = spec.Receivers.TenantKey
+		c.defaultConfigSelector = spec.DefaultConfigSelector
+		c.tenantReceiverSelector = spec.Receivers.TenantReceiverSelector
+		c.globalReceiverSelector = spec.Receivers.GlobalReceiverSelector
+		c.ReceiverOpts = spec.Receivers.Options
+		c.tenantSidecar = false
+		if spec.Sidecars != nil {
+			if sidecar, ok := spec.Sidecars[v2beta2.Tenant]; ok && sidecar != nil {
+				c.tenantSidecar = true
+			}
+		}
+		c.history = spec.History
+
+		c.groupLabels = spec.GroupLabels
+		c.batchMaxSize = spec.BatchMaxSize
+		c.batchMaxWait = spec.BatchMaxWait
+
+		c.routePolicy = spec.RoutePolicy
+
+		c.nmAdd = true
+	} else {
+		c.tenantKey = defaultTenantKey
+		c.globalReceiverSelector = nil
+		c.tenantReceiverSelector = nil
+		c.defaultConfigSelector = nil
+		c.ReceiverOpts = nil
+	}
 }
 
 func (c *Controller) updateReloadTimestamp() {
@@ -285,40 +327,119 @@ func (c *Controller) updateReloadTimestamp() {
 	}
 }
 
-func (c *Controller) onNmDel(obj interface{}) {
-	c.onChange(obj, opDel, notificationManager)
-}
-
-func (c *Controller) onChange(obj interface{}, op, opType string) {
-
+func (c *Controller) onResourceChange(obj interface{}, op string, run func(t *task)) {
 	t := &task{
-		op:     op,
-		obj:    obj,
-		opType: opType,
-		done:   make(chan interface{}, 1),
+		op:   op,
+		obj:  obj,
+		run:  run,
+		done: make(chan interface{}, 1),
 	}
 
 	c.ch <- t
 	<-t.done
 }
 
-func (c *Controller) sync(t *task) {
+func (c *Controller) configChanged(t *task) {
 
-	if t.op == opGet {
-		// Return all receivers of the specified tenant (map[opType/name]*Receiver)
-		// via the done channel if exists
-		for _, id := range t.tenantID {
-			t.done <- c.receivers[id]
-		}
-	} else if t.opType == notificationManager {
-		c.nmChange(t)
+	defer close(t.done)
 
-		_ = level.Info(c.logger).Log("msg", "NotificationManager changed", "op", t.op)
-	} else {
-		c.resourceChanged(t)
+	if !c.nmAdd {
+		return
 	}
 
-	close(t.done)
+	config, ok := t.obj.(*v2beta2.Config)
+	if !ok {
+		return
+	}
+
+	tenantID := c.getTenantID(config.Labels)
+	if len(tenantID) == 0 {
+		_ = level.Warn(c.logger).Log("msg", "Ignore config because of empty tenantID", "name", config.Name, "tenantKey", c.tenantKey)
+		return
+	}
+
+	// If operation is `update` or `delete`, it needs to delete the old config.
+	if t.op == opUpdate || t.op == opDel {
+		suffix := fmt.Sprintf("/%s", config.Name)
+		for id := range c.configs {
+			found := false
+			for k := range c.configs[id] {
+				if strings.HasSuffix(k, suffix) {
+					delete(c.configs[id], k)
+					found = true
+				}
+			}
+
+			if found {
+				break
+			}
+		}
+	}
+
+	if t.op == opAdd || t.op == opUpdate {
+		configs := NewConfigs(config)
+		if _, ok := c.configs[tenantID]; !ok {
+			c.configs[tenantID] = make(map[string]internal.Config)
+		}
+		for k, v := range configs {
+			if !reflect2.IsNil(v) {
+				c.configs[tenantID][k] = v
+			}
+		}
+	}
+
+	_ = level.Info(c.logger).Log("msg", "Config changed", "op", t.op, "name", config.Name)
+}
+
+func (c *Controller) receiverChanged(t *task) {
+	defer close(t.done)
+
+	if !c.nmAdd {
+		return
+	}
+
+	receiver, ok := t.obj.(*v2beta2.Receiver)
+	if !ok {
+		return
+	}
+
+	tenantID := c.getTenantID(receiver.Labels)
+	if len(tenantID) == 0 {
+		_ = level.Warn(c.logger).Log("msg", "Ignore receiver because of empty tenantID", "name", receiver.Name, "tenantKey", c.tenantKey)
+		return
+	}
+
+	// If operation is `update` or `delete`, it needs to delete the old receivers.
+	if t.op == opUpdate || t.op == opDel {
+		suffix := fmt.Sprintf("/%s", receiver.Name)
+		for id := range c.receivers {
+			found := false
+			for k := range c.receivers[id] {
+				if strings.HasSuffix(k, suffix) {
+					delete(c.receivers[id], k)
+					found = true
+				}
+			}
+
+			if found {
+				break
+			}
+		}
+	}
+
+	if t.op == opAdd || t.op == opUpdate {
+		receivers := NewReceivers(tenantID, receiver)
+		if _, ok := c.receivers[tenantID]; !ok {
+			c.receivers[tenantID] = make(map[string]internal.Receiver)
+		}
+		for k, v := range receivers {
+			if !reflect2.IsNil(v) {
+				c.receivers[tenantID][k] = v
+			}
+		}
+	}
+
+	_ = level.Info(c.logger).Log("msg", "Receiver changed", "op", t.op, "name", receiver.Name)
 }
 
 func (c *Controller) tenantIDFromNs(namespace string) ([]string, error) {
@@ -357,34 +478,6 @@ func (c *Controller) tenantIDFromNs(namespace string) ([]string, error) {
 	return res, nil
 }
 
-func (c *Controller) RcvsFromTenantID(ids []string) []internal.Receiver {
-
-	t := &task{
-		op:       opGet,
-		tenantID: ids,
-		done:     make(chan interface{}, 1),
-	}
-
-	c.ch <- t
-	rcvs := make([]internal.Receiver, 0)
-	for {
-		o, more := <-t.done
-		if !more {
-			break
-		}
-
-		if r, ok := o.(map[string]internal.Receiver); ok {
-			for _, v := range r {
-				if v.Enabled() {
-					rcvs = append(rcvs, v.Clone())
-				}
-			}
-		}
-	}
-
-	return rcvs
-}
-
 // `matchingConfig` used to get a matched config for a receiver.
 // It will return true when config is found.
 func getMatchedConfig(r internal.Receiver, configs map[string]map[string]internal.Config) bool {
@@ -411,73 +504,112 @@ func getMatchedConfig(r internal.Receiver, configs map[string]map[string]interna
 		return false
 	}
 
-	configSelector := r.GetConfigSelector()
-	// If config selector is nil, use default config
-	if configSelector == nil {
-		return match(configs[defaultConfig], nil)
-	}
-
 	tenantID := r.GetTenantID()
-	// The global receiver use the default config.
+	configSelector := r.GetConfigSelector()
 	if tenantID == globalTenantID {
-		tenantID = defaultConfig
-	}
-
-	// If no config matched the config selector, use default config.
-	if found := match(configs[tenantID], configSelector); !found {
-		return match(configs[defaultConfig], nil)
+		return match(configs[defaultConfig], configSelector)
 	} else {
-		return true
+		if found := match(configs[tenantID], configSelector); !found {
+			return match(configs[defaultConfig], nil)
+		} else {
+			return true
+		}
 	}
 }
 
 func (c *Controller) RcvsFromNs(namespace *string) []internal.Receiver {
 
-	// Get all global receiver first, global receiver should receive all notifications.
-	rcvs := c.RcvsFromTenantID([]string{globalTenantID})
-
-	// Get tenant receivers.
+	// Global receiver should receive all notifications.
+	tenants := []string{globalTenantID}
 	if namespace != nil && len(*namespace) > 0 {
 		// Get all tenants which need to receive the notifications in this namespace.
 		tenantIDs, err := c.tenantIDFromNs(*namespace)
 		if err != nil {
 			_ = level.Error(c.logger).Log("msg", "get tenantID error", "err", err, "namespace", *namespace)
 		} else {
-			// Get receivers for each tenant.
-			rcvs = append(rcvs, c.RcvsFromTenantID(tenantIDs)...)
+			tenants = append(tenants, tenantIDs...)
 		}
 	}
 
-	for _, rcv := range rcvs {
-		getMatchedConfig(rcv, c.configs)
+	t := &task{
+		run: func(t *task) {
+			var rcvs []internal.Receiver
+			for _, tenant := range tenants {
+				for _, rcv := range c.receivers[tenant] {
+					if rcv.Enabled() {
+						rcv = rcv.Clone()
+						getMatchedConfig(rcv, c.configs)
+						rcvs = append(rcvs, rcv)
+					}
+				}
+			}
+
+			t.done <- rcvs
+		},
+		done: make(chan interface{}, 1),
 	}
 
-	return rcvs
+	c.ch <- t
+	val := <-t.done
+	return val.([]internal.Receiver)
 }
 
-func (c *Controller) nmChange(t *task) {
-	if t.op == opAdd {
-		spec := t.obj.(*v2beta2.NotificationManager).Spec
-		c.tenantKey = spec.Receivers.TenantKey
-		c.defaultConfigSelector = spec.DefaultConfigSelector
-		c.tenantReceiverSelector = spec.Receivers.TenantReceiverSelector
-		c.globalReceiverSelector = spec.Receivers.GlobalReceiverSelector
-		c.ReceiverOpts = spec.Receivers.Options
-		c.tenantSidecar = false
-		if spec.Sidecars != nil {
-			if sidecar, ok := spec.Sidecars[v2beta2.Tenant]; ok && sidecar != nil {
-				c.tenantSidecar = true
+func (c *Controller) RcvsFromName(names []string, regexName, receiverType string) []internal.Receiver {
+
+	t := &task{
+		run: func(t *task) {
+			var rcvs []internal.Receiver
+			for k := range c.receivers {
+				for _, v := range c.receivers[k] {
+					if !utils.StringIsNil(receiverType) && v.GetType() != receiverType {
+						continue
+					}
+
+					if utils.StringInList(v.GetName(), names) || utils.RegularMatch(regexName, v.GetName()) {
+						rcv := v.Clone()
+						getMatchedConfig(rcv, c.configs)
+						rcvs = append(rcvs, rcv)
+					}
+				}
 			}
-		}
-		c.history = spec.History
-		c.nmAdd = true
-	} else {
-		c.tenantKey = defaultTenantKey
-		c.globalReceiverSelector = nil
-		c.tenantReceiverSelector = nil
-		c.defaultConfigSelector = nil
-		c.ReceiverOpts = nil
+
+			t.done <- rcvs
+		},
+		done: make(chan interface{}, 1),
 	}
+
+	c.ch <- t
+	val := <-t.done
+	return val.([]internal.Receiver)
+}
+
+func (c *Controller) RcvsFromSelector(selector *metav1.LabelSelector, receiverType string) []internal.Receiver {
+
+	t := &task{
+		run: func(t *task) {
+			var rcvs []internal.Receiver
+			for k := range c.receivers {
+				for _, v := range c.receivers[k] {
+					if !utils.StringIsNil(receiverType) && v.GetType() != receiverType {
+						continue
+					}
+
+					if utils.LabelMatchSelector(v.GetLabels(), selector) {
+						rcv := v.Clone()
+						getMatchedConfig(rcv, c.configs)
+						rcvs = append(rcvs, rcv)
+					}
+				}
+			}
+
+			t.done <- rcvs
+		},
+		done: make(chan interface{}, 1),
+	}
+
+	c.ch <- t
+	val := <-t.done
+	return val.([]internal.Receiver)
 }
 
 func (c *Controller) getTenantID(label map[string]string) string {
@@ -547,94 +679,6 @@ func (c *Controller) isTenant(label map[string]string) (bool, string) {
 	}
 
 	return false, ""
-}
-
-func (c *Controller) resourceChanged(t *task) {
-	if !c.nmAdd {
-		return
-	}
-
-	tenantID := c.getTenantID(utils.GetObjectLabels(t.obj))
-	if len(tenantID) == 0 {
-		_ = level.Warn(c.logger).Log("msg", "Ignore because of empty tenantID", "name", utils.GetObjectName(t.obj), "tenantKey", c.tenantKey)
-		return
-	}
-
-	if t.opType == resourceConfig {
-		obj, ok := t.obj.(*v2beta2.Config)
-		if !ok {
-			return
-		}
-
-		// If operation is `update` or `delete`, it needs to delete the old config.
-		if t.op == opUpdate || t.op == opDel {
-			suffix := fmt.Sprintf("/%s", obj.Name)
-			for id := range c.configs {
-				found := false
-				for k := range c.configs[id] {
-					if strings.HasSuffix(k, suffix) {
-						delete(c.configs[id], k)
-						found = true
-					}
-				}
-
-				if found {
-					break
-				}
-			}
-		}
-
-		if t.op == opAdd || t.op == opUpdate {
-			configs := NewConfigs(obj)
-			if _, ok := c.configs[tenantID]; !ok {
-				c.configs[tenantID] = make(map[string]internal.Config)
-			}
-			for k, v := range configs {
-				if !reflect2.IsNil(v) {
-					c.configs[tenantID][k] = v
-				}
-			}
-		}
-
-		_ = level.Info(c.logger).Log("msg", "Controller changed", "op", t.op, "name", obj.Name)
-	} else if t.opType == resourceReceiver {
-		obj, ok := t.obj.(*v2beta2.Receiver)
-		if !ok {
-			return
-		}
-
-		// If operation is `update` or `delete`, it needs to delete the old receivers.
-		if t.op == opUpdate || t.op == opDel {
-			suffix := fmt.Sprintf("/%s", obj.Name)
-			for id := range c.receivers {
-				found := false
-				for k := range c.receivers[id] {
-					if strings.HasSuffix(k, suffix) {
-						delete(c.receivers[id], k)
-						found = true
-					}
-				}
-
-				if found {
-					break
-				}
-			}
-		}
-
-		if t.op == opAdd || t.op == opUpdate {
-			receivers := NewReceivers(tenantID, obj)
-			if _, ok := c.receivers[tenantID]; !ok {
-				c.receivers[tenantID] = make(map[string]internal.Receiver)
-			}
-			for k, v := range receivers {
-				if !reflect2.IsNil(v) {
-					c.receivers[tenantID][k] = v
-				}
-			}
-		}
-
-		_ = level.Info(c.logger).Log("msg", "Receiver changed", "op", t.op, "name", obj.Name)
-	}
 }
 
 func (c *Controller) ListReceiver(tenant, opType string) interface{} {
@@ -765,7 +809,7 @@ func (c *Controller) GenerateReceivers(nr *v2beta2.Receiver, nc *v2beta2.Config)
 		rcvs = append(rcvs, r)
 	}
 
-	if rcvs == nil || len(rcvs) == 0 {
+	if len(rcvs) == 0 {
 		return nil, utils.Error("no receivers provided")
 	}
 
@@ -777,11 +821,14 @@ func (c *Controller) GetHistoryReceivers() []internal.Receiver {
 	var rcvs []internal.Receiver
 
 	if c.history != nil {
-		historyReceivers := NewReceivers("", &v2beta2.Receiver{
+		receiver := &v2beta2.Receiver{
 			Spec: v2beta2.ReceiverSpec{
 				Webhook: c.history.Webhook,
 			},
-		})
+		}
+		tmpl := "webhook.default.message"
+		receiver.Spec.Webhook.Template = &tmpl
+		historyReceivers := NewReceivers("", receiver)
 		if historyReceivers != nil {
 			for _, v := range historyReceivers {
 				rcvs = append(rcvs, v)
@@ -790,4 +837,68 @@ func (c *Controller) GetHistoryReceivers() []internal.Receiver {
 	}
 
 	return rcvs
+}
+
+func (c *Controller) GetGroupLabels() []string {
+	return c.groupLabels
+}
+
+func (c *Controller) GetBatchMaxSize() int {
+	return c.batchMaxSize
+}
+
+func (c *Controller) GetBatchMaxWait() time.Duration {
+	return c.batchMaxWait.Duration
+}
+
+func (c *Controller) GetInformer() cache.Cache {
+	return c.cache
+}
+
+func (c *Controller) GetActiveSilences(ctx context.Context, tenant string) ([]v2beta2.Silence, error) {
+
+	var selector *metav1.LabelSelector
+	// Get global silence.
+	if utils.StringIsNil(tenant) {
+		selector = c.globalReceiverSelector
+	} else {
+		// Get tenant silence.
+		selector = c.tenantReceiverSelector
+		selector.MatchLabels[c.tenantKey] = tenant
+	}
+
+	list := &v2beta2.SilenceList{}
+	if err := c.cache.List(ctx, list, &client.ListOptions{LabelSelector: labels.SelectorFromSet(selector.MatchLabels)}); err != nil {
+		return nil, err
+	}
+
+	var ss []v2beta2.Silence
+	for _, silence := range list.Items {
+		if silence.IsActive() {
+			ss = append(ss, silence)
+		}
+	}
+
+	return ss, nil
+}
+
+func (c *Controller) GetActiveRouters(ctx context.Context) ([]v2beta2.Router, error) {
+
+	list := &v2beta2.RouterList{}
+	if err := c.cache.List(ctx, list); err != nil {
+		return nil, err
+	}
+
+	var rs []v2beta2.Router
+	for _, router := range list.Items {
+		if router.Spec.Enabled == nil || *router.Spec.Enabled {
+			rs = append(rs, router)
+		}
+	}
+
+	return rs, nil
+}
+
+func (c *Controller) GetRoutePolicy() string {
+	return c.routePolicy
 }

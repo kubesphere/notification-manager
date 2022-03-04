@@ -61,7 +61,7 @@ func (r *Receiver) SetConfig(c internal.Config) {
 
 func (r *Receiver) Validate() error {
 
-	if r.Profiles == nil || len(r.Profiles) == 0 {
+	if len(r.Profiles) == 0 {
 		return fmt.Errorf("pushover receiver: user profiles must be specified")
 	}
 

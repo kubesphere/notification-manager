@@ -54,7 +54,7 @@ func (r *Receiver) SetConfig(c internal.Config) {
 
 func (r *Receiver) Validate() error {
 
-	if r.Channels == nil || len(r.Channels) == 0 {
+	if len(r.Channels) == 0 {
 		return fmt.Errorf("slack receiver: channel must be specified")
 	}
 

@@ -57,38 +57,38 @@ func (r *Config) validateConfig() error {
 	if r.Spec.DingTalk != nil && r.Spec.DingTalk.Conversation != nil {
 		credentials = append(credentials, map[string]interface{}{
 			"credential": r.Spec.DingTalk.Conversation.AppKey,
-			"path":       field.NewPath("spec").Child("dingtalk").Child("conversation").Child("appkey"),
+			"path":       field.NewPath("spec", "dingtalk", "conversation", "appkey"),
 		})
 		credentials = append(credentials, map[string]interface{}{
 			"credential": r.Spec.DingTalk.Conversation.AppSecret,
-			"path":       field.NewPath("spec").Child("dingtalk").Child("conversation").Child("appsecret"),
+			"path":       field.NewPath("spec", "dingtalk", "conversation", "appsecret"),
 		})
 	}
 
 	if r.Spec.Email != nil {
 		credentials = append(credentials, map[string]interface{}{
 			"credential": r.Spec.Email.AuthSecret,
-			"path":       field.NewPath("spec").Child("email").Child("authSecret"),
+			"path":       field.NewPath("spec", "email", "authSecret"),
 		})
 		credentials = append(credentials, map[string]interface{}{
 			"credential": r.Spec.Email.AuthPassword,
-			"path":       field.NewPath("spec").Child("email").Child("authPassword"),
+			"path":       field.NewPath("spec", "email", "authPassword"),
 		})
 
 		if r.Spec.Email.TLS != nil {
 			credentials = append(credentials, map[string]interface{}{
 				"credential": r.Spec.Email.TLS.RootCA,
-				"path":       field.NewPath("spec").Child("email").Child("tls").Child("rootCA"),
+				"path":       field.NewPath("spec", "email", "tls", "rootCA"),
 			})
 
 			if r.Spec.Email.TLS.ClientCertificate != nil {
 				credentials = append(credentials, map[string]interface{}{
 					"credential": r.Spec.Email.TLS.Cert,
-					"path":       field.NewPath("spec").Child("email").Child("tls").Child("clientCertificate").Child("cert"),
+					"path":       field.NewPath("spec", "email", "tls", "clientCertificate", "cert"),
 				})
 				credentials = append(credentials, map[string]interface{}{
 					"credential": r.Spec.Email.TLS.Key,
-					"path":       field.NewPath("spec").Child("email").Child("tls").Child("clientCertificate").Child("key"),
+					"path":       field.NewPath("spec", "email", "tls", "clientCertificate", "key"),
 				})
 			}
 		}
@@ -97,30 +97,26 @@ func (r *Config) validateConfig() error {
 	if r.Spec.Slack != nil {
 		credentials = append(credentials, map[string]interface{}{
 			"credential": r.Spec.Slack.SlackTokenSecret,
-			"path":       field.NewPath("spec").Child("slack").Child("slackTokenSecret"),
+			"path":       field.NewPath("spec", "slack", "slackTokenSecret"),
 		})
 	}
 
 	if r.Spec.Wechat != nil {
 		credentials = append(credentials, map[string]interface{}{
 			"credential": r.Spec.Wechat.WechatApiSecret,
-			"path":       field.NewPath("spec").Child("wechat").Child("wechatApiSecret"),
+			"path":       field.NewPath("spec", "wechat", "wechatApiSecret"),
 		})
 	}
 
 	if r.Spec.Sms != nil {
 		providers := r.Spec.Sms.Providers
 		defaultProvider := r.Spec.Sms.DefaultProvider
-		if defaultProvider == "aliyun" && providers.Aliyun == nil {
-			err := field.Invalid(field.NewPath("spec").Child("sms").Child("defaultProvider"), "", "cannot find default provider from providers")
-			allErrs = append(allErrs, err)
-		}
-		if defaultProvider == "tencent" && providers.Tencent == nil {
-			err := field.Invalid(field.NewPath("spec").Child("sms").Child("defaultProvider"), "", "cannot find default provider from providers")
-			allErrs = append(allErrs, err)
-		}
-		if defaultProvider == "huawei" && providers.Huawei == nil {
-			err := field.Invalid(field.NewPath("spec").Child("sms").Child("defaultProvider"), "", "cannot find default provider from providers")
+		if (defaultProvider == "aliyun" && providers.Aliyun == nil) ||
+			(defaultProvider == "tencent" && providers.Tencent == nil) ||
+			(defaultProvider == "huawei" && providers.Huawei == nil) {
+			err := field.Invalid(field.NewPath("spec", "sms", "defaultProvider"),
+				defaultProvider,
+				"cannot find provider")
 			allErrs = append(allErrs, err)
 		}
 
@@ -129,13 +125,13 @@ func (r *Config) validateConfig() error {
 			if providers.Aliyun.AccessKeyId != nil {
 				credentials = append(credentials, map[string]interface{}{
 					"credential": r.Spec.Sms.Providers.Aliyun.AccessKeyId,
-					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("aliyun").Child("accessKeyId"),
+					"path":       field.NewPath("spec", "sms", "providers", "aliyun", "accessKeyId"),
 				})
 			}
 			if providers.Aliyun.AccessKeySecret != nil {
 				credentials = append(credentials, map[string]interface{}{
 					"credential": r.Spec.Sms.Providers.Aliyun.AccessKeySecret,
-					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("aliyun").Child("accessKeySecret"),
+					"path":       field.NewPath("spec", "sms", "providers", "aliyun", "accessKeySecret"),
 				})
 			}
 		}
@@ -145,13 +141,13 @@ func (r *Config) validateConfig() error {
 			if providers.Tencent.SecretId != nil {
 				credentials = append(credentials, map[string]interface{}{
 					"credential": r.Spec.Sms.Providers.Tencent.SecretId,
-					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("tencent").Child("secretId"),
+					"path":       field.NewPath("spec", "sms", "providers", "tencent", "secretId"),
 				})
 			}
 			if providers.Tencent.SecretKey != nil {
 				credentials = append(credentials, map[string]interface{}{
 					"credential": r.Spec.Sms.Providers.Tencent.SecretKey,
-					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("tencent").Child("secretKey"),
+					"path":       field.NewPath("spec", "sms", "providers", "tencent", "secretKey"),
 				})
 			}
 		}
@@ -160,14 +156,14 @@ func (r *Config) validateConfig() error {
 		if providers.Huawei != nil {
 			if providers.Huawei.AppKey != nil {
 				credentials = append(credentials, map[string]interface{}{
-					"credential": r.Spec.Sms.Providers.Tencent.SecretId,
-					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("huawei").Child("appKey"),
+					"credential": r.Spec.Sms.Providers.Huawei.AppKey,
+					"path":       field.NewPath("spec", "sms", "providers", "huawei", "appKey"),
 				})
 			}
 			if providers.Huawei.AppSecret != nil {
 				credentials = append(credentials, map[string]interface{}{
-					"credential": r.Spec.Sms.Providers.Tencent.SecretKey,
-					"path":       field.NewPath("spec").Child("sms").Child("providers").Child("huawei").Child("appSecret"),
+					"credential": r.Spec.Sms.Providers.Huawei.AppSecret,
+					"path":       field.NewPath("spec", "sms", "providers", "huawei", "appSecret"),
 				})
 			}
 		}
@@ -177,7 +173,7 @@ func (r *Config) validateConfig() error {
 	if r.Spec.Pushover != nil {
 		credentials = append(credentials, map[string]interface{}{
 			"credential": r.Spec.Pushover.PushoverTokenSecret,
-			"path":       field.NewPath("spec").Child("pushover").Child("pushoverTokenSecret"),
+			"path":       field.NewPath("spec", "pushover", "pushoverTokenSecret"),
 		})
 	}
 
@@ -204,7 +200,7 @@ func validateCredential(c *Credential, fldPath *field.Path) *field.Error {
 	}
 
 	if len(c.Value) == 0 && c.ValueFrom == nil {
-		return field.Invalid(fldPath, "", "must specify one of: `value` or `valueFrom`")
+		return field.Required(fldPath, "must specify one of: `value` or `valueFrom`")
 	}
 
 	if len(c.Value) != 0 && c.ValueFrom != nil {
@@ -213,7 +209,7 @@ func validateCredential(c *Credential, fldPath *field.Path) *field.Error {
 
 	if c.ValueFrom != nil {
 		if c.ValueFrom.SecretKeyRef == nil {
-			return field.Invalid(fldPath.Child("valueFrom").Child("SecretKeyRef"), "", "must be specified")
+			return field.Required(fldPath.Child("valueFrom").Child("SecretKeyRef"), "must be specified")
 		}
 	}
 
