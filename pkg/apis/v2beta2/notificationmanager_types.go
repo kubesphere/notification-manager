@@ -122,13 +122,13 @@ type NotificationManagerSpec struct {
 	//
 	// +kubebuilder:default="1m"
 	BatchMaxWait metav1.Duration `json:"batchMaxWait,omitempty"`
-	// The RoutePolicy determines how to find receivers that notifications will be sent to.
-	// Known values are RouterFirst and RouterOnly.
-	// All: The alerts will send to the receivers which match the router,
-	//      and the receivers of tenants who can access the namespace that the alert is in.
-	// RouterFirst: The alerts will send to the receivers which match the router first, if no receiver is found,
-	//              it will send to the receivers of tenants who can access the namespace that the alert is in.
-	// RouterOnly: The alerts will send to the receivers which match the router only.
+	// The RoutePolicy determines how to find receivers to which notifications will be sent.
+	// Valid RoutePolicy include All, RouterFirst, and RouterOnly.
+	// All: The alerts will be sent to the receivers that match any router,
+	// and also will be sent to the receivers of those tenants with the right to access the namespace to which the alert belongs.
+	// RouterFirst: The alerts will be sent to the receivers that match any router first.
+	// If no receivers match any router, alerts will send to the receivers of those tenants with the right to access the namespace to which the alert belongs.
+	// RouterOnly: The alerts will only be sent to the receivers that match any router.
 	//
 	// +kubebuilder:default=All
 	RoutePolicy string `json:"routePolicy,omitempty"`
