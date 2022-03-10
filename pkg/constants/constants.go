@@ -4,11 +4,13 @@ const (
 	HTML     = "html"
 	Text     = "text"
 	Markdown = "markdown"
+	Post     = "post"
 	Aliyun   = "aliyun"
 	Tencent  = "tencent"
 
 	DingTalk = "dingtalk"
 	Email    = "email"
+	Feishu   = "feishu"
 	Pushover = "pushover"
 	Slack    = "slack"
 	SMS      = "sms"

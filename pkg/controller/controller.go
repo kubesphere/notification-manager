@@ -984,14 +984,16 @@ func (c *Controller) GetGlobalTmpl() (*template.Template, error) {
 			}
 		}
 
-		text, err := c.GetConfigmap(c.template.Text)
-		if err != nil {
-			return nil, err
-		}
+		if c.template != nil {
+			text, err := c.GetConfigmap(c.template.Text)
+			if err != nil {
+				return nil, err
+			}
 
-		tmpl, err = tmpl.ParserText(text...)
-		if err != nil {
-			return nil, err
+			tmpl, err = tmpl.ParserText(text...)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		c.tmpl = tmpl

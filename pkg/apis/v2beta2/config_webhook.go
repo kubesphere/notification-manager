@@ -177,6 +177,17 @@ func (r *Config) validateConfig() error {
 		})
 	}
 
+	if r.Spec.Feishu != nil {
+		credentials = append(credentials, map[string]interface{}{
+			"credential": r.Spec.Feishu.AppID,
+			"path":       field.NewPath("spec", "feishu", "appID"),
+		})
+		credentials = append(credentials, map[string]interface{}{
+			"credential": r.Spec.Feishu.AppSecret,
+			"path":       field.NewPath("spec", "feishu", "appSecret"),
+		})
+	}
+
 	for _, v := range credentials {
 		err := validateCredential(v["credential"].(*Credential), v["path"].(*field.Path))
 		if err != nil {

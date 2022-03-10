@@ -140,7 +140,8 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 			_ = level.Error(n.logger).Log("msg", "EmailNotifier: notify error", "from", n.receiver.From, "to", n.receiver.To, "error", err.Error())
 			return err
 		}
-		_ = level.Debug(n.logger).Log("msg", "EmailNotifier: send message", "from", n.receiver.From, "to", n.receiver.To)
+
+		_ = level.Debug(n.logger).Log("msg", "EmailNotifier: send message", "from", n.receiver.From, "to", utils.ArrayToString(n.receiver.To, ","))
 		return nil
 	}
 

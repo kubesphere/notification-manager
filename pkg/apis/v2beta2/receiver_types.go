@@ -54,7 +54,7 @@ type DingTalkReceiver struct {
 	ChatBot *DingTalkChatBot `json:"chatbot,omitempty"`
 	// The conversation which message will send to.
 	Conversation *DingTalkConversation `json:"conversation,omitempty"`
-	// The name of the template to generate DingTalk message.
+	// The name of the template to generate notification.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
 	// The name of the template to generate markdown title
@@ -74,7 +74,7 @@ type EmailReceiver struct {
 	EmailConfigSelector *metav1.LabelSelector `json:"emailConfigSelector,omitempty"`
 	// Selector to filter alerts.
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
-	// The name of the template to generate DingTalk message.
+	// The name of the template to generate notification.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
 	// The name of the template to generate email subject
@@ -94,7 +94,7 @@ type SlackReceiver struct {
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	// The channel or user to send notifications to.
 	Channels []string `json:"channels"`
-	// The name of the template to generate DingTalk message.
+	// The name of the template to generate notification.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
 	// Template file.
@@ -170,7 +170,7 @@ type WebhookReceiver struct {
 	Service *ServiceReference `json:"service,omitempty"`
 
 	HTTPConfig *HTTPClientConfig `json:"httpConfig,omitempty"`
-	// The name of the template to generate DingTalk message.
+	// The name of the template to generate notification.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
 	// Template file.
@@ -188,7 +188,7 @@ type WechatReceiver struct {
 	ToUser  []string `json:"toUser,omitempty"`
 	ToParty []string `json:"toParty,omitempty"`
 	ToTag   []string `json:"toTag,omitempty"`
-	// The name of the template to generate DingTalk message.
+	// The name of the template to generate notification.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
 	// template type: text or markdown, default type is text
@@ -206,7 +206,7 @@ type SmsReceiver struct {
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	// Receivers' phone numbers
 	PhoneNumbers []string `json:"phoneNumbers"`
-	// The name of the template to generate Sms message.
+	// The name of the template to generate notification.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
 	// Template file.
@@ -235,11 +235,46 @@ type PushoverReceiver struct {
 	PushoverConfigSelector *metav1.LabelSelector `json:"pushoverConfigSelector,omitempty"`
 	// Selector to filter alerts.
 	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
-	// The name of the template to generate DingTalk message.
+	// The name of the template to generate notification.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
 	// The users profile.
 	Profiles []*PushoverUserProfile `json:"profiles"`
+	// Template file.
+	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
+}
+
+// FeishuChatBot is the configuration of ChatBot
+type FeishuChatBot struct {
+	// The webhook of ChatBot which the message will send to.
+	Webhook *Credential `json:"webhook"`
+
+	// Custom keywords of ChatBot
+	Keywords []string `json:"keywords,omitempty"`
+
+	// Secret of ChatBot, you can get it after enabled signature verification of ChatBot.
+	Secret *Credential `json:"secret,omitempty"`
+}
+
+type FeishuReceiver struct {
+	// whether the receiver is enabled
+	Enabled *bool `json:"enabled,omitempty"`
+	// FeishuConfig to be selected for this receiver
+	FeishuConfigSelector *metav1.LabelSelector `json:"feishuConfigSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	// +optional
+	// +kubebuilder:validation:MaxItems=200
+	User []string `json:"user,omitempty"`
+	// +optional
+	// +kubebuilder:validation:MaxItems=200
+	Department []string       `json:"department,omitempty"`
+	ChatBot    *FeishuChatBot `json:"chatbot,omitempty"`
+	// The name of the template to generate notification.
+	// If the global template is not set, it will use default.
+	Template *string `json:"template,omitempty"`
+	// template type: text or post, default type is post
+	TmplType *string `json:"tmplType,omitempty"`
 	// Template file.
 	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
 }
@@ -253,6 +288,7 @@ type ReceiverSpec struct {
 	Wechat   *WechatReceiver   `json:"wechat,omitempty"`
 	Sms      *SmsReceiver      `json:"sms,omitempty"`
 	Pushover *PushoverReceiver `json:"pushover,omitempty"`
+	Feishu   *FeishuReceiver   `json:"feishu,omitempty"`
 }
 
 // ReceiverStatus defines the observed state of Receiver

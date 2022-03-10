@@ -72,7 +72,7 @@ notificationmanager:
         notificationTimeout: 5
       wechat:
         notificationTimeout: 5
-  groupBy:
+  groupLabels:
     - alertname
     - namespace
   template:

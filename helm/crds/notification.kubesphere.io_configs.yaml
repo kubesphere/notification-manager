@@ -618,6 +618,72 @@ spec:
                 - from
                 - smartHost
                 type: object
+              feishu:
+                description: FeishuConfig is the configuration of feishu application
+                properties:
+                  appID:
+                    description: The id of the application with which to send messages.
+                    properties:
+                      value:
+                        type: string
+                      valueFrom:
+                        properties:
+                          secretKeyRef:
+                            description: Selects a key of a secret in the pod's namespace
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: The namespace of the secret, default
+                                  to the `defaultSecretNamespace` of `NotificationManager`
+                                  crd. If the `defaultSecretNamespace` does not set,
+                                  default to the pod's namespace.
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                        type: object
+                    type: object
+                  appSecret:
+                    description: The key in the secret to be used. Must be a valid
+                      secret key.
+                    properties:
+                      value:
+                        type: string
+                      valueFrom:
+                        properties:
+                          secretKeyRef:
+                            description: Selects a key of a secret in the pod's namespace
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: The namespace of the secret, default
+                                  to the `defaultSecretNamespace` of `NotificationManager`
+                                  crd. If the `defaultSecretNamespace` does not set,
+                                  default to the pod's namespace.
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                        type: object
+                    type: object
+                required:
+                - appID
+                - appSecret
+                type: object
               pushover:
                 properties:
                   labels:

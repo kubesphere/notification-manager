@@ -166,6 +166,14 @@ type PushoverConfig struct {
 	PushoverTokenSecret *Credential `json:"pushoverTokenSecret"`
 }
 
+// FeishuConfig is the configuration of feishu application
+type FeishuConfig struct {
+	// The id of the application with which to send messages.
+	AppID *Credential `json:"appID"`
+	// The key in the secret to be used. Must be a valid secret key.
+	AppSecret *Credential `json:"appSecret"`
+}
+
 //ConfigSpec defines the desired state of Config
 type ConfigSpec struct {
 	DingTalk *DingTalkConfig `json:"dingtalk,omitempty"`
@@ -175,6 +183,7 @@ type ConfigSpec struct {
 	Wechat   *WechatConfig   `json:"wechat,omitempty"`
 	Sms      *SmsConfig      `json:"sms,omitempty"`
 	Pushover *PushoverConfig `json:"pushover,omitempty"`
+	Feishu   *FeishuConfig   `json:"feishu,omitempty"`
 }
 
 // ConfigStatus defines the observed state of Config

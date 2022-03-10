@@ -132,6 +132,17 @@ func (r *Receiver) validateReceiver() error {
 		}
 	}
 
+	if r.Spec.Feishu != nil && r.Spec.Feishu.ChatBot != nil {
+		credentials = append(credentials, map[string]interface{}{
+			"credential": r.Spec.Feishu.ChatBot.Webhook,
+			"path":       field.NewPath("spec", "feishu", "chatbot", "webhook"),
+		})
+		credentials = append(credentials, map[string]interface{}{
+			"credential": r.Spec.Feishu.ChatBot.Secret,
+			"path":       field.NewPath("spec", "feishu", "chatbot", "secret"),
+		})
+	}
+
 	for _, v := range credentials {
 		err := validateCredential(v["credential"].(*Credential), v["path"].(*field.Path))
 		if err != nil {
@@ -219,9 +230,7 @@ func (r *Receiver) validateReceiver() error {
 
 	if r.Spec.Wechat != nil {
 		wechat := r.Spec.Wechat
-		if (wechat.ToUser == nil || len(wechat.ToUser) == 0) &&
-			(wechat.ToParty == nil || len(wechat.ToParty) == 0) &&
-			(wechat.ToTag == nil || len(wechat.ToTag) == 0) {
+		if len(wechat.ToUser) == 0 && len(wechat.ToParty) == 0 && len(wechat.ToTag) == 0 {
 			allErrs = append(allErrs, field.Required(field.NewPath("spec", "wechat"),
 				"must specify one of: `toUser`, `toParty` or `toTag`"))
 		}
@@ -238,7 +247,7 @@ func (r *Receiver) validateReceiver() error {
 		if err := validateSelector(r.Spec.Wechat.AlertSelector); err != nil {
 			allErrs = append(allErrs,
 				field.Invalid(field.NewPath("spec", "wechat", "alertSelector"),
-					r.Spec.Wechat.AlertSelector,
+					wechat.AlertSelector,
 					err.Error()))
 		}
 	}
@@ -310,6 +319,21 @@ func (r *Receiver) validateReceiver() error {
 			allErrs = append(allErrs,
 				field.Invalid(field.NewPath("spec", "sms", "alertSelector"),
 					r.Spec.Sms.AlertSelector,
+					err.Error()))
+		}
+	}
+
+	if r.Spec.Feishu != nil {
+		feishu := r.Spec.Feishu
+		if len(feishu.User) == 0 && len(feishu.Department) == 0 && feishu.ChatBot == nil {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec", "feishu"),
+				"must specify one of: `user`, `department` or `chatbot`"))
+		}
+
+		if err := validateSelector(r.Spec.Wechat.AlertSelector); err != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec", "feishu", "alertSelector"),
+					feishu.AlertSelector,
 					err.Error()))
 		}
 	}
