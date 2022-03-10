@@ -12,52 +12,40 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/async"
+	"github.com/kubesphere/notification-manager/pkg/constants"
 	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/internal/webhook"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/mwitkow/go-conntrack"
 )
 
 const (
 	DefaultSendTimeout = time.Second * 5
-	DefaultTemplate    = `{{ template "webhook.default.message" . }}`
 )
 
 type Notifier struct {
-	notifierCtl  *controller.Controller
-	receivers    []*webhook.Receiver
-	timeout      time.Duration
-	logger       log.Logger
-	template     *notifier.Template
-	templateName string
+	notifierCtl *controller.Controller
+	receiver    *webhook.Receiver
+	timeout     time.Duration
+	logger      log.Logger
+	tmpl        *template.Template
 }
 
-func NewWebhookNotifier(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier {
-
-	var path []string
-	opts := notifierCtl.ReceiverOpts
-	if opts != nil && opts.Global != nil {
-		path = opts.Global.TemplateFiles
-	}
-	tmpl, err := notifier.NewTemplate(path)
-	if err != nil {
-		_ = level.Error(logger).Log("msg", "WebhookNotifier: get template error", "error", err.Error())
-		return nil
-	}
+func NewWebhookNotifier(logger log.Logger, receiver internal.Receiver, notifierCtl *controller.Controller) (notifier.Notifier, error) {
 
 	n := &Notifier{
-		notifierCtl:  notifierCtl,
-		timeout:      DefaultSendTimeout,
-		logger:       logger,
-		template:     tmpl,
-		templateName: DefaultTemplate,
+		notifierCtl: notifierCtl,
+		timeout:     DefaultSendTimeout,
+		logger:      logger,
 	}
 
+	opts := notifierCtl.ReceiverOpts
+	tmplName := constants.DefaultWebhookTemplate
 	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
-		n.templateName = opts.Global.Template
+		tmplName = opts.Global.Template
 	}
 
 	if opts != nil && opts.Webhook != nil {
@@ -67,117 +55,99 @@ func NewWebhookNotifier(logger log.Logger, receivers []internal.Receiver, notifi
 		}
 
 		if !utils.StringIsNil(opts.Webhook.Template) {
-			n.templateName = opts.Webhook.Template
+			tmplName = opts.Webhook.Template
 		}
 	}
 
-	for _, r := range receivers {
-		receiver, ok := r.(*webhook.Receiver)
-		if !ok || receiver == nil {
-			continue
-		}
-
-		//if receiver.WebhookConfig == nil {
-		//	_ = level.Warn(logger).Log("msg", "WebhookNotifier: ignore receiver because of empty config")
-		//	continue
-		//}
-
-		if utils.StringIsNil(receiver.Template) {
-			receiver.Template = n.templateName
-		}
-
-		n.receivers = append(n.receivers, receiver)
+	n.receiver = receiver.(*webhook.Receiver)
+	if utils.StringIsNil(n.receiver.TmplName) {
+		n.receiver.TmplName = tmplName
 	}
 
-	return n
+	var err error
+	n.tmpl, err = notifierCtl.GetReceiverTmpl(n.receiver.TmplText)
+	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "WebhookNotifier: create receiver template error", "error", err.Error())
+		return nil, err
+	}
+
+	return n, nil
 }
 
-func (n *Notifier) Notify(ctx context.Context, alerts *notifier.Alerts) error {
+func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
-	send := func(r *webhook.Receiver) error {
+	start := time.Now()
+	defer func() {
+		_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "used", time.Since(start).String())
+	}()
 
-		start := time.Now()
-		defer func() {
-			_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "used", time.Since(start).String())
-		}()
-
-		var buf bytes.Buffer
-		if r.Template != DefaultTemplate {
-			msg, err := n.template.TempleText(r.Template, alerts, n.logger)
-			if err != nil {
-				_ = level.Error(n.logger).Log("msg", "WebhookNotifier: generate message error", "error", err.Error())
-				return err
-			}
-
-			buf.WriteString(msg)
-		} else {
-			if err := utils.JsonEncode(&buf, n.template.NewTemplateData(alerts, n.logger)); err != nil {
-				_ = level.Error(n.logger).Log("msg", "WebhookNotifier: encode message error", "error", err.Error())
-				return err
-			}
-		}
-
-		request, err := http.NewRequest(http.MethodPost, r.URL, &buf)
+	var buf bytes.Buffer
+	if n.receiver.TmplName != constants.DefaultWebhookTemplate {
+		msg, err := n.tmpl.Text(n.receiver.TmplName, data)
 		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: generate message error", "error", err.Error())
 			return err
 		}
-		request.Header.Set("Content-Type", "application/json")
 
-		if r.HttpConfig != nil {
-			if r.HttpConfig.BearerToken != nil {
-				bearer, err := n.notifierCtl.GetCredential(r.HttpConfig.BearerToken)
+		buf.WriteString(msg)
+	} else {
+		if err := utils.JsonEncode(&buf, data); err != nil {
+			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: encode message error", "error", err.Error())
+			return err
+		}
+	}
+
+	request, err := http.NewRequest(http.MethodPost, n.receiver.URL, &buf)
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	if n.receiver.HttpConfig != nil {
+		if n.receiver.HttpConfig.BearerToken != nil {
+			bearer, err := n.notifierCtl.GetCredential(n.receiver.HttpConfig.BearerToken)
+			if err != nil {
+				_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get bearer token error", "error", err.Error())
+				return err
+			}
+
+			request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", bearer))
+		} else if n.receiver.HttpConfig.BasicAuth != nil {
+			pass := ""
+			if n.receiver.HttpConfig.BasicAuth.Password != nil {
+				p, err := n.notifierCtl.GetCredential(n.receiver.HttpConfig.BasicAuth.Password)
 				if err != nil {
-					_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get bearer token error", "error", err.Error())
+					_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get password error", "error", err.Error())
 					return err
 				}
 
-				request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", bearer))
-			} else if r.HttpConfig.BasicAuth != nil {
-				pass := ""
-				if r.HttpConfig.BasicAuth.Password != nil {
-					p, err := n.notifierCtl.GetCredential(r.HttpConfig.BasicAuth.Password)
-					if err != nil {
-						_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get password error", "error", err.Error())
-						return err
-					}
-
-					pass = p
-				}
-				request.SetBasicAuth(r.HttpConfig.BasicAuth.Username, pass)
+				pass = p
 			}
+			request.SetBasicAuth(n.receiver.HttpConfig.BasicAuth.Username, pass)
 		}
-
-		transport, err := n.getTransport(r)
-		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get transport error", "error", err.Error())
-			return err
-		}
-
-		client := &http.Client{
-			Transport: transport,
-			Timeout:   n.timeout,
-		}
-
-		_, err = utils.DoHttpRequest(ctx, client, request)
-		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: do http request error", "error", err.Error())
-			return err
-		}
-
-		_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "to", r.URL)
-
-		return nil
 	}
 
-	group := async.NewGroup(ctx)
-	for _, receiver := range n.receivers {
-		r := receiver
-		group.Add(func(stopCh chan interface{}) {
-			stopCh <- send(r)
-		})
+	transport, err := n.getTransport(n.receiver)
+	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "WebhookNotifier: get transport error", "error", err.Error())
+		return err
 	}
 
-	return group.Wait()
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   n.timeout,
+	}
+
+	_, err = utils.DoHttpRequest(ctx, client, request)
+	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "WebhookNotifier: do http request error", "error", err.Error())
+		return err
+	}
+
+	_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "to", n.receiver.URL)
+
+	return nil
+
 }
 
 func (n *Notifier) getTransport(r *webhook.Receiver) (http.RoundTripper, error) {

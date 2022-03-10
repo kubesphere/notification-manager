@@ -27,9 +27,6 @@ spec:
       matchLabels:
         type: tenant
     options:
-      global:
-        templateFile:
-        - /etc/notification-manager/template
       email:
         notificationTimeout: 5
       slack:
@@ -40,11 +37,10 @@ spec:
         notificationTimeout: 5
       dingtalk:
         notificationTimeout: 5
-  volumeMounts:
-    - mountPath: /etc/notification-manager/
+  groupBy:
+    - alertname
+    - namespace
+  template:
+    text:
       name: notification-manager-template
-  volumes:
-    - configMap:
-        defaultMode: 420
-        name: notification-manager-template
-      name: notification-manager-template
+      namespace: kubesphere-monitoring-system

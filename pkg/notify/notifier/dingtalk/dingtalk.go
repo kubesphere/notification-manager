@@ -20,6 +20,7 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/internal/dingtalk"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 )
 
@@ -41,13 +42,10 @@ const (
 
 type Notifier struct {
 	notifierCtl                *controller.Controller
-	receivers                  []*dingtalk.Receiver
+	receiver                   *dingtalk.Receiver
 	timeout                    time.Duration
 	logger                     log.Logger
-	template                   *notifier.Template
-	templateName               string
-	titleTemplateName          string
-	tmplType                   string
+	tmpl                       *template.Template
 	throttle                   *Throttle
 	ats                        *notifier.AccessTokenService
 	tokenExpires               time.Duration
@@ -96,26 +94,12 @@ type response struct {
 	Punish  string `json:"punish"`
 }
 
-func NewDingTalkNotifier(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier {
-
-	var path []string
-	opts := notifierCtl.ReceiverOpts
-	if opts != nil && opts.Global != nil {
-		path = opts.Global.TemplateFiles
-	}
-	tmpl, err := notifier.NewTemplate(path)
-	if err != nil {
-		_ = level.Error(logger).Log("msg", "DingTalkNotifier: get template error", "error", err.Error())
-		return nil
-	}
+func NewDingTalkNotifier(logger log.Logger, receiver internal.Receiver, notifierCtl *controller.Controller) (notifier.Notifier, error) {
 
 	n := &Notifier{
 		notifierCtl:                notifierCtl,
 		timeout:                    DefaultSendTimeout,
 		logger:                     logger,
-		titleTemplateName:          DefaultTitleTemplate,
-		template:                   tmpl,
-		tmplType:                   constants.Text,
 		throttle:                   GetThrottle(),
 		ats:                        notifier.GetAccessTokenService(),
 		tokenExpires:               DefaultExpires,
@@ -129,28 +113,31 @@ func NewDingTalkNotifier(logger log.Logger, receivers []internal.Receiver, notif
 		conversationMaxWaitTime:    DefaultConversationUnit,
 	}
 
+	opts := notifierCtl.ReceiverOpts
+	tmplType := constants.Text
+	tmplName := ""
+	titleTmplName := DefaultTitleTemplate
 	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
-		n.templateName = opts.Global.Template
+		tmplName = opts.Global.Template
 	}
 
 	if opts != nil && opts.DingTalk != nil {
 
 		d := opts.DingTalk
-
 		if d.NotificationTimeout != nil {
 			n.timeout = time.Second * time.Duration(*d.NotificationTimeout)
 		}
 
 		if !utils.StringIsNil(d.Template) {
-			n.templateName = d.Template
+			tmplName = d.Template
 		}
 
 		if !utils.StringIsNil(d.TitleTemplate) {
-			n.titleTemplateName = d.TitleTemplate
+			titleTmplName = d.TitleTemplate
 		}
 
 		if !utils.StringIsNil(d.TmplType) {
-			n.tmplType = d.TmplType
+			tmplType = d.TmplType
 		}
 
 		if d.TokenExpires != 0 {
@@ -196,69 +183,60 @@ func NewDingTalkNotifier(logger log.Logger, receivers []internal.Receiver, notif
 		}
 	}
 
-	for _, r := range receivers {
-		receiver, ok := r.(*dingtalk.Receiver)
-		if !ok || receiver == nil {
-			continue
-		}
+	n.receiver = receiver.(*dingtalk.Receiver)
 
-		//if receiver.DingTalkConfig == nil {
-		//	_ = level.Warn(logger).Log("msg", "DingTalkNotifier: ignore receiver because of empty config")
-		//	continue
-		//}
-
-		// If the template type of receiver is not set, use the global template type.
-		if utils.StringIsNil(receiver.TmplType) {
-			receiver.TmplType = n.tmplType
-		}
-
-		if utils.StringIsNil(receiver.Template) {
-			if n.templateName != "" {
-				receiver.Template = n.templateName
-			} else {
-				if receiver.TmplType == constants.Markdown {
-					receiver.Template = DefaultMarkdownTemplate
-				} else if receiver.TmplType == constants.Text {
-					receiver.Template = DefaultTextTemplate
-				}
-			}
-		}
-
-		if utils.StringIsNil(receiver.TitleTemplate) && receiver.TmplType == constants.Markdown {
-			receiver.TitleTemplate = n.titleTemplateName
-		}
-
-		n.receivers = append(n.receivers, receiver)
+	// If the template type of receiver is not set, use the global template type.
+	if utils.StringIsNil(n.receiver.TmplType) {
+		n.receiver.TmplType = tmplType
 	}
 
-	return n
+	if utils.StringIsNil(n.receiver.TmplName) {
+		if tmplName != "" {
+			n.receiver.TmplName = tmplName
+		} else {
+			if n.receiver.TmplType == constants.Markdown {
+				n.receiver.TmplName = DefaultMarkdownTemplate
+			} else if n.receiver.TmplType == constants.Text {
+				n.receiver.TmplName = DefaultTextTemplate
+			}
+		}
+	}
+
+	if utils.StringIsNil(n.receiver.TitleTmplName) && n.receiver.TmplType == constants.Markdown {
+		n.receiver.TitleTmplName = titleTmplName
+	}
+
+	var err error
+	n.tmpl, err = notifierCtl.GetReceiverTmpl(n.receiver.TmplText)
+	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: create receiver template error", "error", err.Error())
+		return nil, err
+	}
+
+	return n, nil
 }
 
-func (n *Notifier) Notify(ctx context.Context, alerts *notifier.Alerts) error {
+func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
 	group := async.NewGroup(ctx)
-	for _, receiver := range n.receivers {
-		r := receiver
+	if n.receiver.ChatBot != nil {
+		group.Add(func(stopCh chan interface{}) {
+			stopCh <- n.sendToChatBot(ctx, data)
+		})
+	}
 
-		if r.ChatBot != nil {
-			group.Add(func(stopCh chan interface{}) {
-				stopCh <- n.sendToChatBot(ctx, r, alerts)
-			})
-		}
-
-		if len(r.ChatIDs) > 0 {
-			group.Add(func(stopCh chan interface{}) {
-				stopCh <- n.sendToConversation(ctx, r, alerts)
-			})
-		}
+	if len(n.receiver.ChatIDs) > 0 {
+		group.Add(func(stopCh chan interface{}) {
+			stopCh <- n.sendToConversation(ctx, data)
+		})
 	}
 
 	return group.Wait()
 }
 
-func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, alerts *notifier.Alerts) error {
+func (n *Notifier) sendToChatBot(ctx context.Context, data *template.Data) error {
 
-	bot := r.ChatBot
+	bot := n.receiver.ChatBot
 
 	webhook, err := n.notifierCtl.GetCredential(bot.Webhook)
 	if err != nil {
@@ -274,7 +252,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, aler
 		}()
 
 		chatBotMsg := dingtalkChatBotMessage{
-			Type: r.TmplType,
+			Type: n.receiver.TmplType,
 			At: at{
 				AtMobiles: bot.AtMobiles,
 				AtUserIds: bot.AtUsers,
@@ -282,14 +260,14 @@ func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, aler
 			},
 		}
 
-		if r.TmplType == constants.Markdown {
+		if n.receiver.TmplType == constants.Markdown {
 			chatBotMsg.Markdown.Title = title
 			chatBotMsg.Markdown.Text = msg
-		} else if r.TmplType == constants.Text {
+		} else if n.receiver.TmplType == constants.Text {
 			chatBotMsg.Text.Content = msg
 		} else {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: unknown message type", "type", r.TmplType)
-			return utils.Errorf("Unknown message type, %s", r.TmplType)
+			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: unknown message type", "type", n.receiver.TmplType)
+			return utils.Errorf("Unknown message type, %s", n.receiver.TmplType)
 		}
 
 		var buf bytes.Buffer
@@ -375,11 +353,11 @@ func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, aler
 
 	maxSize := n.chatbotMessageMaxSize - len(keywords)
 	// The mobiles must be in the message when the message format is markdown.
-	if r.TmplType == constants.Markdown {
+	if n.receiver.TmplType == constants.Markdown {
 		maxSize = maxSize - len(atMobiles)
 	}
 
-	messages, titles, err := n.template.Split(alerts, n.chatbotMessageMaxSize-len(keywords)-len(atMobiles), r.Template, r.TitleTemplate, n.logger)
+	messages, titles, err := n.tmpl.Split(data, n.chatbotMessageMaxSize-len(keywords)-len(atMobiles), n.receiver.TmplName, n.receiver.TitleTmplName, n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: split message error", "error", err.Error())
 		return err
@@ -389,7 +367,7 @@ func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, aler
 	for index := range messages {
 		title := titles[index]
 		msg := fmt.Sprintf("%s%s", messages[index], keywords)
-		if r.TmplType == constants.Markdown {
+		if n.receiver.TmplType == constants.Markdown {
 			msg = fmt.Sprintf("%s %s", msg, atMobiles)
 		}
 		group.Add(func(stopCh chan interface{}) {
@@ -406,20 +384,20 @@ func (n *Notifier) sendToChatBot(ctx context.Context, r *dingtalk.Receiver, aler
 	return group.Wait()
 }
 
-func (n *Notifier) sendToConversation(ctx context.Context, r *dingtalk.Receiver, alerts *notifier.Alerts) error {
+func (n *Notifier) sendToConversation(ctx context.Context, data *template.Data) error {
 
-	if r.Config == nil {
+	if n.receiver.Config == nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: config is nil")
 		return utils.Error("DingTalkNotifier: config is nil")
 	}
 
-	appkey, err := n.notifierCtl.GetCredential(r.AppKey)
+	appkey, err := n.notifierCtl.GetCredential(n.receiver.AppKey)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appkey error", "error", err)
 		return err
 	}
 
-	appsecret, err := n.notifierCtl.GetCredential(r.AppSecret)
+	appsecret, err := n.notifierCtl.GetCredential(n.receiver.AppSecret)
 	if err != nil {
 		_ = level.Debug(n.logger).Log("msg", "DingTalkNotifier: get appsecret error", "error", err)
 		return err
@@ -440,18 +418,18 @@ func (n *Notifier) sendToConversation(ctx context.Context, r *dingtalk.Receiver,
 		conversationMsg := dingtalkConversationMessage{
 			ID: chatID,
 			Message: dingtalkChatBotMessage{
-				Type: r.TmplType,
+				Type: n.receiver.TmplType,
 			},
 		}
 
-		if r.TmplType == constants.Markdown {
+		if n.receiver.TmplType == constants.Markdown {
 			conversationMsg.Message.Markdown.Title = title
 			conversationMsg.Message.Markdown.Text = msg
-		} else if r.TmplType == constants.Text {
+		} else if n.receiver.TmplType == constants.Text {
 			conversationMsg.Message.Text.Content = msg
 		} else {
-			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: unknown message type", "conversation", chatID, "type", r.TmplType)
-			return utils.Errorf("Unknown message type, %s", r.TmplType)
+			_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: unknown message type", "conversation", chatID, "type", n.receiver.TmplType)
+			return utils.Errorf("Unknown message type, %s", n.receiver.TmplType)
 		}
 
 		var buf bytes.Buffer
@@ -508,7 +486,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, r *dingtalk.Receiver,
 		return nil
 	}
 
-	messages, titles, err := n.template.Split(alerts, n.conversationMessageMaxSize, r.Template, r.TitleTemplate, n.logger)
+	messages, titles, err := n.tmpl.Split(data, n.conversationMessageMaxSize, n.receiver.TmplName, n.receiver.TitleTmplName, n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: split message error", "error", err.Error())
 		return nil
@@ -518,7 +496,7 @@ func (n *Notifier) sendToConversation(ctx context.Context, r *dingtalk.Receiver,
 	for index := range messages {
 		title := titles[index]
 		msg := messages[index]
-		for _, chatID := range r.ChatIDs {
+		for _, chatID := range n.receiver.ChatIDs {
 			id := chatID
 			group.Add(func(stopCh chan interface{}) {
 				n.throttle.TryAdd(appkey, n.conversationThreshold, n.conversationUnit, n.conversationMaxWaitTime)

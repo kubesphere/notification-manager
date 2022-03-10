@@ -36,6 +36,9 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 			Enable:         p.Enabled,
 			AlertSelector:  p.AlertSelector,
 			ConfigSelector: p.PushoverConfigSelector,
+			Template: internal.Template{
+				TmplText: p.TmplText,
+			},
 		},
 		Profiles: p.Profiles,
 		// User keys are 30 characters long, case-sensitive, and may contain the character set [A-Za-z0-9].
@@ -43,7 +46,7 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 	}
 
 	if p.Template != nil {
-		r.Template = *p.Template
+		r.TmplName = *p.Template
 	}
 
 	return r

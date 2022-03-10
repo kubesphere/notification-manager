@@ -61,6 +61,8 @@ type DingTalkReceiver struct {
 	TitleTemplate *string `json:"titleTemplate,omitempty"`
 	// template type: text or markdown
 	TmplType *string `json:"tmplType,omitempty"`
+	// Template file.
+	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
 }
 
 type EmailReceiver struct {
@@ -79,6 +81,8 @@ type EmailReceiver struct {
 	SubjectTemplate *string `json:"subjectTemplate,omitempty"`
 	// template type: text or html, default type is html
 	TmplType *string `json:"tmplType,omitempty"`
+	// Template file.
+	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
 }
 
 type SlackReceiver struct {
@@ -93,6 +97,8 @@ type SlackReceiver struct {
 	// The name of the template to generate DingTalk message.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
+	// Template file.
+	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
 }
 
 // ServiceReference holds a reference to Service.legacy.k8s.io
@@ -167,6 +173,8 @@ type WebhookReceiver struct {
 	// The name of the template to generate DingTalk message.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
+	// Template file.
+	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
 }
 
 type WechatReceiver struct {
@@ -185,6 +193,8 @@ type WechatReceiver struct {
 	Template *string `json:"template,omitempty"`
 	// template type: text or markdown, default type is text
 	TmplType *string `json:"tmplType,omitempty"`
+	// Template file.
+	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
 }
 
 type SmsReceiver struct {
@@ -199,6 +209,8 @@ type SmsReceiver struct {
 	// The name of the template to generate Sms message.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
+	// Template file.
+	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
 }
 
 // PushoverUserProfile includes userKey and other preferences
@@ -212,6 +224,8 @@ type PushoverUserProfile struct {
 	Title *string `json:"title,omitempty"`
 	// Sound refers to the name of one of the sounds (https://pushover.net/api#sounds) supported by device clients
 	Sound *string `json:"sound,omitempty"`
+	// Template file.
+	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
 }
 
 type PushoverReceiver struct {
@@ -226,6 +240,8 @@ type PushoverReceiver struct {
 	Template *string `json:"template,omitempty"`
 	// The users profile.
 	Profiles []*PushoverUserProfile `json:"profiles"`
+	// Template file.
+	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
 }
 
 //ReceiverSpec defines the desired state of Receiver

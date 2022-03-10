@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kubesphere/notification-manager/pkg/controller"
-	"github.com/kubesphere/notification-manager/pkg/internal"
-
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/constants"
+	"github.com/kubesphere/notification-manager/pkg/controller"
+	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/internal/wechat"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 )
 
@@ -33,13 +33,11 @@ const (
 
 type Notifier struct {
 	notifierCtl    *controller.Controller
-	receivers      []*wechat.Receiver
+	receiver       *wechat.Receiver
 	accessToken    string
 	timeout        time.Duration
 	logger         log.Logger
-	template       *notifier.Template
-	templateName   string
-	tmplType       string
+	tmpl           *template.Template
 	ats            *notifier.AccessTokenService
 	messageMaxSize int
 	tokenExpires   time.Duration
@@ -69,32 +67,22 @@ type weChatResponse struct {
 	InvalidTag   string `json:"invalidTag,omitempty"`
 }
 
-func NewWechatNotifier(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier {
-
-	var path []string
-	opts := notifierCtl.ReceiverOpts
-	if opts != nil && opts.Global != nil {
-		path = opts.Global.TemplateFiles
-	}
-	tmpl, err := notifier.NewTemplate(path)
-	if err != nil {
-		_ = level.Error(logger).Log("msg", "WechatNotifier: get template error", "error", err.Error())
-		return nil
-	}
+func NewWechatNotifier(logger log.Logger, receiver internal.Receiver, notifierCtl *controller.Controller) (notifier.Notifier, error) {
 
 	n := &Notifier{
 		notifierCtl:    notifierCtl,
 		logger:         logger,
 		timeout:        DefaultSendTimeout,
-		template:       tmpl,
-		tmplType:       constants.Text,
 		ats:            notifier.GetAccessTokenService(),
 		messageMaxSize: MessageMaxSize,
 		tokenExpires:   DefaultExpires,
 	}
 
+	opts := notifierCtl.ReceiverOpts
+	tmplType := constants.Text
+	tmplName := ""
 	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
-		n.templateName = opts.Global.Template
+		tmplName = opts.Global.Template
 	}
 
 	if opts != nil && opts.Wechat != nil {
@@ -104,11 +92,11 @@ func NewWechatNotifier(logger log.Logger, receivers []internal.Receiver, notifie
 		}
 
 		if !utils.StringIsNil(opts.Wechat.Template) {
-			n.templateName = opts.Wechat.Template
+			tmplName = opts.Wechat.Template
 		}
 
 		if !utils.StringIsNil(opts.Wechat.TmplType) {
-			n.tmplType = opts.Wechat.TmplType
+			tmplType = opts.Wechat.TmplType
 		}
 
 		if opts.Wechat.MessageMaxSize > 0 {
@@ -120,45 +108,43 @@ func NewWechatNotifier(logger log.Logger, receivers []internal.Receiver, notifie
 		}
 	}
 
-	for _, r := range receivers {
-
-		receiver, ok := r.(*wechat.Receiver)
-		if !ok || receiver == nil {
-			continue
-		}
-
-		if receiver.Config == nil {
-			_ = level.Warn(logger).Log("msg", "WechatNotifier: ignore receiver because of empty config")
-			continue
-		}
-
-		if utils.StringIsNil(receiver.APIURL) {
-			receiver.APIURL = DefaultApiURL
-		}
-
-		if utils.StringIsNil(receiver.TmplType) {
-			receiver.TmplType = n.tmplType
-		}
-
-		if utils.StringIsNil(receiver.Template) {
-			if n.templateName != "" {
-				receiver.Template = n.templateName
-			} else {
-				if receiver.TmplType == constants.Markdown {
-					receiver.Template = DefaultMarkdownTemplate
-				} else if receiver.TmplType == constants.Text {
-					receiver.Template = DefaultTextTemplate
-				}
-			}
-		}
-
-		n.receivers = append(n.receivers, receiver)
+	n.receiver = receiver.(*wechat.Receiver)
+	if n.receiver.Config == nil {
+		_ = level.Warn(logger).Log("msg", "WechatNotifier: ignore receiver because of empty config")
+		return nil, utils.Error("ignore receiver because of empty config")
 	}
 
-	return n
+	if utils.StringIsNil(n.receiver.APIURL) {
+		n.receiver.APIURL = DefaultApiURL
+	}
+
+	if utils.StringIsNil(n.receiver.TmplType) {
+		n.receiver.TmplType = tmplType
+	}
+
+	if utils.StringIsNil(n.receiver.TmplName) {
+		if tmplName != "" {
+			n.receiver.TmplName = tmplName
+		} else {
+			if n.receiver.TmplType == constants.Markdown {
+				n.receiver.TmplName = DefaultMarkdownTemplate
+			} else if n.receiver.TmplType == constants.Text {
+				n.receiver.TmplName = DefaultTextTemplate
+			}
+		}
+	}
+
+	var err error
+	n.tmpl, err = notifierCtl.GetReceiverTmpl(n.receiver.TmplText)
+	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "WechatNotifier: create receiver template error", "error", err.Error())
+		return nil, err
+	}
+
+	return n, nil
 }
 
-func (n *Notifier) Notify(ctx context.Context, alerts *notifier.Alerts) error {
+func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
 	send := func(r *wechat.Receiver, msg string) error {
 
@@ -271,36 +257,33 @@ func (n *Notifier) Notify(ctx context.Context, alerts *notifier.Alerts) error {
 		return err
 	}
 
-	group := async.NewGroup(ctx)
-	for _, receiver := range n.receivers {
-		r := receiver.Clone().(*wechat.Receiver)
+	messages, _, err := n.tmpl.Split(data, MessageMaxSize, n.receiver.TmplName, "", n.logger)
+	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "WechatNotifier: split message error", "error", err.Error())
+		return nil
+	}
 
-		messages, _, err := n.template.Split(alerts, MessageMaxSize, r.Template, "", n.logger)
-		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "WechatNotifier: split message error", "error", err.Error())
-			return nil
+	us, ps, ts := 0, 0, 0
+	toUser := n.receiver.ToUser
+	toParty := n.receiver.ToParty
+	toTag := n.receiver.ToTag
+
+	group := async.NewGroup(ctx)
+	for {
+		if us >= len(toUser) && ps >= len(toParty) && ts >= len(toTag) {
+			break
 		}
 
-		us, ps, ts := 0, 0, 0
-		toUser := r.ToUser
-		toParty := r.ToParty
-		toTag := r.ToTag
+		r := n.receiver.Clone().(*wechat.Receiver)
+		r.ToUser = batch(toUser, &us, ToUserBatchSize)
+		r.ToParty = batch(toParty, &ps, ToPartyBatchSize)
+		r.ToTag = batch(toTag, &ts, ToTagBatchSize)
 
-		for {
-			if us >= len(toUser) && ps >= len(toParty) && ts >= len(toTag) {
-				break
-			}
-
-			r.ToUser = batch(toUser, &us, ToUserBatchSize)
-			r.ToParty = batch(toParty, &ps, ToPartyBatchSize)
-			r.ToTag = batch(toTag, &ts, ToTagBatchSize)
-
-			for index := range messages {
-				msg := messages[index]
-				group.Add(func(stopCh chan interface{}) {
-					stopCh <- send(r, msg)
-				})
-			}
+		for index := range messages {
+			msg := messages[index]
+			group.Add(func(stopCh chan interface{}) {
+				stopCh <- send(r, msg)
+			})
 		}
 	}
 

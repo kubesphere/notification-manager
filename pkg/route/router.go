@@ -10,9 +10,9 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/stage"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/modern-go/reflect2"
-	"github.com/prometheus/common/model"
 )
 
 const (
@@ -26,7 +26,7 @@ type routeStage struct {
 
 type packet struct {
 	receiver internal.Receiver
-	alerts   []*model.Alert
+	alerts   []*template.Alert
 }
 
 func NewStage(notifierCtl *controller.Controller) stage.Stage {
@@ -41,7 +41,7 @@ func (s *routeStage) Exec(ctx context.Context, l log.Logger, data interface{}) (
 		return ctx, nil, nil
 	}
 
-	alertArray := data.([]*model.Alert)
+	alertArray := data.([]*template.Alert)
 
 	_ = level.Debug(l).Log("msg", "RouteStage: start", "seq", ctx.Value("seq"), "alert", len(alertArray))
 
@@ -52,9 +52,9 @@ func (s *routeStage) Exec(ctx context.Context, l log.Logger, data interface{}) (
 	}
 
 	// Grouping alerts by namespace
-	alertMap := make(map[string][]*model.Alert)
+	alertMap := make(map[string][]*template.Alert)
 	for _, alert := range alertArray {
-		ns := string(alert.Labels[constants.Namespace])
+		ns := alert.Labels[constants.Namespace]
 		as := alertMap[ns]
 		as = append(as, alert)
 		alertMap[ns] = as
@@ -94,7 +94,7 @@ func (s *routeStage) Exec(ctx context.Context, l log.Logger, data interface{}) (
 		return ctx, nil, nil
 	}
 
-	res := make(map[internal.Receiver][]*model.Alert)
+	res := make(map[internal.Receiver][]*template.Alert)
 	for _, p := range m {
 		res[p.receiver] = p.alerts
 	}
@@ -102,11 +102,11 @@ func (s *routeStage) Exec(ctx context.Context, l log.Logger, data interface{}) (
 	return ctx, res, nil
 }
 
-func (s *routeStage) rcvsFromRouter(alert *model.Alert, routers []v2beta2.Router) []internal.Receiver {
+func (s *routeStage) rcvsFromRouter(alert *template.Alert, routers []v2beta2.Router) []internal.Receiver {
 
 	var rcvs []internal.Receiver
 	for _, router := range routers {
-		if !utils.LabelMatchSelector(utils.LabelSetToKV(alert.Labels), router.Spec.AlertSelector) {
+		if !utils.LabelMatchSelector(alert.Labels, router.Spec.AlertSelector) {
 			continue
 		}
 

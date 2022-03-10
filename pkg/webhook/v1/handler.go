@@ -10,14 +10,14 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/aggregation"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
+	"github.com/kubesphere/notification-manager/pkg/constants"
 	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/notify"
 	"github.com/kubesphere/notification-manager/pkg/stage"
 	"github.com/kubesphere/notification-manager/pkg/store"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
-	"github.com/prometheus/alertmanager/template"
-	"github.com/prometheus/common/model"
 )
 
 type HttpHandler struct {
@@ -72,7 +72,7 @@ func (h *HttpHandler) Alert(w http.ResponseWriter, r *http.Request) {
 		if v := alert.Labels["cluster"]; v == "" {
 			alert.Labels["cluster"] = cluster
 		}
-		if err := h.alerts.Push(utils.AlertConvert(&alert)); err != nil {
+		if err := h.alerts.Push(alert); err != nil {
 			_ = level.Error(h.logger).Log("msg", "push alert error", "error", err.Error())
 		}
 	}
@@ -151,22 +151,22 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	alerts := []*model.Alert{
+	alerts := []*template.Alert{
 		{
-			Labels: model.LabelSet{
-				"alertname": "verify",
-				"alerttype": "verify",
-				"time":      model.LabelValue(time.Now().Local().String()),
+			Labels: template.KV{
+				constants.AlertName: constants.Verify,
+				constants.AlertType: constants.Verify,
+				constants.AlertTime: time.Now().Local().String(),
 			},
-			Annotations: model.LabelSet{
-				"message": "Congratulations, your notification configuration is correct!",
+			Annotations: template.KV{
+				constants.AlertMessage: "Congratulations, your notification configuration is correct!",
 			},
 			StartsAt: time.Now(),
 			EndsAt:   time.Now(),
 		},
 	}
 
-	if msg := h.send(receivers, alerts, "verify"); msg != "" {
+	if msg := h.send(receivers, alerts, constants.Verify); msg != "" {
 		h.handle(w, &response{http.StatusBadRequest, msg})
 		return
 	}
@@ -206,18 +206,7 @@ func (h *HttpHandler) Notification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var alerts []*model.Alert
-	for _, alert := range d.Alerts {
-		alerts = append(alerts, &model.Alert{
-			Labels:       utils.KvToLabelSet(alert.Labels),
-			Annotations:  utils.KvToLabelSet(alert.Annotations),
-			StartsAt:     alert.StartsAt,
-			EndsAt:       alert.EndsAt,
-			GeneratorURL: alert.GeneratorURL,
-		})
-	}
-
-	if msg := h.send(receivers, alerts, "notification"); msg != "" {
+	if msg := h.send(receivers, d.Alerts, constants.Notification); msg != "" {
 		h.handle(w, &response{http.StatusBadRequest, msg})
 		return
 	}
@@ -253,7 +242,7 @@ func (h *HttpHandler) getReceiversFromRequest(m map[string]interface{}) ([]inter
 	return receivers, nil
 }
 
-func (h *HttpHandler) send(receivers []internal.Receiver, alerts []*model.Alert, seq string) string {
+func (h *HttpHandler) send(receivers []internal.Receiver, alerts template.Alerts, seq string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), h.wkrTimeout)
 	ctx = context.WithValue(ctx, "seq", seq)
 	defer cancel()
@@ -264,12 +253,12 @@ func (h *HttpHandler) send(receivers []internal.Receiver, alerts []*model.Alert,
 	// Notify stage
 	pipeline = append(pipeline, notify.NewStage(h.notifierCtl))
 
-	data := make(map[internal.Receiver][]*model.Alert)
+	val := make(map[internal.Receiver][]*template.Alert)
 	for _, receiver := range receivers {
-		data[receiver] = alerts
+		val[receiver] = alerts
 	}
 
-	_, _, err := pipeline.Exec(ctx, h.logger, data)
+	_, _, err := pipeline.Exec(ctx, h.logger, val)
 	if err != nil {
 		return err.Error()
 	}

@@ -13,6 +13,13 @@ const (
 	priority = "priority"
 )
 
+type Template struct {
+	TmplName      string                        `json:"tmplName,omitempty"`
+	TitleTmplName string                        `json:"titleTmplName,omitempty"`
+	TmplType      string                        `json:"tmplType,omitempty"`
+	TmplText      *v2beta2.ConfigmapKeySelector `json:"tmplText,omitempty"`
+}
+
 type Common struct {
 	Name           string                `json:"name,omitempty"`
 	Type           string                `json:"type,omitempty"`
@@ -21,10 +28,8 @@ type Common struct {
 	Enable         *bool                 `json:"enable,omitempty"`
 	AlertSelector  *metav1.LabelSelector `json:"alertSelector,omitempty"`
 	ConfigSelector *metav1.LabelSelector `json:"configSelector,omitempty"`
-	Template       string                `json:"template,omitempty"`
-	TitleTemplate  string                `json:"titleTemplate,omitempty"`
-	TmplType       string                `json:"tmplType,omitempty"`
 	Hash           string                `json:"hash,omitempty"`
+	Template       `json:"template,omitempty"`
 }
 
 func (c *Common) GetName() string {

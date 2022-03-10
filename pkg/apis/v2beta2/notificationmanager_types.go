@@ -39,6 +39,18 @@ type SecretKeySelector struct {
 	Key string `json:"key" protobuf:"bytes,2,opt,name=key"`
 }
 
+// ConfigmapKeySelector selects a key of a Configmap.
+type ConfigmapKeySelector struct {
+	// The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd.
+	// If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+	// +optional
+	Namespace string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
+	// Name of the configmap.
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	// The key of the configmap to select from.  Must be a valid configmap key.
+	Key string `json:"key,omitempty" protobuf:"bytes,2,opt,name=key"`
+}
+
 type ValueSource struct {
 	// Selects a key of a secret in the pod's namespace
 	// +optional
@@ -65,6 +77,21 @@ type Sidecar struct {
 type HistoryReceiver struct {
 	// Use a webhook to collect notification history, it will create a virtual receiver.
 	Webhook *WebhookReceiver `json:"webhook"`
+}
+
+type Template struct {
+	// Template file.
+	Text *ConfigmapKeySelector `json:"text,omitempty"`
+	// Time to reload template file.
+	//
+	// +kubebuilder:default="1m"
+	ExpiredAt metav1.Duration `json:"texpiredAt,omitempty"`
+	// Configmap which the i18n file be in.
+	LanguagePack []*ConfigmapKeySelector `json:"languagePack,omitempty"`
+	// The language used to send notification.
+	//
+	// +kubebuilder:default="English"
+	Language string `json:"language,omitempty"`
 }
 
 // NotificationManagerSpec defines the desired state of NotificationManager
@@ -132,6 +159,8 @@ type NotificationManagerSpec struct {
 	//
 	// +kubebuilder:default=All
 	RoutePolicy string `json:"routePolicy,omitempty"`
+	// Template used to define information about templates
+	Template *Template `json:"template,omitempty"`
 }
 
 type ReceiversSpec struct {
@@ -150,6 +179,8 @@ type ReceiversSpec struct {
 
 type GlobalOptions struct {
 	// Template file path, must be an absolute path.
+	//
+	// Deprecated
 	TemplateFiles []string `json:"templateFile,omitempty"`
 	// The name of the template to generate message.
 	// If the receiver dose not setup template, it will use this.

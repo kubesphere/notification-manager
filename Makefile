@@ -29,7 +29,7 @@ verify: verify-crds
 
 verify-crds: generate
 	@if !(git diff --quiet HEAD config/crd); then \
-		echo "generated files located at config/crd are out of date, run make generate"; exit 1; \
+		echo "generated files located at config/crd are out of date, run make generate manifests"; exit 1; \
 	fi
 
 # Build manager binary

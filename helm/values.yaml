@@ -66,20 +66,16 @@ notificationmanager:
         notificationTimeout: 5
       email:
         notificationTimeout: 5
-      global:
-        templateFile:
-          - /etc/notification-manager/template
       slack:
         notificationTimeout: 5
       webhook:
         notificationTimeout: 5
       wechat:
         notificationTimeout: 5
-  volumeMounts:
-    - mountPath: /etc/notification-manager/
+  groupBy:
+    - alertname
+    - namespace
+  template:
+    text:
       name: notification-manager-template
-  volumes:
-    - configMap:
-        defaultMode: 420
-        name: notification-manager-template
-      name: notification-manager-template
+      namespace: kubesphere-monitoring-system

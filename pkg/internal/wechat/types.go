@@ -31,6 +31,9 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 			Enable:         w.Enabled,
 			AlertSelector:  w.AlertSelector,
 			ConfigSelector: w.WechatConfigSelector,
+			Template: internal.Template{
+				TmplText: w.TmplText,
+			},
 		},
 		ToUser:  w.ToUser,
 		ToParty: w.ToParty,
@@ -38,7 +41,7 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 	}
 
 	if w.Template != nil {
-		r.Template = *w.Template
+		r.TmplName = *w.Template
 	}
 
 	if w.TmplType != nil {

@@ -3026,6 +3026,21 @@ spec:
                       template:
                         description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
                         type: string
+                      tmplText:
+                        description: Template file.
+                        properties:
+                          key:
+                            description: The key of the configmap to select from.  Must be a valid configmap key.
+                            type: string
+                          name:
+                            description: Name of the configmap.
+                            type: string
+                          namespace:
+                            description: The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                            type: string
+                        required:
+                        - name
+                        type: object
                       url:
                         description: "`url` gives the location of the webhook, in standard URL form (`scheme://host:port/path`). Exactly one of `url` or `service` must be specified. \n The `host` should not refer to a service running in the cluster; use the `service` field instead. The host might be resolved via external DNS in some api servers (e.g., `kube-apiserver` cannot resolve in-cluster DNS as that would be a layering violation). `host` may also be an IP address. \n Please note that using `localhost` or `127.0.0.1` as a `host` is risky unless you take great care to run this webhook on all hosts which run an apiserver which might need to make calls to this webhook. Such installs are likely to be non-portable, i.e., not easy to turn up in a new cluster. \n A path is optional, and if present may be any string permissible in a URL. You may use the path to pass an arbitrary string to the webhook, for example, a cluster identifier. \n Attempting to use a user or basic auth e.g. \"user:password@\" is not allowed. Fragments (\"#...\") and query parameters (\"?...\") are not allowed, either."
                         type: string
@@ -3200,7 +3215,7 @@ spec:
                             description: The name of the template to generate message. If the receiver dose not setup template, it will use this.
                             type: string
                           templateFile:
-                            description: Template file path, must be an absolute path.
+                            description: "Template file path, must be an absolute path. \n Deprecated"
                             items:
                               type: string
                             type: array
@@ -3332,7 +3347,7 @@ spec:
                 type: object
               routePolicy:
                 default: All
-                description: 'The RoutePolicy determines how to find receivers that notifications will be sent to. Known values are RouterFirst and RouterOnly. All: The alerts will send to the receivers which match the router,      and the receivers of tenants who can access the namespace that the alert is in. RouterFirst: The alerts will send to the receivers which match the router first, if no receiver is found,              it will send to the receivers of tenants who can access the namespace that the alert is in. RouterOnly: The alerts will send to the receivers which match the router only.'
+                description: 'The RoutePolicy determines how to find receivers to which notifications will be sent. Valid RoutePolicy include All, RouterFirst, and RouterOnly. All: The alerts will be sent to the receivers that match any router, and also will be sent to the receivers of those tenants with the right to access the namespace to which the alert belongs. RouterFirst: The alerts will be sent to the receivers that match any router first. If no receivers match any router, alerts will send to the receivers of those tenants with the right to access the namespace to which the alert belongs. RouterOnly: The alerts will only be sent to the receivers that match any router.'
                 type: string
               serviceAccountName:
                 description: ServiceAccountName is the name of the ServiceAccount to use to run Notification Manager Pods. ServiceAccount 'default' in notification manager's namespace will be used if not specified.
@@ -4054,6 +4069,51 @@ spec:
                   - type
                   type: object
                 description: 'Sidecar containers. The key is the type of sidecar, known value include: tenant. Tenant sidecar used to manage the tenants which will receive notifications. It needs to provide the API `/api/v2/tenant` at port `19094`, this api receives a parameter `namespace` and return all tenants which need to receive notifications in this namespace.'
+                type: object
+              template:
+                description: Template used to define information about templates
+                properties:
+                  language:
+                    default: English
+                    description: The language used to send notification.
+                    type: string
+                  languagePack:
+                    description: Configmap which the i18n file be in.
+                    items:
+                      description: ConfigmapKeySelector selects a key of a Configmap.
+                      properties:
+                        key:
+                          description: The key of the configmap to select from.  Must be a valid configmap key.
+                          type: string
+                        name:
+                          description: Name of the configmap.
+                          type: string
+                        namespace:
+                          description: The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  texpiredAt:
+                    default: 1m
+                    description: Time to reload template file.
+                    type: string
+                  text:
+                    description: Template file.
+                    properties:
+                      key:
+                        description: The key of the configmap to select from.  Must be a valid configmap key.
+                        type: string
+                      name:
+                        description: Name of the configmap.
+                        type: string
+                      namespace:
+                        description: The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                        type: string
+                    required:
+                    - name
+                    type: object
                 type: object
               tolerations:
                 description: Pod's toleration.
@@ -5691,6 +5751,21 @@ spec:
                   titleTemplate:
                     description: The name of the template to generate markdown title
                     type: string
+                  tmplText:
+                    description: Template file.
+                    properties:
+                      key:
+                        description: The key of the configmap to select from.  Must be a valid configmap key.
+                        type: string
+                      name:
+                        description: Name of the configmap.
+                        type: string
+                      namespace:
+                        description: The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                        type: string
+                    required:
+                    - name
+                    type: object
                   tmplType:
                     description: 'template type: text or markdown'
                     type: string
@@ -5766,6 +5841,21 @@ spec:
                   template:
                     description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
                     type: string
+                  tmplText:
+                    description: Template file.
+                    properties:
+                      key:
+                        description: The key of the configmap to select from.  Must be a valid configmap key.
+                        type: string
+                      name:
+                        description: Name of the configmap.
+                        type: string
+                      namespace:
+                        description: The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                        type: string
+                    required:
+                    - name
+                    type: object
                   tmplType:
                     description: 'template type: text or html, default type is html'
                     type: string
@@ -5828,6 +5918,21 @@ spec:
                         title:
                           description: Title refers to message's title, otherwise your app's name is used.
                           type: string
+                        tmplText:
+                          description: Template file.
+                          properties:
+                            key:
+                              description: The key of the configmap to select from.  Must be a valid configmap key.
+                              type: string
+                            name:
+                              description: Name of the configmap.
+                              type: string
+                            namespace:
+                              description: The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                              type: string
+                          required:
+                          - name
+                          type: object
                         userKey:
                           description: UserKey is the user (Pushover User Key) to send notifications to.
                           pattern: ^[A-Za-z0-9]{30}$
@@ -5869,6 +5974,21 @@ spec:
                   template:
                     description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
                     type: string
+                  tmplText:
+                    description: Template file.
+                    properties:
+                      key:
+                        description: The key of the configmap to select from.  Must be a valid configmap key.
+                        type: string
+                      name:
+                        description: Name of the configmap.
+                        type: string
+                      namespace:
+                        description: The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                        type: string
+                    required:
+                    - name
+                    type: object
                 required:
                 - profiles
                 type: object
@@ -5945,6 +6065,21 @@ spec:
                   template:
                     description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
                     type: string
+                  tmplText:
+                    description: Template file.
+                    properties:
+                      key:
+                        description: The key of the configmap to select from.  Must be a valid configmap key.
+                        type: string
+                      name:
+                        description: Name of the configmap.
+                        type: string
+                      namespace:
+                        description: The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                        type: string
+                    required:
+                    - name
+                    type: object
                 required:
                 - channels
                 type: object
@@ -6021,6 +6156,21 @@ spec:
                   template:
                     description: The name of the template to generate Sms message. If the global template is not set, it will use default.
                     type: string
+                  tmplText:
+                    description: Template file.
+                    properties:
+                      key:
+                        description: The key of the configmap to select from.  Must be a valid configmap key.
+                        type: string
+                      name:
+                        description: Name of the configmap.
+                        type: string
+                      namespace:
+                        description: The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                        type: string
+                    required:
+                    - name
+                    type: object
                 required:
                 - phoneNumbers
                 type: object
@@ -6241,6 +6391,21 @@ spec:
                   template:
                     description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
                     type: string
+                  tmplText:
+                    description: Template file.
+                    properties:
+                      key:
+                        description: The key of the configmap to select from.  Must be a valid configmap key.
+                        type: string
+                      name:
+                        description: Name of the configmap.
+                        type: string
+                      namespace:
+                        description: The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                        type: string
+                    required:
+                    - name
+                    type: object
                   url:
                     description: "`url` gives the location of the webhook, in standard URL form (`scheme://host:port/path`). Exactly one of `url` or `service` must be specified. \n The `host` should not refer to a service running in the cluster; use the `service` field instead. The host might be resolved via external DNS in some api servers (e.g., `kube-apiserver` cannot resolve in-cluster DNS as that would be a layering violation). `host` may also be an IP address. \n Please note that using `localhost` or `127.0.0.1` as a `host` is risky unless you take great care to run this webhook on all hosts which run an apiserver which might need to make calls to this webhook. Such installs are likely to be non-portable, i.e., not easy to turn up in a new cluster. \n A path is optional, and if present may be any string permissible in a URL. You may use the path to pass an arbitrary string to the webhook, for example, a cluster identifier. \n Attempting to use a user or basic auth e.g. \"user:password@\" is not allowed. Fragments (\"#...\") and query parameters (\"?...\") are not allowed, either."
                     type: string
@@ -6313,6 +6478,21 @@ spec:
                   template:
                     description: The name of the template to generate DingTalk message. If the global template is not set, it will use default.
                     type: string
+                  tmplText:
+                    description: Template file.
+                    properties:
+                      key:
+                        description: The key of the configmap to select from.  Must be a valid configmap key.
+                        type: string
+                      name:
+                        description: Name of the configmap.
+                        type: string
+                      namespace:
+                        description: The namespace of the configmap, default to the `defaultSecretNamespace` of `NotificationManager` crd. If the `defaultSecretNamespace` does not set, default to the pod's namespace.
+                        type: string
+                    required:
+                    - name
+                    type: object
                   tmplType:
                     description: 'template type: text or markdown, default type is text'
                     type: string

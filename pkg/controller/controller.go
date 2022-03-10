@@ -7,12 +7,15 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
+	"github.com/kubesphere/notification-manager/pkg/constants"
 	"github.com/kubesphere/notification-manager/pkg/internal"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/modern-go/reflect2"
 	v1 "k8s.io/api/core/v1"
@@ -80,6 +83,11 @@ type Controller struct {
 	batchMaxWait metav1.Duration
 
 	routePolicy string
+
+	// Global template.
+	template  *v2beta2.Template
+	tmpl      *template.Template
+	tmplMutex sync.Mutex
 }
 
 type task struct {
@@ -271,6 +279,8 @@ func (c *Controller) nmChange(t *task) {
 		c.batchMaxWait = spec.BatchMaxWait
 
 		c.routePolicy = spec.RoutePolicy
+
+		c.template = spec.Template
 
 		c.nmAdd = true
 	} else {
@@ -566,9 +576,11 @@ func (c *Controller) RcvsFromName(names []string, regexName, receiverType string
 					}
 
 					if utils.StringInList(v.GetName(), names) || utils.RegularMatch(regexName, v.GetName()) {
-						rcv := v.Clone()
-						getMatchedConfig(rcv, c.configs)
-						rcvs = append(rcvs, rcv)
+						if v.Enabled() {
+							rcv := v.Clone()
+							getMatchedConfig(rcv, c.configs)
+							rcvs = append(rcvs, rcv)
+						}
 					}
 				}
 			}
@@ -595,9 +607,11 @@ func (c *Controller) RcvsFromSelector(selector *metav1.LabelSelector, receiverTy
 					}
 
 					if utils.LabelMatchSelector(v.GetLabels(), selector) {
-						rcv := v.Clone()
-						getMatchedConfig(rcv, c.configs)
-						rcvs = append(rcvs, rcv)
+						if v.Enabled() {
+							rcv := v.Clone()
+							getMatchedConfig(rcv, c.configs)
+							rcvs = append(rcvs, rcv)
+						}
 					}
 				}
 			}
@@ -826,12 +840,14 @@ func (c *Controller) GetHistoryReceivers() []internal.Receiver {
 				Webhook: c.history.Webhook,
 			},
 		}
-		tmpl := "webhook.default.message"
+		tmpl := constants.DefaultWebhookTemplate
 		receiver.Spec.Webhook.Template = &tmpl
 		historyReceivers := NewReceivers("", receiver)
 		if historyReceivers != nil {
 			for _, v := range historyReceivers {
-				rcvs = append(rcvs, v)
+				if v.Enabled() {
+					rcvs = append(rcvs, v)
+				}
 			}
 		}
 	}
@@ -849,10 +865,6 @@ func (c *Controller) GetBatchMaxSize() int {
 
 func (c *Controller) GetBatchMaxWait() time.Duration {
 	return c.batchMaxWait.Duration
-}
-
-func (c *Controller) GetInformer() cache.Cache {
-	return c.cache
 }
 
 func (c *Controller) GetActiveSilences(ctx context.Context, tenant string) ([]v2beta2.Silence, error) {
@@ -901,4 +913,103 @@ func (c *Controller) GetActiveRouters(ctx context.Context) ([]v2beta2.Router, er
 
 func (c *Controller) GetRoutePolicy() string {
 	return c.routePolicy
+}
+
+func (c *Controller) GetConfigmap(configmaps ...*v2beta2.ConfigmapKeySelector) ([]string, error) {
+	if len(configmaps) == 0 {
+		return nil, nil
+	}
+
+	var res []string
+	for _, configmap := range configmaps {
+
+		if configmap == nil {
+			continue
+		}
+
+		ns := configmap.Namespace
+		if len(ns) == 0 {
+			ns = c.namespace
+		}
+
+		cm := v1.ConfigMap{}
+		if err := c.cache.Get(c.ctx, types.NamespacedName{Namespace: ns, Name: configmap.Name}, &cm); err != nil {
+			return nil, err
+		}
+
+		if utils.StringIsNil(configmap.Key) {
+			for _, v := range cm.Data {
+				res = append(res, v)
+			}
+		} else {
+			if val, ok := cm.Data[configmap.Key]; !ok {
+				return nil, utils.Errorf("'%s' is not found in configmap %s/%s", configmap.Key, cm.Name, ns)
+			} else {
+				res = append(res, val)
+			}
+		}
+	}
+
+	return res, nil
+}
+
+func (c *Controller) GetGlobalTmpl() (*template.Template, error) {
+
+	c.tmplMutex.Lock()
+	defer c.tmplMutex.Unlock()
+
+	var err error
+	if c.tmpl == nil || c.tmpl.Expired(c.template.ExpiredAt.Duration) {
+
+		var tmpl *template.Template
+		if c.template == nil {
+			tmpl, err = template.New("", nil)
+		} else {
+			pack, err := c.GetConfigmap(c.template.LanguagePack...)
+			if err != nil {
+				return nil, err
+			}
+
+			tmpl, err = template.New(c.template.Language, pack)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		if c.ReceiverOpts != nil && c.ReceiverOpts.Global != nil && len(c.ReceiverOpts.Global.TemplateFiles) > 0 {
+			tmpl, err = tmpl.ParserFile(c.ReceiverOpts.Global.TemplateFiles...)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		text, err := c.GetConfigmap(c.template.Text)
+		if err != nil {
+			return nil, err
+		}
+
+		tmpl, err = tmpl.ParserText(text...)
+		if err != nil {
+			return nil, err
+		}
+
+		c.tmpl = tmpl
+	}
+
+	return c.tmpl.Clone(), nil
+}
+
+func (c *Controller) GetReceiverTmpl(cm *v2beta2.ConfigmapKeySelector) (*template.Template, error) {
+	text, err := c.GetConfigmap(cm)
+	if err != nil {
+		return nil, err
+	}
+
+	globalTmpl, err := c.GetGlobalTmpl()
+	if err != nil {
+		return nil, err
+	}
+
+	return globalTmpl.ParserText(text...)
 }

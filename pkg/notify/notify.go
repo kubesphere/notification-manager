@@ -18,12 +18,11 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/webhook"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/wechat"
 	"github.com/kubesphere/notification-manager/pkg/stage"
-	"github.com/kubesphere/notification-manager/pkg/utils"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/modern-go/reflect2"
-	"github.com/prometheus/common/model"
 )
 
-type Factory func(logger log.Logger, receivers []internal.Receiver, notifierCtl *controller.Controller) notifier.Notifier
+type Factory func(logger log.Logger, receiver internal.Receiver, notifierCtl *controller.Controller) (notifier.Notifier, error)
 
 var (
 	factories map[string]Factory
@@ -68,33 +67,28 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 
 	group := async.NewGroup(ctx)
 
-	alertMap := data.(map[internal.Receiver]map[string][]*model.Alert)
+	alertMap := data.(map[internal.Receiver][]*template.Data)
 
 	for k, v := range alertMap {
 		receiver := k
-		nf := factories[receiver.GetType()](l, []internal.Receiver{receiver}, s.notifierCtl)
-		if reflect2.IsNil(nf) {
+		ds := v
+		nf, err := factories[receiver.GetType()](l, receiver, s.notifierCtl)
+		if err != nil {
+			e := err
+			group.Add(func(stopCh chan interface{}) {
+				stopCh <- e
+			})
 			continue
 		}
-		alerts := v
-		for key, val := range alerts {
-			groupBy := key
-			as := val
+
+		for _, d := range ds {
+			alert := d
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- nf.Notify(ctx, &notifier.Alerts{
-					Alerts:     as,
-					GroupLabel: getGroupLables(groupBy),
-				})
+				stopCh <- nf.Notify(ctx, alert)
 			})
 		}
+
 	}
 
 	return ctx, data, group.Wait()
-}
-
-func getGroupLables(groupBy string) model.LabelSet {
-
-	labelSet := model.LabelSet{}
-	_ = utils.JsonUnmarshal([]byte(groupBy), &labelSet)
-	return labelSet
 }

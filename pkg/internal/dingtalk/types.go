@@ -45,15 +45,18 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 			Enable:         dingtalk.Enabled,
 			AlertSelector:  dingtalk.AlertSelector,
 			ConfigSelector: dingtalk.DingTalkConfigSelector,
+			Template: internal.Template{
+				TmplText: dingtalk.TmplText,
+			},
 		},
 	}
 
 	if dingtalk.Template != nil {
-		r.Template = *dingtalk.Template
+		r.TmplName = *dingtalk.Template
 	}
 
 	if dingtalk.TitleTemplate != nil {
-		r.TitleTemplate = *dingtalk.TitleTemplate
+		r.TitleTmplName = *dingtalk.TitleTemplate
 	}
 
 	if dingtalk.TmplType != nil {

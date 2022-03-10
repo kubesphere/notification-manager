@@ -3266,6 +3266,25 @@ spec:
                           message. If the global template is not set, it will use
                           default.
                         type: string
+                      tmplText:
+                        description: Template file.
+                        properties:
+                          key:
+                            description: The key of the configmap to select from.  Must
+                              be a valid configmap key.
+                            type: string
+                          name:
+                            description: Name of the configmap.
+                            type: string
+                          namespace:
+                            description: The namespace of the configmap, default to
+                              the `defaultSecretNamespace` of `NotificationManager`
+                              crd. If the `defaultSecretNamespace` does not set, default
+                              to the pod's namespace.
+                            type: string
+                        required:
+                        - name
+                        type: object
                       url:
                         description: "`url` gives the location of the webhook, in
                           standard URL form (`scheme://host:port/path`). Exactly one
@@ -3520,7 +3539,8 @@ spec:
                               this.
                             type: string
                           templateFile:
-                            description: Template file path, must be an absolute path.
+                            description: "Template file path, must be an absolute
+                              path. \n Deprecated"
                             items:
                               type: string
                             type: array
@@ -3684,15 +3704,16 @@ spec:
                 type: object
               routePolicy:
                 default: All
-                description: 'The RoutePolicy determines how to find receivers that
-                  notifications will be sent to. Known values are RouterFirst and
-                  RouterOnly. All: The alerts will send to the receivers which match
-                  the router,      and the receivers of tenants who can access the
-                  namespace that the alert is in. RouterFirst: The alerts will send
-                  to the receivers which match the router first, if no receiver is
-                  found,              it will send to the receivers of tenants who
-                  can access the namespace that the alert is in. RouterOnly: The alerts
-                  will send to the receivers which match the router only.'
+                description: 'The RoutePolicy determines how to find receivers to
+                  which notifications will be sent. Valid RoutePolicy include All,
+                  RouterFirst, and RouterOnly. All: The alerts will be sent to the
+                  receivers that match any router, and also will be sent to the receivers
+                  of those tenants with the right to access the namespace to which
+                  the alert belongs. RouterFirst: The alerts will be sent to the receivers
+                  that match any router first. If no receivers match any router, alerts
+                  will send to the receivers of those tenants with the right to access
+                  the namespace to which the alert belongs. RouterOnly: The alerts
+                  will only be sent to the receivers that match any router.'
                 type: string
               serviceAccountName:
                 description: ServiceAccountName is the name of the ServiceAccount
@@ -4775,6 +4796,59 @@ spec:
                   which will receive notifications. It needs to provide the API `/api/v2/tenant`
                   at port `19094`, this api receives a parameter `namespace` and return
                   all tenants which need to receive notifications in this namespace.'
+                type: object
+              template:
+                description: Template used to define information about templates
+                properties:
+                  language:
+                    default: English
+                    description: The language used to send notification.
+                    type: string
+                  languagePack:
+                    description: Configmap which the i18n file be in.
+                    items:
+                      description: ConfigmapKeySelector selects a key of a Configmap.
+                      properties:
+                        key:
+                          description: The key of the configmap to select from.  Must
+                            be a valid configmap key.
+                          type: string
+                        name:
+                          description: Name of the configmap.
+                          type: string
+                        namespace:
+                          description: The namespace of the configmap, default to
+                            the `defaultSecretNamespace` of `NotificationManager`
+                            crd. If the `defaultSecretNamespace` does not set, default
+                            to the pod's namespace.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  texpiredAt:
+                    default: 1m
+                    description: Time to reload template file.
+                    type: string
+                  text:
+                    description: Template file.
+                    properties:
+                      key:
+                        description: The key of the configmap to select from.  Must
+                          be a valid configmap key.
+                        type: string
+                      name:
+                        description: Name of the configmap.
+                        type: string
+                      namespace:
+                        description: The namespace of the configmap, default to the
+                          `defaultSecretNamespace` of `NotificationManager` crd. If
+                          the `defaultSecretNamespace` does not set, default to the
+                          pod's namespace.
+                        type: string
+                    required:
+                    - name
+                    type: object
                 type: object
               tolerations:
                 description: Pod's toleration.

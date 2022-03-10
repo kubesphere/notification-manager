@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/kubesphere/notification-manager/pkg/store/provider"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
-	"github.com/prometheus/common/model"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -16,7 +16,7 @@ var (
 )
 
 type memProvider struct {
-	ch chan *model.Alert
+	ch chan *template.Alert
 }
 
 func init() {
@@ -33,11 +33,11 @@ func init() {
 func NewProvider() provider.Provider {
 
 	return &memProvider{
-		ch: make(chan *model.Alert, *queueLen),
+		ch: make(chan *template.Alert, *queueLen),
 	}
 }
 
-func (p *memProvider) Push(alert *model.Alert) error {
+func (p *memProvider) Push(alert *template.Alert) error {
 	ctx, cancel := context.WithTimeout(context.Background(), *pushTimeout)
 	defer cancel()
 
@@ -49,12 +49,12 @@ func (p *memProvider) Push(alert *model.Alert) error {
 	}
 }
 
-func (p *memProvider) Pull(batchSize int, batchWait time.Duration) ([]*model.Alert, error) {
+func (p *memProvider) Pull(batchSize int, batchWait time.Duration) ([]*template.Alert, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), batchWait)
 	defer cancel()
 
-	var as []*model.Alert
+	var as []*template.Alert
 	for {
 		select {
 		case <-ctx.Done():
