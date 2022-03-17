@@ -85,7 +85,7 @@ type Template struct {
 	// Time to reload template file.
 	//
 	// +kubebuilder:default="1m"
-	ExpiredAt metav1.Duration `json:"texpiredAt,omitempty"`
+	ReloadCycle metav1.Duration `json:"reloadCycle,omitempty"`
 	// Configmap which the i18n file be in.
 	LanguagePack []*ConfigmapKeySelector `json:"languagePack,omitempty"`
 	// The language used to send notification.

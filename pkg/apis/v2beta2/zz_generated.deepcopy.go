@@ -1769,7 +1769,7 @@ func (in *Template) DeepCopyInto(out *Template) {
 		*out = new(ConfigmapKeySelector)
 		**out = **in
 	}
-	out.ExpiredAt = in.ExpiredAt
+	out.ReloadCycle = in.ReloadCycle
 	if in.LanguagePack != nil {
 		in, out := &in.LanguagePack, &out.LanguagePack
 		*out = make([]*ConfigmapKeySelector, len(*in))

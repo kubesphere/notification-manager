@@ -4826,7 +4826,7 @@ spec:
                       - name
                       type: object
                     type: array
-                  texpiredAt:
+                  reloadCycle:
                     default: 1m
                     description: Time to reload template file.
                     type: string

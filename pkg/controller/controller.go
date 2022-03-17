@@ -959,7 +959,7 @@ func (c *Controller) GetGlobalTmpl() (*template.Template, error) {
 	defer c.tmplMutex.Unlock()
 
 	var err error
-	if c.tmpl == nil || c.tmpl.Expired(c.template.ExpiredAt.Duration) {
+	if c.tmpl == nil || c.tmpl.Expired(c.template.ReloadCycle.Duration) {
 
 		var tmpl *template.Template
 		if c.template == nil {
