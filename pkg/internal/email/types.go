@@ -32,16 +32,19 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 			Enable:         e.Enabled,
 			AlertSelector:  e.AlertSelector,
 			ConfigSelector: e.EmailConfigSelector,
+			Template: internal.Template{
+				TmplText: e.TmplText,
+			},
 		},
 		To: e.To,
 	}
 
 	if e.Template != nil {
-		r.Template = *e.Template
+		r.TmplName = *e.Template
 	}
 
 	if e.SubjectTemplate != nil {
-		r.TitleTemplate = *e.SubjectTemplate
+		r.TitleTmplName = *e.SubjectTemplate
 	}
 
 	if e.TmplType != nil {

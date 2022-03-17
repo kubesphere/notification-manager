@@ -15,8 +15,8 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/silence"
 	"github.com/kubesphere/notification-manager/pkg/stage"
 	"github.com/kubesphere/notification-manager/pkg/store"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
-	"github.com/prometheus/common/model"
 )
 
 type Dispatcher struct {
@@ -56,7 +56,7 @@ func (d *Dispatcher) Run() error {
 	}
 }
 
-func (d *Dispatcher) processAlerts(alerts []*model.Alert) {
+func (d *Dispatcher) processAlerts(alerts []*template.Alert) {
 
 	if len(alerts) == 0 {
 		return
@@ -126,7 +126,7 @@ func (d *Dispatcher) worker(ctx context.Context, data interface{}, stopCh chan s
 	pipeline = append(pipeline, history.NewStage(d.notifierCtl))
 
 	if _, _, err := pipeline.Exec(ctx, d.l, data); err != nil {
-		_ = level.Error(d.l).Log("msg", "Dispatcher: process alerts failed ")
+		_ = level.Error(d.l).Log("msg", "Dispatcher: process alerts failed", "seq", ctx.Value("seq"))
 	}
 
 	stopCh <- struct{}{}

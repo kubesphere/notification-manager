@@ -29,12 +29,15 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 			Labels:        obj.Labels,
 			Enable:        w.Enabled,
 			AlertSelector: w.AlertSelector,
+			Template: internal.Template{
+				TmplText: w.TmplText,
+			},
 		},
 		HttpConfig: w.HTTPConfig,
 	}
 
 	if w.Template != nil {
-		r.Template = *w.Template
+		r.TmplName = *w.Template
 	}
 
 	if w.URL != nil {

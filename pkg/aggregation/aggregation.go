@@ -9,9 +9,9 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/stage"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/modern-go/reflect2"
-	"github.com/prometheus/common/model"
 )
 
 type aggregationStage struct {
@@ -33,32 +33,48 @@ func (s *aggregationStage) Exec(ctx context.Context, l log.Logger, data interfac
 	groupLabel := s.notifierCtl.GetGroupLabels()
 	_ = level.Debug(l).Log("msg", "Start aggregation stage", "seq", ctx.Value("seq"), "group by", utils.ArrayToString(groupLabel, ","))
 
-	alertMap := data.(map[internal.Receiver][]*model.Alert)
+	alertMap := data.(map[internal.Receiver][]*template.Alert)
 
-	res := make(map[internal.Receiver]map[string][]*model.Alert)
+	res := make(map[internal.Receiver][]*template.Data)
 	for receiver, alerts := range alertMap {
-		m := make(map[string][]*model.Alert)
+		m := make(map[string][]*template.Alert)
 		for _, alert := range alerts {
-			group := getGroup(groupLabel, alert)
+			group := labelToGroupKey(groupLabel, alert)
 			as := m[group]
 			as = append(as, alert)
 			m[group] = as
 		}
 
-		res[receiver] = m
+		var ds []*template.Data
+		for k, v := range m {
+			d := &template.Data{
+				GroupLabels: groupKeyToLabel(k),
+				Alerts:      v,
+			}
+			ds = append(ds, d.Format())
+		}
+
+		res[receiver] = ds
 	}
 
 	return ctx, res, nil
 }
 
-func getGroup(groupLabel []string, alert *model.Alert) string {
+func labelToGroupKey(groupLabel []string, alert *template.Alert) string {
 
 	m := make(map[string]string)
 	for _, k := range groupLabel {
-		m[k] = string(alert.Labels[model.LabelName(k)])
+		m[k] = alert.Labels[k]
 	}
 
 	bs, _ := json.Marshal(m)
 
 	return string(bs)
+}
+
+func groupKeyToLabel(groupKey string) template.KV {
+
+	label := template.KV{}
+	_ = utils.JsonUnmarshal([]byte(groupKey), &label)
+	return label
 }

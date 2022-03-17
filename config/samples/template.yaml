@@ -1,23 +1,20 @@
 apiVersion: v1
 data:
   template: |
-    {{ define "nm.default.message" }}{{ if ne .Labels.alerttype "verify" }}[{{ .Status | toUpper }}] {{ end }}{{ if .Annotations.message }}{{ .Annotations.message }}{{ else if .Annotations.summary }}{{ .Annotations.summary }}{{ else if .Annotations.summaryCn }}{{ .Annotations.summaryCn }}{{- end }}{{ end }}
+    {{ define "nm.default.message" }}{{ if ne (len .Status) 0 }}[{{ .Status | translate }}] {{ end }}{{ .Message }}{{ end }}
+    {{ define "nm.default.message.cn" }}{{ if ne (len .Status) 0 }}[{{ .Status | translate }}] {{ end }}{{ .MessageCN }}{{ end }}
 
-    {{ define "nm.default.subject" }}{{ if eq (len .Alerts) 1 }}{{ range .Alerts }}{{ template "nm.default.message" . }}{{ end }}{{ else }}{{ .Alerts | len }} {{ .Status }} alerts{{ if gt (len .GroupLabels.SortedPairs) 1 }} for {{ range .GroupLabels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}{{ end }}{{ end }}{{ end }}
+    {{ define "nm.default.subject" }}{{ if eq (len .Alerts) 1 }}{{ range .Alerts }}{{ template "nm.default.message" . }}{{ end }}{{ else }}{{ .Alerts | len }} {{ .Status }} alerts{{ if gt (len .GroupLabels.SortedPairs) 1 }} for {{ range .GroupLabels.SortedPairs }}{{ .Name | translate }}={{ .Value }} {{ end }}{{ end }}{{ end }}{{ end }}
 
-    {{ define "__nm_alert_list" }}{{ range . }}{{ template "nm.default.message" . }}
-    {{ range .Labels.SortedPairs }}  {{ .Name }}: {{ .Value }}
+    {{ define "nm.default.text" }}{{ range .Alerts }}{{ template "nm.default.message" . }}
+    {{ range .Labels.SortedPairs }}  {{ .Name | translate }}: {{ .Value }}
     {{ end }}
-    {{ end }}{{ end }}
+    {{ end }}{{- end }}
 
-    {{ define "nm.default.text" }}{{ template "__nm_alert_list" .Alerts }}{{- end }}
-
-    {{ define "__nm_alert_list_markdown" }}{{ range . }}## {{ template "nm.default.message" . }}
-    {{ range .Labels.SortedPairs }}### {{ .Name }}: {{ .Value }}
+    {{ define "nm.default.markdown" }}{{ range . }}### {{ template "nm.default.message" . }}
+    {{ range .Labels.SortedPairs }}- {{ .Name | translate }}: {{ .Value }}
     {{ end }}
-    {{ end }}{{ end }}
-
-    {{ define "nm.default.markdown" }}{{ template "__nm_alert_list_markdown" .Alerts }}{{- end }}
+    {{ end }}{{- end }}
 
     {{ define "nm.default.html" }}
       <html xmlns="http://www.w3.org/1999/xhtml" xmlns="http://www.w3.org/1999/xhtml" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
@@ -35,7 +32,7 @@ data:
                         <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                           <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;" valign="top">
                             <strong style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">{{ template "nm.default.message" . }}</strong><br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />
-                            {{ range .Labels.SortedPairs }}{{ if ne .Name "runbook_url" }}&nbsp&nbsp{{ .Name }}: {{ .Value }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
+                            {{ range .Labels.SortedPairs }}&nbsp;&nbsp;{{ .Name | translate }}: {{ .Value }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
                           </td>
                         </tr>
                       {{ end }}

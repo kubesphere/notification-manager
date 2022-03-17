@@ -16,4 +16,19 @@ const (
 	WeChat   = "wechat"
 
 	Namespace = "namespace"
+
+	AlertFiring   = "firing"
+	AlertResolved = "resolved"
+
+	AlertName      = "alertname"
+	AlertType      = "alertype"
+	AlertTime      = "alertime"
+	AlertMessage   = "message"
+	AlertSummary   = "summary"
+	AlertSummaryCN = "summaryCn"
+
+	Verify       = "verify"
+	Notification = "notification"
+
+	DefaultWebhookTemplate = `{{ template "webhook.default.message" . }}`
 )

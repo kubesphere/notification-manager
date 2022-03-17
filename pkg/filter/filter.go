@@ -8,9 +8,11 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/stage"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/modern-go/reflect2"
-	"github.com/prometheus/common/model"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 type filterStage struct {
@@ -31,8 +33,8 @@ func (s *filterStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 
 	_ = level.Debug(l).Log("msg", "Start filter stage", "seq", ctx.Value("seq"))
 
-	alertMap := data.(map[internal.Receiver][]*model.Alert)
-	res := make(map[internal.Receiver][]*model.Alert)
+	alertMap := data.(map[internal.Receiver][]*template.Alert)
+	res := make(map[internal.Receiver][]*template.Alert)
 	for receiver, alerts := range alertMap {
 		as, err := s.mute(ctx, alerts, receiver)
 		if err != nil {
@@ -40,7 +42,7 @@ func (s *filterStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 			return ctx, data, err
 		}
 
-		as, err = utils.FilterAlerts(as, receiver.GetAlertSelector())
+		as, err = filter(as, receiver.GetAlertSelector())
 		if err != nil {
 			_ = level.Error(l).Log("msg", "Filter failed", "stage", "Filter", "seq", ctx.Value("seq"), "error", err.Error(), "receiver", receiver.GetName())
 			return ctx, nil, err
@@ -52,7 +54,7 @@ func (s *filterStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 	return ctx, res, nil
 }
 
-func (s *filterStage) mute(ctx context.Context, alerts []*model.Alert, receiver internal.Receiver) ([]*model.Alert, error) {
+func (s *filterStage) mute(ctx context.Context, alerts []*template.Alert, receiver internal.Receiver) ([]*template.Alert, error) {
 
 	silences, err := s.notifierCtl.GetActiveSilences(ctx, receiver.GetTenantID())
 	if err != nil {
@@ -63,7 +65,7 @@ func (s *filterStage) mute(ctx context.Context, alerts []*model.Alert, receiver 
 		return alerts, nil
 	}
 
-	var as []*model.Alert
+	var as []*template.Alert
 	for _, alert := range alerts {
 		flag := false
 		for _, silence := range silences {
@@ -71,7 +73,7 @@ func (s *filterStage) mute(ctx context.Context, alerts []*model.Alert, receiver 
 				continue
 			}
 
-			if utils.LabelMatchSelector(utils.LabelSetToKV(alert.Labels), silence.Spec.Matcher) {
+			if utils.LabelMatchSelector(alert.Labels, silence.Spec.Matcher) {
 				flag = true
 				break
 			}
@@ -83,4 +85,30 @@ func (s *filterStage) mute(ctx context.Context, alerts []*model.Alert, receiver 
 	}
 
 	return as, err
+}
+
+// FilterAlerts filter the alerts with label selector,if the selector is not correct, return all of the alerts.
+func filter(alerts []*template.Alert, selector *v1.LabelSelector) ([]*template.Alert, error) {
+
+	if selector == nil {
+		return alerts, nil
+	}
+
+	labelSelector, err := v1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		return alerts, err
+	}
+
+	if labelSelector.Empty() {
+		return alerts, nil
+	}
+
+	var as []*template.Alert
+	for _, alert := range alerts {
+		if labelSelector.Matches(labels.Set(alert.Labels)) {
+			as = append(as, alert)
+		}
+	}
+
+	return as, nil
 }

@@ -32,12 +32,15 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 			Enable:         s.Enabled,
 			AlertSelector:  s.AlertSelector,
 			ConfigSelector: s.SmsConfigSelector,
+			Template: internal.Template{
+				TmplText: s.TmplText,
+			},
 		},
 		PhoneNumbers: s.PhoneNumbers,
 	}
 
 	if s.Template != nil {
-		r.Template = *s.Template
+		r.TmplName = *s.Template
 	}
 
 	return r

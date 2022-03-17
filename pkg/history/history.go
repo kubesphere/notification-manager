@@ -10,9 +10,9 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/notify"
 	"github.com/kubesphere/notification-manager/pkg/stage"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/modern-go/reflect2"
-	"github.com/prometheus/common/model"
 )
 
 const (
@@ -43,31 +43,29 @@ func (s *historyStage) Exec(ctx context.Context, l log.Logger, data interface{})
 
 	_ = level.Debug(l).Log("msg", "Start history stage", "seq", ctx.Value("seq"))
 
-	alertMap := data.(map[internal.Receiver]map[string][]*model.Alert)
-	m := make(map[string]*model.Alert)
+	alertMap := data.(map[internal.Receiver][]*template.Data)
+	m := make(map[string]*template.Alert)
 	for _, v := range alertMap {
-		for _, as := range v {
-			for _, alert := range as {
+		for _, d := range v {
+			for _, alert := range d.Alerts {
 				hash := utils.Hash(alert)
 				m[hash] = alert
 			}
 		}
 	}
 
-	var alerts []*model.Alert
+	d := &template.Data{}
 	for _, v := range m {
-		alerts = append(alerts, v)
+		d.Alerts = append(d.Alerts, v)
 	}
 
-	if len(alerts) == 0 {
+	if len(d.Alerts) == 0 {
 		return ctx, nil, nil
 	}
 
-	alertMap = make(map[internal.Receiver]map[string][]*model.Alert)
+	alertMap = make(map[internal.Receiver][]*template.Data)
 	for _, receiver := range receivers {
-		alertMap[receiver] = map[string][]*model.Alert{
-			"": alerts,
-		}
+		alertMap[receiver] = []*template.Data{d}
 	}
 
 	for retry := 0; retry <= historyRetryMax; retry++ {

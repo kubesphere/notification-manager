@@ -3,14 +3,9 @@ package notifier
 import (
 	"context"
 
-	"github.com/prometheus/common/model"
+	"github.com/kubesphere/notification-manager/pkg/template"
 )
 
-type Alerts struct {
-	Alerts     []*model.Alert
-	GroupLabel model.LabelSet
-}
-
 type Notifier interface {
-	Notify(ctx context.Context, alerts *Alerts) error
+	Notify(ctx context.Context, data *template.Data) error
 }

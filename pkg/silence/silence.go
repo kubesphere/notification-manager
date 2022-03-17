@@ -7,9 +7,9 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/stage"
+	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/modern-go/reflect2"
-	"github.com/prometheus/common/model"
 )
 
 type silenceStage struct {
@@ -28,7 +28,7 @@ func (s *silenceStage) Exec(ctx context.Context, l log.Logger, data interface{})
 		return ctx, nil, nil
 	}
 
-	alerts := data.([]*model.Alert)
+	alerts := data.([]*template.Alert)
 
 	_ = level.Debug(l).Log("msg", "Start silence stage", "seq", ctx.Value("seq"), "alert", len(alerts))
 
@@ -42,11 +42,11 @@ func (s *silenceStage) Exec(ctx context.Context, l log.Logger, data interface{})
 		return ctx, alerts, nil
 	}
 
-	var as []*model.Alert
+	var as []*template.Alert
 	for _, alert := range alerts {
 		mute := false
 		for _, silence := range ss {
-			if utils.LabelMatchSelector(utils.LabelSetToKV(alert.Labels), silence.Spec.Matcher) {
+			if utils.LabelMatchSelector(alert.Labels, silence.Spec.Matcher) {
 				mute = true
 				break
 			}
