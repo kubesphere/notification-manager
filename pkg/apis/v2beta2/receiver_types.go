@@ -246,13 +246,13 @@ type PushoverReceiver struct {
 
 // FeishuChatBot is the configuration of ChatBot
 type FeishuChatBot struct {
-	// The webhook of ChatBot which the message will send to.
+	// The webhook of the ChatBot to which the message will be sent.
 	Webhook *Credential `json:"webhook"`
 
 	// Custom keywords of ChatBot
 	Keywords []string `json:"keywords,omitempty"`
 
-	// Secret of ChatBot, you can get it after enabled signature verification of ChatBot.
+	// Secret of ChatBot, you can get it after enabling signature verification of ChatBot.
 	Secret *Credential `json:"secret,omitempty"`
 }
 

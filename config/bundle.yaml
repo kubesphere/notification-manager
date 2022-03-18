@@ -5982,7 +5982,7 @@ spec:
                           type: string
                         type: array
                       secret:
-                        description: Secret of ChatBot, you can get it after enabled signature verification of ChatBot.
+                        description: Secret of ChatBot, you can get it after enabling signature verification of ChatBot.
                         properties:
                           value:
                             type: string
@@ -6007,7 +6007,7 @@ spec:
                             type: object
                         type: object
                       webhook:
-                        description: The webhook of ChatBot which the message will send to.
+                        description: The webhook of the ChatBot to which the message will be sent.
                         properties:
                           value:
                             type: string

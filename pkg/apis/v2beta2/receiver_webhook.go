@@ -330,7 +330,7 @@ func (r *Receiver) validateReceiver() error {
 				"must specify one of: `user`, `department` or `chatbot`"))
 		}
 
-		if err := validateSelector(r.Spec.Wechat.AlertSelector); err != nil {
+		if err := validateSelector(r.Spec.Feishu.AlertSelector); err != nil {
 			allErrs = append(allErrs,
 				field.Invalid(field.NewPath("spec", "feishu", "alertSelector"),
 					feishu.AlertSelector,
