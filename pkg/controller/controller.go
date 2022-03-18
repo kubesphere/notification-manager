@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	kconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -958,46 +959,49 @@ func (c *Controller) GetGlobalTmpl() (*template.Template, error) {
 	c.tmplMutex.Lock()
 	defer c.tmplMutex.Unlock()
 
-	var err error
-	if c.tmpl == nil || c.tmpl.Expired(c.template.ReloadCycle.Duration) {
-
-		var tmpl *template.Template
-		if c.template == nil {
-			tmpl, err = template.New("", nil)
-		} else {
-			pack, err := c.GetConfigmap(c.template.LanguagePack...)
-			if err != nil {
-				return nil, err
-			}
-
-			tmpl, err = template.New(c.template.Language, pack)
+	if c.tmpl != nil {
+		if c.template == nil || !c.tmpl.Expired(c.template.ReloadCycle.Duration) {
+			return c.tmpl.Clone(), nil
 		}
+	}
 
+	var err error
+	var tmpl *template.Template
+	if c.template == nil {
+		tmpl, err = template.New("", nil)
+	} else {
+		pack, err := c.GetConfigmap(c.template.LanguagePack...)
 		if err != nil {
 			return nil, err
 		}
 
-		if c.ReceiverOpts != nil && c.ReceiverOpts.Global != nil && len(c.ReceiverOpts.Global.TemplateFiles) > 0 {
-			tmpl, err = tmpl.ParserFile(c.ReceiverOpts.Global.TemplateFiles...)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		if c.template != nil {
-			text, err := c.GetConfigmap(c.template.Text)
-			if err != nil {
-				return nil, err
-			}
-
-			tmpl, err = tmpl.ParserText(text...)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		c.tmpl = tmpl
+		tmpl, err = template.New(c.template.Language, pack)
 	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if c.ReceiverOpts != nil && c.ReceiverOpts.Global != nil && len(c.ReceiverOpts.Global.TemplateFiles) > 0 {
+		tmpl, err = tmpl.ParserFile(c.ReceiverOpts.Global.TemplateFiles...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if c.template != nil {
+		text, err := c.GetConfigmap(c.template.Text)
+		if err != nil {
+			return nil, err
+		}
+
+		tmpl, err = tmpl.ParserText(text...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	c.tmpl = tmpl
 
 	return c.tmpl.Clone(), nil
 }
@@ -1014,4 +1018,51 @@ func (c *Controller) GetReceiverTmpl(cm *v2beta2.ConfigmapKeySelector) (*templat
 	}
 
 	return globalTmpl.ParserText(text...)
+}
+
+type clusterConfig struct {
+	MultiCluster multiCluster `json:"multicluster,omitempty" yaml:"multicluster,omitempty"`
+}
+
+type multiCluster struct {
+	ClusterName string `json:"clusterName,omitempty" yaml:"clusterName,omitempty"`
+}
+
+// GetCluster returns the name of the cluster where the notification manager is located.
+// If a cluster name is specified, the specified cluster name is used.
+// Otherwise, for kubespere platforms (version >= 3.3), it will try to get the cluster name
+// from the configmap kubesphere-config.
+// Otherwise, the default cluster name "default" will be returned.
+func (c *Controller) GetCluster() string {
+
+	if c.ReceiverOpts != nil && c.ReceiverOpts.Global != nil && !utils.StringIsNil(c.ReceiverOpts.Global.Cluster) {
+		return c.ReceiverOpts.Global.Cluster
+	}
+
+	files, err := c.GetConfigmap(&v2beta2.ConfigmapKeySelector{
+		Namespace: constants.KubesphereConfigNamespace,
+		Name:      constants.KubesphereConfigName,
+		Key:       constants.KubesphereConfigKey,
+	})
+	if err != nil {
+		_ = level.Debug(c.logger).Log("msg", "get kubesphere config configmap error", "err", err)
+		return constants.DefaultClusterName
+	}
+
+	if len(files) == 0 {
+		_ = level.Debug(c.logger).Log("msg", "get kubesphere cluster name error, key is not found")
+		return constants.DefaultClusterName
+	}
+
+	cc := &clusterConfig{}
+	if err := yaml.Unmarshal([]byte(files[0]), cc); err != nil {
+		_ = level.Debug(c.logger).Log("msg", "decode kubesphere config error", "error", err)
+		return constants.DefaultClusterName
+	}
+
+	if !utils.StringIsNil(cc.MultiCluster.ClusterName) {
+		return cc.MultiCluster.ClusterName
+	}
+
+	return constants.DefaultClusterName
 }

@@ -36,4 +36,10 @@ const (
 	Notification = "notification"
 
 	DefaultWebhookTemplate = `{{ template "webhook.default.message" . }}`
+
+	DefaultClusterName = "default"
+
+	KubesphereConfigNamespace = "kubesphere-system"
+	KubesphereConfigName      = "kubesphere-config"
+	KubesphereConfigKey       = "kubesphere.yaml"
 )
