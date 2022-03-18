@@ -16,6 +16,22 @@ data:
     {{ "{{ end }}" }}
     {{ "{{ end }}{{- end }}" }}
 
+    {{ "{{ define \"nm.feishu.post\" }}" }}
+    {{ "en_us:" }}
+    {{ "  content:" }}
+    {{ "    {{ range .Alerts }}" }}
+    {{ "    - - tag: text" }}
+    {{ "        text: '{{ template \"nm.default.message\" . }}'{{ range .Labels.SortedPairs }}" }}
+    {{ "    - - tag: text" }}
+    {{ "        text: '  {{ .Name | translate }}: {{ .Value }}'" }}
+    {{ "    {{- end }}" }}
+    {{ "    - - tag: text" }}
+    {{ "        text: ' '" }}
+    {{ "    {{- end }}" }}
+    {{ "{{- end }}" }}
+
+    {{ "{{ define \"nm.feishu.text\" }}{{ range .Alerts }}{{ template \"nm.default.message\" . }}{{ \"\\n\" }}{{ range .Labels.SortedPairs }}  {{ .Name | translate }}: {{ .Value }}{{ \"\\n\" }}{{ end }}{{ \"\\n\" }}{{ end }}{{- end }}" }}
+
     {{ "{{ define \"nm.default.html\" }}" }}
     {{ "  <html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns=\"http://www.w3.org/1999/xhtml\" style=\"font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;\">" }}
     {{ "  <body itemscope=\"\" itemtype=\"http://schema.org/EmailMessage\" style=\"font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: none; height: 100%; line-height: 1.6em; width: 100% !important; background-color: #f6f6f6; margin: 0; padding: 0;\" bgcolor=\"#f6f6f6\">" }}

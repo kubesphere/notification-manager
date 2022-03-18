@@ -3,7 +3,9 @@ package wechat
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-kit/kit/log"
@@ -221,9 +223,20 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 				if weResp.InvalidUser != "" || weResp.InvalidParty != "" || weResp.InvalidTag != "" {
 					_ = level.Error(n.logger).Log("msg", "WechatNotifier: send message",
 						"from", r.AgentID,
-						"Invalid user", weResp.InvalidUser,
-						"Invalid party", weResp.InvalidParty,
-						"Invalid tag", weResp.InvalidTag)
+						"InvalidUser", weResp.InvalidUser,
+						"InvalidParty", weResp.InvalidParty,
+						"InvalidTag", weResp.InvalidTag)
+					e := ""
+					if weResp.InvalidUser != "" {
+						e = fmt.Sprintf("invalid user %s, ", weResp.InvalidUser)
+					}
+					if weResp.InvalidParty != "" {
+						e = fmt.Sprintf("%sinvalid party %s, ", e, weResp.InvalidParty)
+					}
+					if weResp.InvalidTag != "" {
+						e = fmt.Sprintf("%sinvalid tag %s, ", e, weResp.InvalidTag)
+					}
+					return false, utils.Error(strings.TrimSuffix(e, ", "))
 				}
 				_ = level.Debug(n.logger).Log("msg", "WechatNotifier: send message",
 					"from", r.AgentID,
@@ -241,7 +254,8 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 			}
 
 			_ = level.Error(n.logger).Log("msg", "WechatNotifier: wechat response error",
-				"error code", weResp.ErrorCode, "error message", weResp.ErrorMsg,
+				"code", weResp.ErrorCode,
+				"message", weResp.ErrorMsg,
 				"from", r.AgentID,
 				"toUser", utils.ArrayToString(r.ToUser, "|"),
 				"toParty", utils.ArrayToString(r.ToParty, "|"),

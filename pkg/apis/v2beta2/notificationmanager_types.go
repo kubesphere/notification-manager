@@ -283,6 +283,18 @@ type PushoverOptions struct {
 	Template string `json:"template,omitempty"`
 }
 
+type FeishuOptions struct {
+	// Notification Sending Timeout
+	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
+	// The name of the template to generate DingTalk message.
+	// If the global template is not set, it will use default.
+	Template string `json:"template,omitempty"`
+	// template type: text or post, default type is post
+	TmplType string `json:"tmplType,omitempty"`
+	// The time of token expired.
+	TokenExpires time.Duration `json:"tokenExpires,omitempty"`
+}
+
 type Options struct {
 	Global   *GlobalOptions   `json:"global,omitempty"`
 	Email    *EmailOptions    `json:"email,omitempty"`
@@ -292,6 +304,7 @@ type Options struct {
 	DingTalk *DingTalkOptions `json:"dingtalk,omitempty"`
 	Sms      *SmsOptions      `json:"sms,omitempty"`
 	Pushover *PushoverOptions `json:"pushover,omitempty"`
+	Feishu   *FeishuOptions   `json:"feishu,omitempty"`
 }
 
 // NotificationManagerStatus defines the observed state of NotificationManager

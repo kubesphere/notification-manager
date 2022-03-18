@@ -3262,9 +3262,8 @@ spec:
                         - namespace
                         type: object
                       template:
-                        description: The name of the template to generate DingTalk
-                          message. If the global template is not set, it will use
-                          default.
+                        description: The name of the template to generate notification.
+                          If the global template is not set, it will use default.
                         type: string
                       tmplText:
                         description: Template file.
@@ -3526,6 +3525,26 @@ spec:
                             description: 'template type: text or html, default type
                               is html'
                             type: string
+                        type: object
+                      feishu:
+                        properties:
+                          notificationTimeout:
+                            description: Notification Sending Timeout
+                            format: int32
+                            type: integer
+                          template:
+                            description: The name of the template to generate DingTalk
+                              message. If the global template is not set, it will
+                              use default.
+                            type: string
+                          tmplType:
+                            description: 'template type: text or post, default type
+                              is post'
+                            type: string
+                          tokenExpires:
+                            description: The time of token expired.
+                            format: int64
+                            type: integer
                         type: object
                       global:
                         properties:

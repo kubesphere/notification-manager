@@ -8,6 +8,7 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/internal/dingtalk"
 	"github.com/kubesphere/notification-manager/pkg/internal/email"
+	"github.com/kubesphere/notification-manager/pkg/internal/feishu"
 	"github.com/kubesphere/notification-manager/pkg/internal/pushover"
 	"github.com/kubesphere/notification-manager/pkg/internal/slack"
 	"github.com/kubesphere/notification-manager/pkg/internal/sms"
@@ -27,6 +28,7 @@ func init() {
 	receiverFactories = make(map[string]receiverFactory)
 	receiverFactories[constants.DingTalk] = dingtalk.NewReceiver
 	receiverFactories[constants.Email] = email.NewReceiver
+	receiverFactories[constants.Feishu] = feishu.NewReceiver
 	receiverFactories[constants.Pushover] = pushover.NewReceiver
 	receiverFactories[constants.Slack] = slack.NewReceiver
 	receiverFactories[constants.SMS] = sms.NewReceiver
@@ -36,6 +38,7 @@ func init() {
 	configFactories = make(map[string]configFactory)
 	configFactories[constants.DingTalk] = dingtalk.NewConfig
 	configFactories[constants.Email] = email.NewConfig
+	configFactories[constants.Feishu] = feishu.NewConfig
 	configFactories[constants.Pushover] = pushover.NewConfig
 	configFactories[constants.Slack] = slack.NewConfig
 	configFactories[constants.SMS] = sms.NewConfig
