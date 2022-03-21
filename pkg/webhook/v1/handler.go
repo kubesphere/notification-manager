@@ -61,13 +61,7 @@ func (h *HttpHandler) Alert(w http.ResponseWriter, r *http.Request) {
 	//	fmt.Println(string(alerts))
 	//}
 
-	cluster := "default"
-	if h.notifierCtl != nil && h.notifierCtl.ReceiverOpts != nil && h.notifierCtl.ReceiverOpts.Global != nil {
-		if h.notifierCtl.ReceiverOpts.Global.Cluster != "" {
-			cluster = h.notifierCtl.ReceiverOpts.Global.Cluster
-		}
-	}
-
+	cluster := h.notifierCtl.GetCluster()
 	for _, alert := range data.Alerts {
 		if v := alert.Labels["cluster"]; v == "" {
 			alert.Labels["cluster"] = cluster
