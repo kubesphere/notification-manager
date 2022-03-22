@@ -31,6 +31,7 @@ const (
 	DefaultPostTemplate = `{{ template "nm.feishu.post" . }}`
 	DefaultTextTemplate = `{{ template "nm.feishu.text" . }}`
 	DefaultExpires      = time.Hour * 2
+	ExceedLimitCode     = 9499
 )
 
 type Notifier struct {
@@ -141,6 +142,147 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 		return err
 	}
 
+	group := async.NewGroup(ctx)
+	if n.receiver.ChatBot != nil {
+		group.Add(func(stopCh chan interface{}) {
+			stopCh <- n.sendToChatBot(ctx, content)
+		})
+	}
+
+	if len(n.receiver.User) > 0 || len(n.receiver.Department) > 0 {
+		group.Add(func(stopCh chan interface{}) {
+			stopCh <- n.batchSend(ctx, content)
+		})
+	}
+
+	return group.Wait()
+}
+
+func (n *Notifier) sendToChatBot(ctx context.Context, content string) error {
+
+	keywords := ""
+	if len(n.receiver.ChatBot.Keywords) != 0 {
+		keywords = fmt.Sprintf("[Keywords] %s", utils.ArrayToString(n.receiver.ChatBot.Keywords, ","))
+	}
+
+	message := &Message{}
+	if n.receiver.TmplType == constants.Post {
+
+		post := make(map[string]interface{})
+		if err := yaml.Unmarshal([]byte(content), &post); err != nil {
+			_ = level.Error(n.logger).Log("msg", "FeishuNotifier: unmarshal failed", "error", err)
+			return err
+		}
+
+		if len(keywords) > 0 {
+			for k, v := range post {
+				p := v.(map[interface{}]interface{})
+				items := p["content"].([]interface{})
+				items = append(items, []interface{}{
+					map[string]string{
+						"tag":  "text",
+						"text": keywords,
+					},
+				})
+				p["content"] = items
+				post[k] = p
+			}
+		}
+
+		message.MsgType = constants.Post
+		message.Content.Post = post
+	} else if n.receiver.TmplType == constants.Text {
+		message.MsgType = constants.Text
+		message.Content.Text = content
+		if len(keywords) > 0 {
+			message.Content.Text = fmt.Sprintf("%s\n\n%s", content, keywords)
+		}
+	} else {
+		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: unknown message type", "type", n.receiver.TmplType)
+		return utils.Errorf("Unknown message type, %s", n.receiver.TmplType)
+	}
+
+	if n.receiver.ChatBot.Secret != nil {
+		secret, err := n.notifierCtl.GetCredential(n.receiver.ChatBot.Secret)
+		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "FeishuNotifier: get secret error", "error", err.Error())
+			return err
+		}
+
+		message.Timestamp = time.Now().Unix()
+		message.Sign, err = genSign(secret, message.Timestamp)
+		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "FeishuNotifier: calculate signature error", "error", err.Error())
+			return err
+		}
+	}
+
+	send := func() (bool, error) {
+		webhook, err := n.notifierCtl.GetCredential(n.receiver.ChatBot.Webhook)
+		if err != nil {
+			return false, err
+		}
+
+		var buf bytes.Buffer
+		if err := utils.JsonEncode(&buf, message); err != nil {
+			return false, err
+		}
+
+		request, err := http.NewRequest(http.MethodPost, webhook, &buf)
+		if err != nil {
+			return false, err
+		}
+		request.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+		respBody, err := utils.DoHttpRequest(ctx, nil, request)
+		if err != nil && len(respBody) == 0 {
+			return false, err
+		}
+
+		var resp Response
+		if err := utils.JsonUnmarshal(respBody, &resp); err != nil {
+			return false, err
+		}
+
+		if resp.Code == 0 {
+			return false, nil
+		}
+
+		// 9499 means the API call exceeds the limit, need to retry.
+		if resp.Code == ExceedLimitCode {
+			return true, utils.Errorf("%d, %s", resp.Code, resp.Msg)
+		}
+
+		return false, utils.Errorf("%d, %s", resp.Code, resp.Msg)
+	}
+
+	start := time.Now()
+	defer func() {
+		_ = level.Debug(n.logger).Log("msg", "FeishuNotifier: send message to chatbot", "used", time.Since(start).String())
+	}()
+
+	retry := 0
+	// The retries will continue until the send times out and the context is cancelled.
+	// There is only one case that triggers the retry mechanism, that is, the API call exceeds the limit.
+	// The maximum frequency for sending notifications to chatbot is 5 times/second and 100 times/minute.
+	for {
+		needRetry, err := send()
+		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "FeishuNotifier: send notification to chatbot error", "error", err.Error())
+		}
+		if needRetry {
+			retry = retry + 1
+			time.Sleep(time.Second)
+			_ = level.Info(n.logger).Log("msg", "FeishuNotifier: retry to send notification to chatbot", "retry", retry)
+			continue
+		}
+
+		return err
+	}
+}
+
+func (n *Notifier) batchSend(ctx context.Context, content string) error {
+
 	message := &Message{}
 	if n.receiver.TmplType == constants.Post {
 
@@ -160,88 +302,66 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 		return utils.Errorf("Unknown message type, %s", n.receiver.TmplType)
 	}
 
-	group := async.NewGroup(ctx)
-	if n.receiver.ChatBot != nil {
-		group.Add(func(stopCh chan interface{}) {
-			stopCh <- n.sendToChatBot(ctx, message)
-		})
-	}
+	message.User = n.receiver.User
+	message.Department = n.receiver.Department
 
-	if len(n.receiver.User) > 0 || len(n.receiver.Department) > 0 {
-		group.Add(func(stopCh chan interface{}) {
-			stopCh <- n.batchSend(ctx, message)
-		})
-	}
-
-	return group.Wait()
-}
-
-func (n *Notifier) sendToChatBot(ctx context.Context, message *Message) error {
-
-	start := time.Now()
-	defer func() {
-		_ = level.Debug(n.logger).Log("msg", "FeishuNotifier: send message to chatbot", "used", time.Since(start).String())
-	}()
-
-	webhook, err := n.notifierCtl.GetCredential(n.receiver.ChatBot.Webhook)
-	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: get webhook error", "error", err.Error())
-		return err
-	}
-
-	if n.receiver.ChatBot.Secret != nil {
-		secret, err := n.notifierCtl.GetCredential(n.receiver.ChatBot.Secret)
-		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "FeishuNotifier: get secret error", "error", err.Error())
-			return err
+	send := func(retry int) (bool, error) {
+		if n.receiver.Config == nil {
+			_ = level.Error(n.logger).Log("msg", "FeishuNotifier: config is nil")
+			return false, utils.Error("FeishuNotifier: config is nil")
 		}
 
-		message.Timestamp = time.Now().Unix()
-		message.Sign, err = genSign(secret, message.Timestamp)
+		accessToken, err := n.getToken(ctx, n.receiver)
 		if err != nil {
-			_ = level.Error(n.logger).Log("msg", "FeishuNotifier: calculate signature error", "error", err.Error())
-			return err
+			return false, err
 		}
+
+		var buf bytes.Buffer
+		if err := utils.JsonEncode(&buf, message); err != nil {
+			return false, err
+		}
+
+		request, err := http.NewRequest(http.MethodPost, BatchAPI, &buf)
+		if err != nil {
+			return false, err
+		}
+		request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+		request.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+		respBody, err := utils.DoHttpRequest(ctx, nil, request)
+		if err != nil {
+			return false, err
+		}
+
+		var resp Response
+		if err := utils.JsonUnmarshal(respBody, &resp); err != nil {
+			return false, err
+		}
+
+		if resp.Code == 0 {
+			if len(resp.Data.InvalidUser) > 0 || len(resp.Data.InvalidDepartment) > 0 {
+				e := ""
+				if len(resp.Data.InvalidUser) > 0 {
+					e = fmt.Sprintf("invalid user %s, ", resp.Data.InvalidUser)
+				}
+				if len(resp.Data.InvalidDepartment) > 0 {
+					e = fmt.Sprintf("%sinvalid department %s, ", e, resp.Data.InvalidDepartment)
+				}
+
+				return false, utils.Error(strings.TrimSuffix(e, ", "))
+			}
+
+			return false, nil
+		}
+
+		// 9499 means the API call exceeds the limit, need to retry.
+		if resp.Code == ExceedLimitCode {
+			return true, utils.Errorf("%d, %s", resp.Code, resp.Msg)
+		}
+
+		return false, utils.Errorf("%d, %s", resp.Code, resp.Msg)
 	}
 
-	if err := n.addKeywords(message); err != nil {
-		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: add keywords error", "error", err.Error())
-		return err
-	}
-
-	var buf bytes.Buffer
-	if err := utils.JsonEncode(&buf, message); err != nil {
-		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: encode message error", "error", err.Error())
-		return err
-	}
-
-	request, err := http.NewRequest(http.MethodPost, webhook, &buf)
-	if err != nil {
-		return err
-	}
-	request.Header.Set("Content-Type", "application/json; charset=utf-8")
-
-	respBody, err := utils.DoHttpRequest(ctx, nil, request)
-	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: do http error", "error", err)
-		return err
-	}
-
-	var resp Response
-	if err := utils.JsonUnmarshal(respBody, &resp); err != nil {
-		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: decode response body error", "error", err)
-		return err
-	}
-
-	if resp.Code != 0 {
-		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: send message to chatbot error", "code", resp.Code, "message", resp.Msg)
-		return utils.Errorf("%d, %s", resp.Code, resp.Msg)
-	}
-
-	return nil
-}
-
-func (n *Notifier) batchSend(ctx context.Context, message *Message) error {
 	start := time.Now()
 	defer func() {
 		_ = level.Debug(n.logger).Log("msg", "FeishuNotifier: send message", "used", time.Since(start).String(),
@@ -249,61 +369,24 @@ func (n *Notifier) batchSend(ctx context.Context, message *Message) error {
 			"department", utils.ArrayToString(n.receiver.Department, ","))
 	}()
 
-	accessToken, err := n.getToken(ctx, n.receiver)
-	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: get access token error", "error", err.Error())
-		return err
-	}
-
-	message.User = n.receiver.User
-	message.Department = n.receiver.Department
-
-	var buf bytes.Buffer
-	if err := utils.JsonEncode(&buf, message); err != nil {
-		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: encode message error", "error", err.Error())
-		return err
-	}
-
-	request, err := http.NewRequest(http.MethodPost, BatchAPI, &buf)
-	if err != nil {
-		return err
-	}
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-	request.Header.Set("Content-Type", "application/json; charset=utf-8")
-
-	respBody, err := utils.DoHttpRequest(ctx, nil, request)
-	if err != nil {
-		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: do http error", "error", err)
-		return err
-	}
-
-	var resp Response
-	if err := utils.JsonUnmarshal(respBody, &resp); err != nil {
-		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: decode response body error", "error", err)
-		return err
-	}
-
-	if resp.Code == 0 {
-		if len(resp.Data.InvalidUser) > 0 || len(resp.Data.InvalidDepartment) > 0 {
-			_ = level.Error(n.logger).Log("msg", "FeishuNotifier: invalid user or department",
-				"InvalidUser", utils.ArrayToString(resp.Data.InvalidUser, ","),
-				"InvalidDepartment", utils.ArrayToString(resp.Data.InvalidDepartment, ","))
-			e := ""
-			if len(resp.Data.InvalidUser) > 0 {
-				e = fmt.Sprintf("invalid user %s, ", resp.Data.InvalidUser)
-			}
-			if len(resp.Data.InvalidDepartment) > 0 {
-				e = fmt.Sprintf("%sinvalid department %s, ", e, resp.Data.InvalidDepartment)
-			}
-
-			return utils.Error(strings.TrimSuffix(e, ", "))
+	retry := 0
+	// The retries will continue until the send times out and the context is cancelled.
+	// There is only one case that triggers the retry mechanism, that is, the API call exceeds the limit.
+	// The maximum frequency for sending notifications to the same user is 5 times/second.
+	for {
+		needRetry, err := send(retry)
+		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "FeishuNotifier: send notification error", "error", err, "retry", retry)
+		}
+		if needRetry {
+			retry = retry + 1
+			time.Sleep(time.Second)
+			_ = level.Info(n.logger).Log("msg", "FeishuNotifier: retry to send notification", "retry", retry)
+			continue
 		}
 
-		return nil
+		return err
 	}
-
-	_ = level.Error(n.logger).Log("msg", "FeishuNotifier: send message error", "code", resp.Code, "message", resp.Msg)
-	return utils.Errorf("%d, %s", resp.Code, resp.Msg)
 }
 
 func (n *Notifier) getToken(ctx context.Context, r *feishu.Receiver) (string, error) {
@@ -357,36 +440,6 @@ func (n *Notifier) getToken(ctx context.Context, r *feishu.Receiver) (string, er
 	}
 
 	return n.ats.GetToken(ctx, appID+" | "+appSecret, get)
-}
-
-func (n *Notifier) addKeywords(message *Message) error {
-
-	if len(n.receiver.ChatBot.Keywords) == 0 {
-		return nil
-	}
-
-	keywords := fmt.Sprintf("[Keywords] %s", utils.ArrayToString(n.receiver.ChatBot.Keywords, ","))
-
-	if message.MsgType == constants.Text {
-		content := message.Content.Text.(string)
-		message.Content.Text = fmt.Sprintf("%s\n\n%s", content, keywords)
-	} else {
-		post := message.Content.Post.(map[string]interface{})
-		for k, v := range post {
-			p := v.(map[interface{}]interface{})
-			items := p["content"].([]interface{})
-			items = append(items, []interface{}{
-				map[string]string{
-					"tag":  "text",
-					"text": keywords,
-				},
-			})
-			p["content"] = items
-			post[k] = p
-		}
-	}
-
-	return nil
 }
 
 func genSign(secret string, timestamp int64) (string, error) {
