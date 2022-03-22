@@ -31,6 +31,7 @@ const (
 	DefaultPostTemplate = `{{ template "nm.feishu.post" . }}`
 	DefaultTextTemplate = `{{ template "nm.feishu.text" . }}`
 	DefaultExpires      = time.Hour * 2
+	ExceedLimitCode     = 9499
 )
 
 type Notifier struct {
@@ -247,7 +248,8 @@ func (n *Notifier) sendToChatBot(ctx context.Context, content string) error {
 			return false, nil
 		}
 
-		if resp.Code == 9499 {
+		// 9499 means the API call exceeds the limit, need to retry.
+		if resp.Code == ExceedLimitCode {
 			return true, utils.Errorf("%d, %s", resp.Code, resp.Msg)
 		}
 
@@ -353,7 +355,7 @@ func (n *Notifier) batchSend(ctx context.Context, content string) error {
 		}
 
 		// 9499 means the API call exceeds the limit, need to retry.
-		if resp.Code == 9499 {
+		if resp.Code == ExceedLimitCode {
 			return true, utils.Errorf("%d, %s", resp.Code, resp.Msg)
 		}
 
