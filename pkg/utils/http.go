@@ -62,7 +62,7 @@ func DoHttpRequest(ctx context.Context, client *http.Client, request *http.Reque
 		if len(body) > 0 {
 			msg = string(body)
 		}
-		return nil, fmt.Errorf("http error, code: %d, message: %s", resp.StatusCode, msg)
+		return body, fmt.Errorf("%d, %s", resp.StatusCode, msg)
 	}
 
 	return body, nil

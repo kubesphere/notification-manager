@@ -6,7 +6,7 @@
 # Use of this source code is governed by a Apache license
 # that can be found in the LICENSE file.
 
-FROM golang:1.13 as notification-adapter
+FROM golang:1.17 as notification-adapter
 
 COPY / /
 WORKDIR /
