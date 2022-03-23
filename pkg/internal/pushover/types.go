@@ -3,6 +3,7 @@ package pushover
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 
 	"github.com/modern-go/reflect2"
 
@@ -45,6 +46,8 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 		userKeyRegex: regexp.MustCompile(`^[A-Za-z0-9]{30}$`),
 	}
 
+	r.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
+
 	if p.Template != nil {
 		r.TmplName = *p.Template
 	}
@@ -85,7 +88,7 @@ func (r *Receiver) Validate() error {
 func (r *Receiver) Clone() internal.Receiver {
 
 	return &Receiver{
-		Common:       r.Common,
+		Common:       r.Common.Clone(),
 		Profiles:     r.Profiles,
 		userKeyRegex: r.userKeyRegex,
 		Config:       r.Config,
@@ -113,6 +116,8 @@ func NewConfig(obj *v2beta2.Config) internal.Config {
 		Token: obj.Spec.Pushover.PushoverTokenSecret,
 	}
 
+	c.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
+
 	return c
 }
 
@@ -128,7 +133,7 @@ func (c *Config) Validate() error {
 func (c *Config) Clone() internal.Config {
 
 	return &Config{
-		Common: c.Common,
+		Common: c.Common.Clone(),
 		Token:  c.Token,
 	}
 }

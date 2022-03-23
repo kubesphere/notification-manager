@@ -2,6 +2,7 @@ package dingtalk
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/kubesphere/notification-manager/pkg/constants"
 	"github.com/kubesphere/notification-manager/pkg/internal"
@@ -50,6 +51,8 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 			},
 		},
 	}
+
+	r.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
 
 	if dingtalk.Template != nil {
 		r.TmplName = *dingtalk.Template
@@ -125,7 +128,7 @@ func (r *Receiver) Validate() error {
 func (r *Receiver) Clone() internal.Receiver {
 
 	return &Receiver{
-		Common:  r.Common,
+		Common:  r.Common.Clone(),
 		ChatIDs: r.ChatIDs,
 		ChatBot: r.ChatBot,
 		Config:  r.Config,
@@ -153,6 +156,8 @@ func NewConfig(obj *v2beta2.Config) internal.Config {
 			Labels: obj.Labels,
 		},
 	}
+
+	c.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
 
 	if dingtalk.Conversation != nil {
 		c.AppKey = dingtalk.Conversation.AppKey
@@ -182,7 +187,7 @@ func (c *Config) Validate() error {
 func (c *Config) Clone() internal.Config {
 
 	return &Config{
-		Common:    c.Common,
+		Common:    c.Common.Clone(),
 		AppKey:    c.AppKey,
 		AppSecret: c.AppSecret,
 	}

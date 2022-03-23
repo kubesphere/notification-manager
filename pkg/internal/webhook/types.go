@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/constants"
@@ -35,6 +36,8 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 		},
 		HttpConfig: w.HTTPConfig,
 	}
+
+	r.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
 
 	if w.Template != nil {
 		r.TmplName = *w.Template
@@ -78,7 +81,7 @@ func (r *Receiver) Validate() error {
 func (r *Receiver) Clone() internal.Receiver {
 
 	return &Receiver{
-		Common:     r.Common,
+		Common:     r.Common.Clone(),
 		URL:        r.URL,
 		HttpConfig: r.HttpConfig,
 		Config:     r.Config,

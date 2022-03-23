@@ -21,19 +21,24 @@ type Template struct {
 }
 
 type Common struct {
-	Name           string                `json:"name,omitempty"`
-	Type           string                `json:"type,omitempty"`
-	TenantID       string                `json:"tenantID,omitempty"`
-	Labels         map[string]string     `json:"labels,omitempty"`
-	Enable         *bool                 `json:"enable,omitempty"`
-	AlertSelector  *metav1.LabelSelector `json:"alertSelector,omitempty"`
-	ConfigSelector *metav1.LabelSelector `json:"configSelector,omitempty"`
-	Hash           string                `json:"hash,omitempty"`
-	Template       `json:"template,omitempty"`
+	Name            string                `json:"name,omitempty"`
+	ResourceVersion uint64                `json:"resourceVersion,omitempty"`
+	Type            string                `json:"type,omitempty"`
+	TenantID        string                `json:"tenantID,omitempty"`
+	Labels          map[string]string     `json:"labels,omitempty"`
+	Enable          *bool                 `json:"enable,omitempty"`
+	AlertSelector   *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	ConfigSelector  *metav1.LabelSelector `json:"configSelector,omitempty"`
+	Hash            string                `json:"hash,omitempty"`
+	Template        `json:"template,omitempty"`
 }
 
 func (c *Common) GetName() string {
 	return c.Name
+}
+
+func (c *Common) GetResourceVersion() uint64 {
+	return c.ResourceVersion
 }
 
 func (c *Common) GetTenantID() string {
@@ -83,6 +88,26 @@ func (c *Common) SetHash(h string) {
 
 func (c *Common) GetHash() string {
 	return c.Hash
+}
+
+func (c *Common) Clone() *Common {
+
+	return &Common{
+		Name:           c.Name,
+		Type:           c.Type,
+		TenantID:       c.TenantID,
+		Labels:         c.Labels,
+		Enable:         c.Enable,
+		AlertSelector:  c.AlertSelector,
+		ConfigSelector: c.ConfigSelector,
+		Hash:           c.Hash,
+		Template: Template{
+			TmplName:      c.TmplName,
+			TitleTmplName: c.TitleTmplName,
+			TmplType:      c.TmplType,
+			TmplText:      c.TmplText,
+		},
+	}
 }
 
 func ValidateCredential(c *v2beta2.Credential) error {

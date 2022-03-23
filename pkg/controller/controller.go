@@ -6,6 +6,8 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -202,13 +204,13 @@ func (c *Controller) Run() error {
 
 	nmInf.AddEventHandler(kcache.ResourceEventHandlerFuncs{
 		AddFunc: func(Obj interface{}) {
-			c.onNmChange(Obj, opAdd)
+			c.onResourceChange(Obj, opAdd, c.nmChange)
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			c.onNmChange(newObj, opAdd)
+			c.onResourceChange(newObj, opUpdate, c.nmChange)
 		},
 		DeleteFunc: func(Obj interface{}) {
-			c.onNmChange(Obj, opDel)
+			c.onResourceChange(Obj, opDel, c.nmChange)
 		},
 	})
 
@@ -249,95 +251,6 @@ func (c *Controller) Run() error {
 	return c.ctx.Err()
 }
 
-func (c *Controller) onNmChange(obj interface{}, op string) {
-	c.onResourceChange(obj, op, c.nmChange)
-
-	if op == opAdd {
-		c.updateReloadTimestamp()
-	}
-}
-
-func (c *Controller) nmChange(t *task) {
-	defer close(t.done)
-
-	if t.op == opAdd {
-		spec := t.obj.(*v2beta2.NotificationManager).Spec
-		c.tenantKey = spec.Receivers.TenantKey
-		c.defaultConfigSelector = spec.DefaultConfigSelector
-		c.tenantReceiverSelector = spec.Receivers.TenantReceiverSelector
-		c.globalReceiverSelector = spec.Receivers.GlobalReceiverSelector
-		c.ReceiverOpts = spec.Receivers.Options
-		c.tenantSidecar = false
-		if spec.Sidecars != nil {
-			if sidecar, ok := spec.Sidecars[v2beta2.Tenant]; ok && sidecar != nil {
-				c.tenantSidecar = true
-			}
-		}
-		c.history = spec.History
-
-		c.groupLabels = spec.GroupLabels
-		c.batchMaxSize = spec.BatchMaxSize
-		c.batchMaxWait = spec.BatchMaxWait
-
-		c.routePolicy = spec.RoutePolicy
-
-		c.template = spec.Template
-
-		c.nmAdd = true
-	} else {
-		c.tenantKey = defaultTenantKey
-		c.globalReceiverSelector = nil
-		c.tenantReceiverSelector = nil
-		c.defaultConfigSelector = nil
-		c.ReceiverOpts = nil
-	}
-}
-
-func (c *Controller) updateReloadTimestamp() {
-
-	receiverList := v2beta2.ReceiverList{}
-	if err := c.client.List(c.ctx, &receiverList, client.InNamespace("")); err != nil {
-		_ = level.Error(c.logger).Log("msg", "Failed to list receiver", "err", err)
-		return
-	}
-
-	configList := v2beta2.ConfigList{}
-	if err := c.client.List(c.ctx, &configList, client.InNamespace("")); err != nil {
-		_ = level.Error(c.logger).Log("msg", "Failed to list config", "err", err)
-		return
-	}
-
-	for _, obj := range receiverList.Items {
-
-		annotations := obj.Annotations
-		if annotations == nil {
-			annotations = make(map[string]string)
-		}
-		annotations["reloadtimestamp"] = time.Now().String()
-		obj.SetAnnotations(annotations)
-		err := c.client.Update(c.ctx, &obj)
-		if err != nil {
-			_ = level.Error(c.logger).Log("msg", "update receiver error", "name", obj.GetName(), "err", err)
-			continue
-		}
-	}
-
-	for _, obj := range configList.Items {
-
-		annotations := obj.Annotations
-		if annotations == nil {
-			annotations = make(map[string]string)
-		}
-		annotations["reloadtimestamp"] = time.Now().String()
-		obj.SetAnnotations(annotations)
-		err := c.client.Update(c.ctx, &obj)
-		if err != nil {
-			_ = level.Error(c.logger).Log("msg", "update config error", "name", obj.GetName(), "err", err)
-			continue
-		}
-	}
-}
-
 func (c *Controller) onResourceChange(obj interface{}, op string, run func(t *task)) {
 	t := &task{
 		op:   op,
@@ -347,7 +260,125 @@ func (c *Controller) onResourceChange(obj interface{}, op string, run func(t *ta
 	}
 
 	c.ch <- t
-	<-t.done
+}
+
+func (c *Controller) nmChange(t *task) {
+	defer func() {
+		_ = level.Info(c.logger).Log("msg", "notification manager changed", "op", t.op)
+		close(t.done)
+	}()
+
+	if t.op == opDel {
+		c.tenantKey = defaultTenantKey
+		c.globalReceiverSelector = nil
+		c.tenantReceiverSelector = nil
+		c.defaultConfigSelector = nil
+		c.ReceiverOpts = nil
+		c.nmAdd = false
+
+		return
+	}
+
+	spec := t.obj.(*v2beta2.NotificationManager).Spec
+	needToReloadConfig := false
+	needToReloadReceiver := false
+	if c.tenantKey != spec.Receivers.TenantKey {
+		c.tenantKey = spec.Receivers.TenantKey
+		needToReloadConfig = true
+		needToReloadReceiver = true
+	}
+
+	if !reflect.DeepEqual(c.defaultConfigSelector, spec.DefaultConfigSelector) {
+		c.defaultConfigSelector = spec.DefaultConfigSelector
+		needToReloadConfig = true
+	}
+
+	if !reflect.DeepEqual(c.tenantReceiverSelector, spec.Receivers.TenantReceiverSelector) {
+		c.tenantReceiverSelector = spec.Receivers.TenantReceiverSelector
+		needToReloadConfig = true
+		needToReloadReceiver = true
+	}
+
+	if !reflect.DeepEqual(c.globalReceiverSelector, spec.Receivers.GlobalReceiverSelector) {
+		c.globalReceiverSelector = spec.Receivers.GlobalReceiverSelector
+		needToReloadReceiver = true
+	}
+
+	c.ReceiverOpts = spec.Receivers.Options
+	c.tenantSidecar = false
+	if spec.Sidecars != nil {
+		if sidecar, ok := spec.Sidecars[v2beta2.Tenant]; ok && sidecar != nil {
+			c.tenantSidecar = true
+		}
+	}
+
+	c.history = spec.History
+	c.groupLabels = spec.GroupLabels
+	c.batchMaxSize = spec.BatchMaxSize
+	c.batchMaxWait = spec.BatchMaxWait
+	c.routePolicy = spec.RoutePolicy
+	c.template = spec.Template
+	c.nmAdd = true
+
+	c.reload(needToReloadConfig, needToReloadReceiver)
+}
+
+// Reload all configs and receivers after notification manager changed.
+func (c *Controller) reload(needToReloadConfig, needToReloadReceiver bool) {
+
+	go func() {
+		// Infinite loop until reload succeeds
+		for {
+			if needToReloadConfig {
+				configList := v2beta2.ConfigList{}
+				if err := c.client.List(c.ctx, &configList); err != nil {
+					_ = level.Error(c.logger).Log("msg", "Failed to list config", "err", err)
+					time.Sleep(time.Second)
+					continue
+				}
+
+				for _, config := range configList.Items {
+					nc := config
+					t := &task{
+						op:   opUpdate,
+						obj:  &nc,
+						run:  c.configChanged,
+						done: make(chan interface{}, 1),
+					}
+
+					c.ch <- t
+				}
+
+				needToReloadConfig = false
+				_ = level.Info(c.logger).Log("msg", "reload configs")
+			}
+
+			if needToReloadReceiver {
+				receiverList := v2beta2.ReceiverList{}
+				if err := c.client.List(c.ctx, &receiverList); err != nil {
+					_ = level.Error(c.logger).Log("msg", "Failed to list receiver", "err", err)
+					time.Sleep(time.Second)
+					continue
+				}
+
+				for _, receiver := range receiverList.Items {
+					nr := receiver
+					t := &task{
+						op:   opUpdate,
+						obj:  &nr,
+						run:  c.receiverChanged,
+						done: make(chan interface{}, 1),
+					}
+
+					c.ch <- t
+				}
+				needToReloadReceiver = false
+				_ = level.Info(c.logger).Log("msg", "reload receivers")
+			}
+
+			return
+		}
+	}()
 }
 
 func (c *Controller) configChanged(t *task) {
@@ -360,42 +391,66 @@ func (c *Controller) configChanged(t *task) {
 
 	config, ok := t.obj.(*v2beta2.Config)
 	if !ok {
+		_ = level.Warn(c.logger).Log("msg", "not a config object")
 		return
 	}
 
-	tenantID := c.getTenantID(config.Labels)
-	if len(tenantID) == 0 {
+	newResourceVersion, _ := strconv.ParseUint(config.ResourceVersion, 10, 64)
+	newTenantID := c.getTenantID(config.Labels)
+	if len(newTenantID) == 0 {
 		_ = level.Warn(c.logger).Log("msg", "Ignore config because of empty tenantID", "name", config.Name, "tenantKey", c.tenantKey)
 		return
 	}
 
-	// If operation is `update` or `delete`, it needs to delete the old config.
-	if t.op == opUpdate || t.op == opDel {
-		suffix := fmt.Sprintf("/%s", config.Name)
-		for id := range c.configs {
-			found := false
-			for k := range c.configs[id] {
-				if strings.HasSuffix(k, suffix) {
+	oldTenantID := ""
+	oldResourceVersion := uint64(0)
+	suffix := fmt.Sprintf("/%s", config.Name)
+	for id := range c.configs {
+		found := false
+		for k := range c.configs[id] {
+			if strings.HasSuffix(k, suffix) {
+				oldTenantID = id
+				oldResourceVersion = c.configs[id][k].GetResourceVersion()
+				if t.op == opDel {
 					delete(c.configs[id], k)
-					found = true
 				}
+				found = true
 			}
+		}
 
-			if found {
-				break
-			}
+		if found {
+			break
 		}
 	}
 
-	if t.op == opAdd || t.op == opUpdate {
-		configs := NewConfigs(config)
-		if _, ok := c.configs[tenantID]; !ok {
-			c.configs[tenantID] = make(map[string]internal.Config)
+	if t.op == opDel {
+		return
+	}
+
+	if newResourceVersion < oldResourceVersion {
+		_ = level.Info(c.logger).Log("msg", "A newer config had added", "op", t.op, "name", config.Name)
+		return
+	}
+
+	if newResourceVersion == oldResourceVersion && newTenantID == oldTenantID {
+		_ = level.Debug(c.logger).Log("msg", "Config has no change", "op", t.op, "name", config.Name)
+		return
+	}
+
+	// Delete the old config.
+	if t.op == opUpdate {
+		for k := range c.configs[oldTenantID] {
+			delete(c.configs[oldTenantID], k)
 		}
-		for k, v := range configs {
-			if !reflect2.IsNil(v) {
-				c.configs[tenantID][k] = v
-			}
+	}
+
+	configs := NewConfigs(config)
+	if _, ok := c.configs[newTenantID]; !ok {
+		c.configs[newTenantID] = make(map[string]internal.Config)
+	}
+	for k, v := range configs {
+		if !reflect2.IsNil(v) {
+			c.configs[newTenantID][k] = v
 		}
 	}
 
@@ -411,42 +466,66 @@ func (c *Controller) receiverChanged(t *task) {
 
 	receiver, ok := t.obj.(*v2beta2.Receiver)
 	if !ok {
+		_ = level.Warn(c.logger).Log("msg", "not a config object")
 		return
 	}
 
-	tenantID := c.getTenantID(receiver.Labels)
-	if len(tenantID) == 0 {
+	newResourceVersion, _ := strconv.ParseUint(receiver.ResourceVersion, 10, 64)
+	newTenantID := c.getTenantID(receiver.Labels)
+	if len(newTenantID) == 0 {
 		_ = level.Warn(c.logger).Log("msg", "Ignore receiver because of empty tenantID", "name", receiver.Name, "tenantKey", c.tenantKey)
 		return
 	}
 
-	// If operation is `update` or `delete`, it needs to delete the old receivers.
-	if t.op == opUpdate || t.op == opDel {
-		suffix := fmt.Sprintf("/%s", receiver.Name)
-		for id := range c.receivers {
-			found := false
-			for k := range c.receivers[id] {
-				if strings.HasSuffix(k, suffix) {
+	oldTenantID := ""
+	oldResourceVersion := uint64(0)
+	suffix := fmt.Sprintf("/%s", receiver.Name)
+	for id := range c.receivers {
+		found := false
+		for k := range c.receivers[id] {
+			if strings.HasSuffix(k, suffix) {
+				if t.op == opDel {
 					delete(c.receivers[id], k)
-					found = true
 				}
+				oldTenantID = id
+				oldResourceVersion = c.receivers[id][k].GetResourceVersion()
+				found = true
 			}
+		}
 
-			if found {
-				break
-			}
+		if found {
+			break
 		}
 	}
 
-	if t.op == opAdd || t.op == opUpdate {
-		receivers := NewReceivers(tenantID, receiver)
-		if _, ok := c.receivers[tenantID]; !ok {
-			c.receivers[tenantID] = make(map[string]internal.Receiver)
+	if t.op == opDel {
+		return
+	}
+
+	if newResourceVersion < oldResourceVersion {
+		_ = level.Info(c.logger).Log("msg", "A newer receiver had added", "op", t.op, "name", receiver.Name)
+		return
+	}
+
+	if newResourceVersion == oldResourceVersion && newTenantID == oldTenantID {
+		_ = level.Debug(c.logger).Log("msg", "Receiver has no change", "op", t.op, "name", receiver.Name)
+		return
+	}
+
+	// Delete the old receiver.
+	if t.op == opUpdate {
+		for k := range c.receivers[oldTenantID] {
+			delete(c.receivers[oldTenantID], k)
 		}
-		for k, v := range receivers {
-			if !reflect2.IsNil(v) {
-				c.receivers[tenantID][k] = v
-			}
+	}
+
+	receivers := NewReceivers(newTenantID, receiver)
+	if _, ok := c.receivers[newTenantID]; !ok {
+		c.receivers[newTenantID] = make(map[string]internal.Receiver)
+	}
+	for k, v := range receivers {
+		if !reflect2.IsNil(v) {
+			c.receivers[newTenantID][k] = v
 		}
 	}
 
@@ -873,10 +952,10 @@ func (c *Controller) GetActiveSilences(ctx context.Context, tenant string) ([]v2
 	var selector *metav1.LabelSelector
 	// Get global silence.
 	if utils.StringIsNil(tenant) {
-		selector = c.globalReceiverSelector
+		selector = c.globalReceiverSelector.DeepCopy()
 	} else {
 		// Get tenant silence.
-		selector = c.tenantReceiverSelector
+		selector = c.tenantReceiverSelector.DeepCopy()
 		selector.MatchLabels[c.tenantKey] = tenant
 	}
 

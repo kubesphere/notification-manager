@@ -2,6 +2,7 @@ package feishu
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/constants"
@@ -44,6 +45,8 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 		User:       f.User,
 		Department: f.Department,
 	}
+
+	r.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
 
 	if f.Template != nil {
 		r.TmplName = *f.Template
@@ -94,7 +97,7 @@ func (r *Receiver) Validate() error {
 func (r *Receiver) Clone() internal.Receiver {
 
 	return &Receiver{
-		Common:     r.Common,
+		Common:     r.Common.Clone(),
 		Config:     r.Config,
 		User:       r.User,
 		Department: r.Department,
@@ -124,6 +127,8 @@ func NewConfig(obj *v2beta2.Config) internal.Config {
 		AppSecret: f.AppSecret,
 	}
 
+	c.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
+
 	return c
 }
 
@@ -143,7 +148,7 @@ func (c *Config) Validate() error {
 func (c *Config) Clone() internal.Config {
 
 	return &Config{
-		Common:    c.Common,
+		Common:    c.Common.Clone(),
 		AppSecret: c.AppSecret,
 		AppID:     c.AppID,
 	}

@@ -2,6 +2,7 @@ package slack
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/modern-go/reflect2"
 
@@ -38,6 +39,8 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 		Channels: s.Channels,
 	}
 
+	r.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
+
 	if s.Template != nil {
 		r.TmplName = *s.Template
 	}
@@ -71,7 +74,7 @@ func (r *Receiver) Validate() error {
 func (r *Receiver) Clone() internal.Receiver {
 
 	return &Receiver{
-		Common:   r.Common,
+		Common:   r.Common.Clone(),
 		Channels: r.Channels,
 		Config:   r.Config,
 	}
@@ -97,6 +100,8 @@ func NewConfig(obj *v2beta2.Config) internal.Config {
 		Token: obj.Spec.Slack.SlackTokenSecret,
 	}
 
+	c.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
+
 	return c
 }
 
@@ -112,7 +117,7 @@ func (c *Config) Validate() error {
 func (c *Config) Clone() internal.Config {
 
 	return &Config{
-		Common: c.Common,
+		Common: c.Common.Clone(),
 		Token:  c.Token,
 	}
 }
