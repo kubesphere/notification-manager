@@ -5,6 +5,7 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 type Receiver interface {
 	GetTenantID() string
 	GetName() string
+	GetResourceVersion() uint64
 	Enabled() bool
 	GetType() string
 	GetLabels() map[string]string
@@ -18,6 +19,7 @@ type Receiver interface {
 }
 
 type Config interface {
+	GetResourceVersion() uint64
 	GetLabels() map[string]string
 	GetPriority() int
 	Validate() error

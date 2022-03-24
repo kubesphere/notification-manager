@@ -11,7 +11,7 @@ data:
     {{ end }}
     {{ end }}{{- end }}
 
-    {{ define "nm.default.markdown" }}{{ range . }}### {{ template "nm.default.message" . }}
+    {{ define "nm.default.markdown" }}{{ range .Alerts }}### {{ template "nm.default.message" . }}
     {{ range .Labels.SortedPairs }}- {{ .Name | translate }}: {{ .Value }}
     {{ end }}
     {{ end }}{{- end }}

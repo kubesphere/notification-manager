@@ -2,6 +2,7 @@ package wechat
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/constants"
@@ -39,6 +40,8 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 		ToParty: w.ToParty,
 		ToTag:   w.ToTag,
 	}
+
+	r.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
 
 	if w.Template != nil {
 		r.TmplName = *w.Template
@@ -80,13 +83,16 @@ func (r *Receiver) Validate() error {
 
 func (r *Receiver) Clone() internal.Receiver {
 
-	return &Receiver{
-		Common:  r.Common,
-		Config:  r.Config,
-		ToUser:  r.ToUser,
-		ToParty: r.ToParty,
-		ToTag:   r.ToTag,
+	out := &Receiver{
+		Common: r.Common.Clone(),
+		Config: r.Config,
 	}
+
+	out.ToParty = append(out.ToParty, r.ToParty...)
+	out.ToTag = append(out.ToTag, r.ToTag...)
+	out.ToUser = append(out.ToUser, r.ToUser...)
+
+	return out
 }
 
 type Config struct {
@@ -114,6 +120,8 @@ func NewConfig(obj *v2beta2.Config) internal.Config {
 		APISecret: w.WechatApiSecret,
 	}
 
+	c.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
+
 	return c
 }
 
@@ -137,7 +145,7 @@ func (c *Config) Validate() error {
 func (c *Config) Clone() internal.Config {
 
 	return &Config{
-		Common:    c.Common,
+		Common:    c.Common.Clone(),
 		APISecret: c.APISecret,
 		CorpID:    c.CorpID,
 		APIURL:    c.APIURL,

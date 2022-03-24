@@ -2,6 +2,7 @@ package email
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/constants"
@@ -38,6 +39,8 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 		},
 		To: e.To,
 	}
+
+	r.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
 
 	if e.Template != nil {
 		r.TmplName = *e.Template
@@ -84,7 +87,7 @@ func (r *Receiver) Validate() error {
 func (r *Receiver) Clone() internal.Receiver {
 
 	return &Receiver{
-		Common: r.Common,
+		Common: r.Common.Clone(),
 		To:     r.To,
 		Config: r.Config,
 	}
@@ -121,6 +124,8 @@ func NewConfig(obj *v2beta2.Config) internal.Config {
 		AuthSecret:   e.AuthSecret,
 	}
 
+	c.ResourceVersion, _ = strconv.ParseUint(obj.ResourceVersion, 10, 64)
+
 	if e.Hello != nil {
 		c.Hello = *e.Hello
 	}
@@ -151,7 +156,7 @@ func (c *Config) Validate() error {
 func (c *Config) Clone() internal.Config {
 
 	return &Config{
-		Common:       c.Common,
+		Common:       c.Common.Clone(),
 		From:         c.From,
 		SmartHost:    c.SmartHost,
 		Hello:        c.Hello,
