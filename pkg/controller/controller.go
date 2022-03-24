@@ -411,10 +411,12 @@ func (c *Controller) configChanged(t *task) {
 			if strings.HasSuffix(k, suffix) {
 				oldTenantID = id
 				oldResourceVersion = c.configs[id][k].GetResourceVersion()
+				found = true
 				if t.op == opDel {
 					delete(c.configs[id], k)
+				} else {
+					break
 				}
-				found = true
 			}
 		}
 
@@ -440,7 +442,9 @@ func (c *Controller) configChanged(t *task) {
 	// Delete the old config.
 	if t.op == opUpdate {
 		for k := range c.configs[oldTenantID] {
-			delete(c.configs[oldTenantID], k)
+			if strings.HasSuffix(k, suffix) {
+				delete(c.configs[oldTenantID], k)
+			}
 		}
 	}
 
@@ -484,12 +488,14 @@ func (c *Controller) receiverChanged(t *task) {
 		found := false
 		for k := range c.receivers[id] {
 			if strings.HasSuffix(k, suffix) {
-				if t.op == opDel {
-					delete(c.receivers[id], k)
-				}
 				oldTenantID = id
 				oldResourceVersion = c.receivers[id][k].GetResourceVersion()
 				found = true
+				if t.op == opDel {
+					delete(c.receivers[id], k)
+				} else {
+					break
+				}
 			}
 		}
 
@@ -515,7 +521,9 @@ func (c *Controller) receiverChanged(t *task) {
 	// Delete the old receiver.
 	if t.op == opUpdate {
 		for k := range c.receivers[oldTenantID] {
-			delete(c.receivers[oldTenantID], k)
+			if strings.HasSuffix(k, suffix) {
+				delete(c.receivers[oldTenantID], k)
+			}
 		}
 	}
 
