@@ -26,7 +26,7 @@ import (
 
 // SilenceSpec defines the desired state of Silence
 type SilenceSpec struct {
-	// whether the receiver is enabled
+	// whether the silence enabled
 	Enabled *bool                 `json:"enabled,omitempty"`
 	Matcher *metav1.LabelSelector `json:"matcher"`
 	// The start time during which the silence is active.
@@ -105,6 +105,6 @@ func (s *Silence) IsActive() bool {
 
 		return false
 	} else {
-		return false
+		return true
 	}
 }

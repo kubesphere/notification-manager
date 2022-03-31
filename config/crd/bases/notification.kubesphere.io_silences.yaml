@@ -43,7 +43,7 @@ spec:
                   not set, the silence will be active ever.
                 type: string
               enabled:
-                description: whether the receiver is enabled
+                description: whether the silence enabled
                 type: boolean
               matcher:
                 description: A label selector is a label query over a set of resources.
