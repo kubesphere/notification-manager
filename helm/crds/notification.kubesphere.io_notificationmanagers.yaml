@@ -3425,7 +3425,7 @@ spec:
                       dingtalk:
                         properties:
                           chatBotThrottle:
-                            description: The flow control fo chatbot.
+                            description: The flow control for chatbot.
                             properties:
                               maxWaitTime:
                                 description: The maximum tolerable waiting time when
@@ -3456,7 +3456,7 @@ spec:
                               to conversation in a request.
                             type: integer
                           conversationThrottle:
-                            description: The flow control fo conversation.
+                            description: The flow control for conversation.
                             properties:
                               maxWaitTime:
                                 description: The maximum tolerable waiting time when
@@ -3574,6 +3574,10 @@ spec:
                             description: The name of the template to generate pushover
                               message. If the global template is not set, it will
                               use default.
+                            type: string
+                          titleTemplate:
+                            description: The name of the template to generate message
+                              title
                             type: string
                         type: object
                       slack:

@@ -261,9 +261,9 @@ type DingTalkOptions struct {
 	ConversationMessageMaxSize int `json:"conversationMessageMaxSize,omitempty"`
 	// The maximum message size that can be sent to chatbot in a request.
 	ChatbotMessageMaxSize int `json:"chatbotMessageMaxSize,omitempty"`
-	// The flow control fo chatbot.
+	// The flow control for chatbot.
 	ChatBotThrottle *Throttle `json:"chatBotThrottle,omitempty"`
-	// The flow control fo conversation.
+	// The flow control for conversation.
 	ConversationThrottle *Throttle `json:"conversationThrottle,omitempty"`
 }
 
@@ -281,6 +281,8 @@ type PushoverOptions struct {
 	// The name of the template to generate pushover message.
 	// If the global template is not set, it will use default.
 	Template string `json:"template,omitempty"`
+	// The name of the template to generate message title
+	TitleTemplate string `json:"titleTemplate,omitempty"`
 }
 
 type FeishuOptions struct {

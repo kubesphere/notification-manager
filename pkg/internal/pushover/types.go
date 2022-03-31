@@ -52,6 +52,10 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 		r.TmplName = *p.Template
 	}
 
+	if p.TitleTemplate != nil {
+		r.TitleTmplName = *p.TitleTemplate
+	}
+
 	return r
 }
 

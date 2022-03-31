@@ -22,10 +22,11 @@ import (
 )
 
 const (
-	DefaultSendTimeout = time.Second * 3
-	URL                = "https://api.pushover.net/1/messages.json"
-	DefaultTemplate    = `{{ template "nm.default.text" . }}`
-	MessageMaxLength   = 1024
+	DefaultSendTimeout   = time.Second * 3
+	URL                  = "https://api.pushover.net/1/messages.json"
+	DefaultTemplate      = `{{ template "nm.default.text" . }}`
+	DefaultTitleTemplate = `{{ template "nm.default.subject" . }}`
+	MessageMaxLength     = 1024
 )
 
 var client = &http.Client{Timeout: DefaultSendTimeout, Transport: &http.Transport{MaxConnsPerHost: 2}}
@@ -74,6 +75,7 @@ func NewPushoverNotifier(logger log.Logger, receiver internal.Receiver, notifier
 
 	opts := notifierCtl.ReceiverOpts
 	tmplName := DefaultTemplate
+	titleTmplName := DefaultTitleTemplate
 	if opts != nil && opts.Global != nil && !utils.StringIsNil(opts.Global.Template) {
 		tmplName = opts.Global.Template
 	}
@@ -88,6 +90,10 @@ func NewPushoverNotifier(logger log.Logger, receiver internal.Receiver, notifier
 		if !utils.StringIsNil(opts.Pushover.Template) {
 			tmplName = opts.Pushover.Template
 		}
+
+		if !utils.StringIsNil(opts.Pushover.TitleTemplate) {
+			titleTmplName = opts.Pushover.TitleTemplate
+		}
 	}
 
 	n.receiver = receiver.(*pushover.Receiver)
@@ -98,6 +104,10 @@ func NewPushoverNotifier(logger log.Logger, receiver internal.Receiver, notifier
 
 	if utils.StringIsNil(n.receiver.TmplName) {
 		n.receiver.TmplName = tmplName
+	}
+
+	if utils.StringIsNil(n.receiver.TitleTmplName) {
+		n.receiver.TitleTmplName = titleTmplName
 	}
 
 	var err error
@@ -125,7 +135,7 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 		return err
 	}
 
-	send := func(profile *v2beta2.PushoverUserProfile, message string) error {
+	send := func(profile *v2beta2.PushoverUserProfile, title, message string) error {
 
 		if profile.UserKey == nil || utils.StringIsNil(*profile.UserKey) {
 			_ = level.Error(n.logger).Log("msg", "PushoverNotifier: invalid userKey")
@@ -141,14 +151,13 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 		pReq := &pushoverRequest{
 			Token:   token,
 			UserKey: userKey,
+			Title:   title,
 			Message: message,
 		}
 		if len(profile.Devices) > 0 {
 			pReq.Device = strings.Join(profile.Devices, ",")
 		}
-		if profile.Title != nil {
-			pReq.Title = *profile.Title
-		}
+
 		if profile.Sound != nil {
 			pReq.Sound = *profile.Sound
 		}
@@ -210,6 +219,12 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 		return nil
 	}
 
+	title, err := n.tmpl.Text(n.receiver.TitleTmplName, data)
+	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "PushoverNotifier: generate title error", "error", err.Error())
+		return err
+	}
+
 	// split new data along with its Alerts to ensure each message is small enough to fit the Pushover's message length limit
 	messages, _, err := n.tmpl.Split(data, MessageMaxLength, n.receiver.TmplName, "", n.logger)
 	if err != nil {
@@ -223,7 +238,7 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 		for _, p := range n.receiver.Profiles {
 			profile := p
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- send(profile, message)
+				stopCh <- send(profile, title, message)
 			})
 		}
 	}

@@ -19,7 +19,6 @@ package v2beta2
 import (
 	"fmt"
 	"regexp"
-	"unicode/utf8"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -275,15 +274,7 @@ func (r *Receiver) validateReceiver() error {
 							"length must less than 25 characters and can only contain character set [A-Za-z0-9_-]"))
 					}
 				}
-				// Validate Title
-				if profile.Title != nil {
-					if l := utf8.RuneCountInString(*profile.Title); l > 250 {
-						allErrs = append(allErrs,
-							field.TooLong(field.NewPath("spec", "pushover", fmt.Sprintf("profiles[%d]", i), "title"),
-								*profile.Title,
-								250))
-					}
-				}
+
 				// Validate Sound
 				if profile.Sound != nil {
 					flag := false
