@@ -22,7 +22,7 @@ limitations under the License.
 package v2beta2
 
 import (
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -1185,6 +1185,11 @@ func (in *PushoverReceiver) DeepCopyInto(out *PushoverReceiver) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.TitleTemplate != nil {
+		in, out := &in.TitleTemplate, &out.TitleTemplate
+		*out = new(string)
+		**out = **in
+	}
 	if in.Profiles != nil {
 		in, out := &in.Profiles, &out.Profiles
 		*out = make([]*PushoverUserProfile, len(*in))
@@ -1234,11 +1239,6 @@ func (in *PushoverUserProfile) DeepCopyInto(out *PushoverUserProfile) {
 	if in.Sound != nil {
 		in, out := &in.Sound, &out.Sound
 		*out = new(string)
-		**out = **in
-	}
-	if in.TmplText != nil {
-		in, out := &in.TmplText, &out.TmplText
-		*out = new(ConfigmapKeySelector)
 		**out = **in
 	}
 }
