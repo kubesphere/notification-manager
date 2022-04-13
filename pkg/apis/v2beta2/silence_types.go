@@ -26,7 +26,7 @@ import (
 
 // SilenceSpec defines the desired state of Silence
 type SilenceSpec struct {
-	// whether the silence enabled
+	// whether the silence is enabled
 	Enabled *bool                 `json:"enabled,omitempty"`
 	Matcher *metav1.LabelSelector `json:"matcher"`
 	// The start time during which the silence is active.

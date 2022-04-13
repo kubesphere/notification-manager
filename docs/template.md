@@ -2,7 +2,7 @@
 
 ## Overview
 
-The notifications sent to receivers constructed via templates. The Notification Manager comes with default templates, but they can also customize.
+The notifications are sent to receivers constructed via templates. The Notification Manager comes with default templates which also support customization.
 User can define global template and define template for receiver.
 
 ## Add global template
@@ -136,7 +136,7 @@ The default template of receivers.
 
 ## Customize template
 
-The notification templates based on the [Go templating](https://pkg.go.dev/text/template) system.
+The notification template is based on the [Go templating](https://pkg.go.dev/text/template) system.
 So we need to know what is the data structure passed to notification template firstly.
 
 ### Data
@@ -194,7 +194,7 @@ So we need to know what is the data structure passed to notification template fi
 
 The `Data` type exposes a function for getting status.
 
-- `Status` returns the status of `Alerts`. if there has a firing alert in `Alerts`, it returns `firing`, else return `resolved`.
+- `Status` returns the status of `Alerts`. if there has a firing alert in `Alerts`, it returns `firing`, else it returns `resolved`.
 
 The `Alerts` type exposes functions for filtering alerts:
 
@@ -270,7 +270,7 @@ In addition to the [built-in functions](https://pkg.go.dev/text/template#hdr-Fun
 
 ## Multilingual support
 
-Notification manager supports custom the notification language.
+Notification manager supports language customization.
 
 ```yaml
 apiVersion: notification.kubesphere.io/v2beta2
@@ -284,7 +284,7 @@ spec:
       - name: zh-cn
         namespace: kubesphere-monitoring-system
 ```
-The `languagePack` is a list of `ConfigmapKeySelector`. The configmap likes this.
+The `languagePack` is a list of `ConfigmapKeySelector`. The configmap is like this.
 
 ```yaml
 apiVersion: v1

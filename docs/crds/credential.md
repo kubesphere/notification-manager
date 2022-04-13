@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `credential` used to store user credentials, like password, token, app secret, etc.
+The `credential` is used to store user credentials, like password, token, app secret, etc.
 
 ```yaml
       password:
@@ -22,10 +22,10 @@ A `credential` allows the user to define:
 
 - `value` - The value saved in plaintext, not recommended for storing confidential information.
 - `valueFrom` - The object used to store user credentials, now only support `secret`.
-- `valueFrom.secretKeyRef` - The secret that used to store user credentials.
-- `valueFrom.secretKeyRef.name` - The name of secret that used to store user credentials.
-- `valueFrom.secretKeyRef.namespace` - The namespace of secret that used to store user credentials.
-- `valueFrom.secretKeyRef.key` - The key of secret that used to store user credentials.
+- `valueFrom.secretKeyRef` - The secret used to store user credentials.
+- `valueFrom.secretKeyRef.name` - The name of secret used to store user credentials.
+- `valueFrom.secretKeyRef.namespace` - The namespace of secret used to store user credentials.
+- `valueFrom.secretKeyRef.key` - The key of secret used to store user credentials.
 
-> If the `valueFrom.secretKeyRef.namespace` does not specify, notification manager will get the secret in the [`defaultSecretNamespace`](./notification-manager.md#DefaultSecretNamespace).
-> If the `defaultSecretNamespace` is not set, notification manager will get the secret in the namespace where the notification manager webhook is located.
+> If the `valueFrom.secretKeyRef.namespace` is not specified, Notification Manager will get the secret in the [`defaultSecretNamespace`](./notification-manager.md#DefaultSecretNamespace).
+> If the `defaultSecretNamespace` is not set, Notification Manager will get the secret in the namespace where the notification manager webhook is located.

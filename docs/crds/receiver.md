@@ -2,7 +2,7 @@
 
 ## Overview
 
-`Receiver` used to define which notifications sent where and in what format.
+`Receiver` is used to define destinations to which notifications are sent, and the notification format.
 `Receiver` can be categorized into 2 types `global` and `tenant` by label like `type = global`, `type = tenant` :
 - A global receiver receives all notifications and then send notifications regardless tenant info(user or namespace).
 - A tenant receiver receives notifications form the namespaces that the tenant has access to.
@@ -69,25 +69,25 @@ spec:
 
 A dingtalk receiver allows the user to define:
 
-- `alertSelector` - The label selector used to filter notifications, more information see [notification filter](#Notification-filter).
-- `conversation.chatid` - The id of dingtalk conversation, you can refer to [this](https://open.dingtalk.com/document/orgapp-server/create-group-session) for more information.
+- `alertSelector` - The label selector used to filter notifications. For more information, you can refer to [notification filter](#Notification-filter).
+- `conversation.chatid` - The id of dingtalk conversation. For more information, you can refer to [this](https://open.dingtalk.com/document/orgapp-server/create-group-session).
 - [chatbot](#Chatbot) - The configuration of dingtalk chatbot.
-- `dingtalkConfigSelector` - The label selector used to get `Config`, more information see [this](#How-to-select-config).
+- `dingtalkConfigSelector` - The label selector used to get `Config`. For more information, you can refer to [this](#How-to-select-config).
 - `enabled` - Whether to enable receiver.
-- `template` - The name of the template that generated notifications, more information see [template](../template.md).
+- `template` - The name of the template that generated notifications. For more information, you can refer to [template](../template.md).
 - `titleTemplate` - The name of the template that generated markdown message title.
-- `tmplText` - The configmap that the template text file be in, more information see [template](../template.md).
-- `tmplType` - The type of the message send to the dingtalk, text or markdown, default type is text.
+- `tmplText` - The configmap that the template text file be in. For more information, you can refer to [template](../template.md).
+- `tmplType` - The type of the message send to the dingtalk, `text` or `markdown`, default type is `text`.
 
 ### Chatbot
 
-The dingtalk chatbot is a webhook that receives messages and forward them to the conversation, you can refer to [this](https://open.dingtalk.com/document/group/custom-robot-access) for more information.
+The dingtalk chatbot is a webhook that receives messages and forwards them to the conversation. For more information, you can refer to [this](https://open.dingtalk.com/document/group/custom-robot-access).
 
 A chatbot allows the user to define:
 
-- `webhook` - The webhook url of chatbot, type is [credential](./credential.md).
-- `keywords` - The keywords of the chatbot, the notifications send to the chatbot must include one of the keywords.
-- `secret` - Secret of ChatBot, you can get it after enabled Additional Signature of ChatBot, type is [credential](./credential.md).
+- `webhook` - The webhook url of chatbot, and `type` is [credential](./credential.md).
+- `keywords` - The keywords of the chatbot, and the notifications send to the chatbot must include one of the keywords.
+- `secret` - Secret of ChatBot, you can get it after enabling Additional Signature of ChatBot, and `type` is [credential](./credential.md).
 
 ## Email Receiver
 
@@ -124,13 +124,13 @@ spec:
 
 An email receiver allows the user to define:
 
-- `alertSelector` - The label selector used to filter notifications, more information see [notification filter](#Notification-filter).
-- `emailConfigSelector` - The label selector used to get `Config`, more information see [this](#How-to-select-config).
+- `alertSelector` - The label selector used to filter notifications. For more information, please refer to [notification filter](#Notification-filter).
+- `emailConfigSelector` - The label selector used to get `Config`. For more information, please refer to [this](#How-to-select-config).
 - `enabled` - Whether to enable receiver.
-- `template` - The name of the template that generated notifications, more information see [template](../template.md).
+- `template` - The name of the template that generated notifications. For more information, please refer to [template](../template.md).
 - `subjectTemplate` - The name of the template that generated email subject.
-- `tmplText` - The configmap that the template text file be in, more information see [template](../template.md). 
-- `tmplType` - The type of the email content, html or text, default type is html.
+- `tmplText` - The configmap that the template text file be in. For more information, please refer to [template](../template.md). 
+- `tmplType` - The type of the email content, `html` or `text`, default type is `html`.
 - `to` - Who will receiver the email.
 
 ## Feishu Receiver
@@ -183,25 +183,25 @@ spec:
 ```
 A feishu receiver allows the user to define:
 
-- `alertSelector` - The label selector used to filter notifications, more information see [notification filter](#Notification-filter).
+- `alertSelector` - The label selector used to filter notifications. For more information, please refer to [notification filter](#Notification-filter).
 - [chatbot](#Feishu-Chatbot) - The configuration of feishu chatbot.
-- `department` - The department of feishu, all the user in the department will receive the notifications. Note that the notification to the department sent asynchronously, there will be a delay.
+- `department` - The department of feishu, all the users in the department will receive the notifications. Note that the notification to the department are sent asynchronously, there will be a delay.
 - `enabled` - Whether to enable receiver.
-- `feishuConfigSelector` - The label selector used to get `Config`, more information see [this](#How-to-select-config).
-- `template` - The name of the template that generated notifications, more information see [template](../template.md).
-- `tmplText` - The configmap that the template text file be in, more information see [template](../template.md).
-- `tmplType` - The type of message sent to feishu, post or text, default type is post.
+- `feishuConfigSelector` - The label selector used to get `Config`. For more information, please refer to [this](#How-to-select-config).
+- `template` - The name of the template that generated notifications. For more information, please refer to [template](../template.md).
+- `tmplText` - The configmap that the template text file be in. For more information, please refer to [template](../template.md).
+- `tmplType` - The type of message sent to feishu, `post` or `text`, default type is `post`.
 - `user` - Who will receiver notifications. Note that the notifications to the user sent asynchronously, there will be a delay.
 
 ### Feishu Chatbot
 
-The feishu chatbot is a webhook that receives messages and forward them to the conversation, you can refer to [this](https://open.feishu.cn/document/ukTMukTMukTM/ucTM5YjL3ETO24yNxkjN) for more information.
+The feishu chatbot is a webhook that receives messages and forwards them to the conversation, you can refer to [this](https://open.feishu.cn/document/ukTMukTMukTM/ucTM5YjL3ETO24yNxkjN) for more information.
 
 A chatbot allows the user to define:
 
-- `webhook` - The webhook url of chatbot, type is [credential](./credential.md).
-- `keywords` - The keywords of the chatbot, the notifications send to the chatbot must include one of the keywords.
-- `secret` - Secret of ChatBot, you can get it after enabled Additional Signature of ChatBot, type is [credential](./credential.md).
+- `webhook` - The webhook url of chatbot, and `type` is [credential](./credential.md).
+- `keywords` - The keywords of the chatbot, the notifications sent to the chatbot must include one of the keywords.
+- `secret` - Secret of ChatBot, you can get it after enabled Additional Signature of ChatBot, and `type` is [credential](./credential.md).
 
 ## Pushover Receiver
 
@@ -241,13 +241,13 @@ spec:
 
 A pushover receiver allows the user to define:
 
-- `alertSelector` - The label selector used to filter notifications, more information see [notification filter](#Notification-filter).
+- `alertSelector` - The label selector used to filter notifications. For more information, please refer to [notification filter](#Notification-filter).
 - `enabled` - Whether to enable receiver.
 - [profiles](#User-Profile) - The profile of users who will receive the notifications.
-- `pushoverConfigSelector` - The label selector used to get `Config`, more information see [this](#How-to-select-config).
-- `template` - The name of the template that generated notifications, more information see [template](../template.md).
+- `pushoverConfigSelector` - The label selector used to get `Config`. For more information, please refer to [this](#How-to-select-config).
+- `template` - The name of the template that generated notifications. For more information, please refer to [template](../template.md).
 - `titleTemplate` - The name of the template that generated message title.
-- `tmplText` - The configmap that the template text file be in, more information see [template](../template.md).
+- `tmplText` - The configmap that the template text file be in. For more information, please refer to [template](../template.md).
 
 ### User Profile 
 
@@ -292,16 +292,16 @@ spec:
 
 A slack receiver allows the user to define:
 
-- `alertSelector` - The label selector used to filter notifications, more information see [notification filter](#Notification-filter).
+- `alertSelector` - The label selector used to filter notifications. For more information, please refer to [notification filter](#Notification-filter).
 - `enabled` - Whether to enable receiver.
-- `slackConfigSelector` - The label selector used to get `Config`, more information see [this](#How-to-select-config).
-- `template` - The name of the template that generated notifications, more information see [template](../template.md).
-- `tmplText` - The configmap that the template text file be in, more information see [template](../template.md).
+- `slackConfigSelector` - The label selector used to get `Config`. For more information, please refer to [this](#How-to-select-config).
+- `template` - The name of the template that generated notifications. For more information, please refer to [template](../template.md).
+- `tmplText` - The configmap that the template text file be in. For more information, please refer to [template](../template.md).
 - `channels` - Channels that the notification will send to.
 
 ## SMS Receiver
 
-A sms receiver is like this.
+An SMS receiver is like this.
 
 ```yaml
 apiVersion: notification.kubesphere.io/v2beta2
@@ -330,13 +330,13 @@ spec:
       - 13612345678
 ```
 
-A sms receiver allows the user to define:
+An SMS receiver allows the user to define:
 
-- `alertSelector` - The label selector used to filter notifications, more information see [notification filter](#Notification-filter).
+- `alertSelector` - The label selector used to filter notifications. For more information, please refer to [notification filter](#Notification-filter).
 - `enabled` - Whether to enable receiver.
-- `smsConfigSelector` - The label selector used to get `Config`, more information see [this](#How-to-select-config).
-- `template` - The name of the template that generated notifications, more information see [template](../template.md).
-- `tmplText` - The configmap that the template text file be in, more information see [template](../template.md).
+- `smsConfigSelector` - The label selector used to get `Config`. For more information, please refer to [this](#How-to-select-config).
+- `template` - The name of the template that generated notifications. For more information, please refer to [template](../template.md).
+- `tmplText` - The configmap that the template text file be in. For more information, please refer to [template](../template.md).
 - `phoneNumbers` - PhoneNumbers that the notification will send to.
 
 ## Webhook Receiver
@@ -368,10 +368,10 @@ spec:
 ```
 A webhook receiver allows the user to define:
 
-- `alertSelector` - The label selector used to filter notifications, more information see [notification filter](#Notification-filter).
+- `alertSelector` - The label selector used to filter notifications. For more information, please refer to [notification filter](#Notification-filter).
 - `enabled` - Whether to enable receiver.
-- `template` - The name of the template that generated notifications, more information see [template](../template.md).
-- `tmplText` - The configmap that the template text file be in, more information see [template](../template.md).
+- `template` - The name of the template that generated notifications. For more information, please refer to [template](../template.md).
+- `tmplText` - The configmap that the template text file be in. For more information, please refer to [template](../template.md).
 - `url` - Url of the webhook.
 - [service](#Service) - `service` is a reference to the service for this webhook. Either `service` or `url` must be specified. If the webhook is running within the cluster, then you should use `service`.
 - [httpConfig](#HttpConfig) - The http/s client configuration.
@@ -386,26 +386,26 @@ A webhook receiver allows the user to define:
 - `namespace` - The namespace of the service.
 - `name` - The name of the service.
 - `port` - The port on the service that hosting webhook, it should be a valid port number (1-65535, inclusive).
-- `path` - An optional URL path which will be sent in any request to.
-- `scheme` - Http scheme, default is http.
+- `path` - An optional URL path to which the request will be sent.
+- `scheme` - Http scheme. The default value is http.
 
 ### HttpConfig
 
 `HttpConfig` allows the user to define:
 
 - `basicAuth.username` - The username for basic auth.
-- `basicAuth.password` - Password for basic auth, type is [credential](./credential.md).
-- `bearerToken` - Token for bearer authentication, type is [credential](./credential.md).
-- `proxyUrl` - HTTP proxy server to use to connect to the targets.  
+- `basicAuth.password` - Password for basic auth, and `type` is [credential](./credential.md).
+- `bearerToken` - Token for bearer authentication, and `type` is [credential](./credential.md).
+- `proxyUrl` - HTTP proxy server used to connect to the targets.  
 - [tlsConfig](#TlsConfig) - TLS configuration to use to connect to the targets, it needs to be set when the scheme is https.
 
 #### TlsConfig
 
 `tlsConfig` allows the user to define:
 
-- `rootCA` - RootCA defines the root certificate authorities that clients use when verifying server certificates, type is [credential](./credential.md).
-- `clientCertificate.cert` - The client cert file for the targets, type is [credential](./credential.md).
-- `clientCertificate.key` - The client key file for the targets, type is [credential](./credential.md).
+- `rootCA` - RootCA defines the root certificate authorities that clients use when verifying server certificates, and `type` is [credential](./credential.md).
+- `clientCertificate.cert` - The client cert file for the targets, and `type` is [credential](./credential.md).
+- `clientCertificate.key` - The client key file for the targets, and `type` is [credential](./credential.md).
 - `serverName` - Used to verify the hostname for the targets.
 - `insecureSkipVerify` - Disable target certificate validation.
 
@@ -455,20 +455,20 @@ A WeChat receiver allows the user to define:
 - `template` - The name of the template that generated notifications, more information see [template](../template.md).
 - `tmplText` - The configmap that the template text file be in, more information see [template](../template.md).
 - `tmplType` - The type of the message send to the WeChat, text or markdown, default type is text.
-- `toUser` - Users who will receiver the email.
-- `toPart` - The id of the party, all users in the party will receive notification.
-- `toTag` - The id of the tag, all users who has this tag will receive notification.
+- `toUser` - The id of users who will receive the notifications.
+- `toPart` - The id of the party, all users in the party will receive notifications.
+- `toTag` - The id of the tag, all users who have this tag will receive notifications.
 
 ## How to select config
 
-The `Receiver` define where to send notifications, and the [Config](config.md) define how to send notifications to receiver.
-A `Receiver` select a `Config` by `xxxConfigSelector`.
+The `Receiver` defines where to send notifications, and the [Config](config.md) define how to send notifications to receiver.
+A `Receiver` selects a `Config` by `xxxConfigSelector`.
 
 The relationship between receivers and configs can be demonstrated as below:
 
 ![Receivers & Configs](../images/receivers_configs.png)
 
-For a tenant receiver, it will use the config selector to select config if config selector set, else it will try to find a `default` config.
+For a tenant receiver, it will use the config selector to select config if config selector has been set, else it will try to find a `default` config.
 For a global receiver, it can only use default config.
 
 ## Notification filter
@@ -476,7 +476,7 @@ For a global receiver, it can only use default config.
 A receiver can only receive the notifications it needs by setting `alertSelector`. The `alertSelector` is label selector,
 the receiver will only receive the notifications that match the selector.
 
-An email receiver only receive "warning" notifications.
+An email receiver only receives "warning" notifications.
 
 ```yaml
 email:
@@ -489,7 +489,7 @@ email:
           - critical
 ```
 
-An email receiver only receive cluster-level notifications.
+An email receiver only receives cluster-level notifications.
 
 ```yaml
 email:

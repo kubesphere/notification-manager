@@ -6943,7 +6943,7 @@ spec:
                 description: The time range during which the silence is active. If not set, the silence will be active ever.
                 type: string
               enabled:
-                description: whether the silence enabled
+                description: whether the silence is enabled
                 type: boolean
               matcher:
                 description: A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.

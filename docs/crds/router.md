@@ -2,7 +2,7 @@
 
 ## Overview
 
-`Router` CRD used to send the specified notifications to the specified receivers.
+`Router` CRD is used to send the specified notifications to the specified receivers.
 
 ```yaml
 apiVersion: notification.kubesphere.io/v2beta2
@@ -34,7 +34,7 @@ A router resource allows user to define:
 
 ## Examples
 
-A router that route all notifications to the all receivers of tenant `user1`.
+A router that routes all notifications to the all receivers of tenant `user1`.
 
 ```yaml
 apiVersion: notification.kubesphere.io/v2beta2
@@ -48,7 +48,7 @@ spec:
         tenant: user1
 ```
 
-A router that route cluster-level notifications to the email receivers `user1`.
+A router that routes cluster-level notifications to the email receivers `user1`.
 
 ```yaml
 apiVersion: notification.kubesphere.io/v2beta2
