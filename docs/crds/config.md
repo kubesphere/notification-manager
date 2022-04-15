@@ -2,7 +2,7 @@
 
 ## Overview
 
-`Config` is used to define the information needed to send notifications, such as SMTP server, email sender, slack token, etc. 
+`Config` is used to define the information needed to send notifications, such as SMTP server, DingTalk setting, slack token, etc. 
 `Config` can be categorized into 2 types `tenant` and `default` by label like `type = tenant`, `type = default`:
 - The `tenant` config can only be selected by tenant receivers with the same tenant label  .
 - The `default` config can be selected by all receivers. Usually admin will set a global default config.

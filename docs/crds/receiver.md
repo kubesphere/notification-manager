@@ -2,10 +2,10 @@
 
 ## Overview
 
-`Receiver` is used to define destinations to which notifications are sent, and the notification format.
+`Receiver` is used to define the notification format and destinations to which notifications will be sent.
 `Receiver` can be categorized into 2 types `global` and `tenant` by label like `type = global`, `type = tenant` :
 - A global receiver receives all notifications and then send notifications regardless tenant info(user or namespace).
-- A tenant receiver receives notifications form the namespaces that the tenant has access to.
+- A tenant receiver only receives notifications from the namespaces that the tenant has access to.
 
 A receiver resource allows the user to define:
 

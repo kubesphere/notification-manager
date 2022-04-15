@@ -59,22 +59,22 @@ How the two methods work together is determined by the [routePolicy](docs/crds/n
 
 ### Filter
 
-`Filter` filter the notifications sent to receivers. There are two ways to filter notifications. One is using [alertSelector](docs/crds/receiver.md#notification-filter) in the receiver,
+`Filter` filters the notifications sent to receivers. There are two ways to filter notifications. One is using [alertSelector](docs/crds/receiver.md#notification-filter) in the receiver,
 the other is using [tenant silence](docs/crds/silence.md).
 
 ### Aggregation
 
-`Aggregation` will group notifications by [groupLabels](docs/crds/notification-manager.md#grouplabels). Notifications in the same group will send together.
+`Aggregation` groups notifications by [groupLabels](docs/crds/notification-manager.md#grouplabels). Notifications in the same group will send together.
 
 ### History
 
-`History` is a webhook used to collect all notifications that sent to receivers, it can be set via [history](docs/crds/notification-manager.md#history).
+`History` is a webhook used to collect all notifications sent to receivers, it can be set via [history](docs/crds/notification-manager.md#history).
 
 ## QuickStart
 
 ### Install
 
-We assume you already have a Kubernetes cluster (v1.16+). If you don't, you can install one use [KubeKey](https://github.com/kubesphere/kubekey).
+We assume you already have a Kubernetes cluster (v1.16+). You can install one using [KubeKey](https://github.com/kubesphere/kubekey) if you haven't.
 
 #### Install with yaml
 
@@ -95,7 +95,7 @@ helm install notification-manager helm --create-namespace -n kubesphere-monitori
 
 ### Configure NotificationManager 
 
-[NotificationManager](docs/crds/notification-manager.md) CRD Defines the desired notification manager webhook deployment. The Notification Manager Operator 
+[NotificationManager](docs/crds/notification-manager.md) CRD Defines the desired notification manager deployment. The Notification Manager Operator 
 ensures a deployment meeting the resource requirements is running. 
 
 We should create a NotificationManager CR first, skip this when using helm install.
@@ -121,7 +121,7 @@ To receive Alertmanager alerts, add webhook config like below to the `receivers`
 
 #### Customize sender
 
-The data structure passed to notification manager likes this, more information see [Data](https://github.com/kubesphere/notification-manager/blob/master/pkg/template/types.go#L12).
+Below is the data structure passed to the notification manager, please refer to [Data](https://github.com/kubesphere/notification-manager/blob/master/pkg/template/types.go#L12) for more details.
 
 ```yaml
 {
@@ -152,12 +152,11 @@ A custom senders can send notifications using notification manager simply by sen
 
 ### Create receiver and config
 
-Now it needs a receiver and config to receive notification, you can follow [receiver](docs/crds/receiver.md) and [config](docs/crds/config.md) 
-to create a receiver and config.
+Now it's time to create the receiver and config to receive notifications, you can find guides to create them in [receiver](docs/crds/receiver.md) and [config](docs/crds/config.md).
 
 ### Customize template
 
-See [template](docs/template.md) for more information.
+To customize the notification template, please refer to [template](docs/template.md).
 
 ## Development
 

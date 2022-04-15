@@ -2,8 +2,8 @@
 
 ## Overview
 
-`slience` CRD is used to define policies that mute notification for a given time. A silence configures based on label selector,
-if the incoming data matches the label selector of an active silence, no notifications will be sent out for that data.
+`slience` CRD is used to define policies to mute notifications for a given time. A silence is configured based on a label selector.
+If the incoming alert matches the label selector of an active silence, no notifications will be sent out for that alert.
 
 `Silence` can be categorized into 2 types `global` and `tenant` by label like `type = global`, `type = tenant` :
 - A global silence will mute all notifications that match the label selector. The global silence will take effect in the [silence](../../README.md#silence) step.

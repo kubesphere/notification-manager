@@ -2,7 +2,7 @@
 
 ## Overview
 
-NotificationManager CRD defines the desired Notification Manager webhook deployment. 
+NotificationManager CRD defines the desired Notification Manager deployment. 
 The Notification Manager Operator ensures a deployment meeting the resource requirements is running.
 
 ```yaml
@@ -116,7 +116,7 @@ Others
 
 ### DefaultSecretNamespace
 
-`defaultSecretNamespace` used to define the default namespace where the secret and configmap are located.For more information, please refer to [Credential](credential.md).
+`defaultSecretNamespace` is used to define the default namespace where the secret and configmap are located.For more information, please refer to [Credential](credential.md).
 
 ### Receivers 
 
@@ -131,32 +131,32 @@ The `receivers` supports the following fields:
 
 ##### Global options
 
-- `templateFile` - Template file path, which must be an absolute path. This field deprecated in v2.0.0 and will be removed in a future release.
+- `templateFile` - Template file path, which must be an absolute path. This field is deprecated in v2.0.0 and will be removed in a future release.
 - `template` - The name of the template that generates the notification.
 - `cluster` - The name of the cluster where Notification Manager is deployed, and the default value is `default`, Notification Manager will add a cluster label to the notification using this value if the notification does not contain a cluster label. 
   If Notification Manager deployed in KubeSphere(v3.3+), it will try to get the cluster name automatically if the `cluster` is not set.
 ##### DingTalk options
 
-- `notificationTimeout` - Maximum time to send notifications to DingTalk, and the default value is `3s`.
+- `notificationTimeout` - Timeout when sending notifications to DingTalk, and the default value is `3s`.
 - `template` - The name of the template that generates the notification for all dingtalk receivers. For more information, please refer to [template](../template.md).
 - `titleTemplate` - The name of the template that generates the markdown title.
 - `tmplType` - The type of message sent to dingtalk, The value can be `text` or `markdown`.
 - `tokenExpires` - The expiry time of the token, and the default value is `2h`.
-- `conversationMessageMaxSize` - The maximum message size that a single request can send to a conversation, and the default value is `5000 bytes`.
-- `chatbotMessageMaxSize` - The maximum message size that a single request can send to a chatbot, and the default value is `19960 bytes`.
-- `chatBotThrottle` - The throttle used to control how often notifications sent to the same conversation.
-- `conversationThrottle` - The throttle used to control how often notifications sent to the same chatbot.
+- `conversationMessageMaxSize` - The maximum message size of a single request to a conversation, and the default value is `5000 bytes`.
+- `chatbotMessageMaxSize` - The maximum message size of a single request to a chatbot, and the default value is `19960 bytes`.
+- `chatBotThrottle` - The throttle is used to control how often notifications can be sent to the same conversation.
+- `conversationThrottle` - The throttle is used to control how often notifications can be sent to the same chatbot.
 
 A throttle supports the following fields:
 
-- `threshold` - The maximum calls in a `unit`.
-- `unit` - The time unit for flow control.
-- `maxWaitTime` - The maximum waiting time that can be tolerated when calling trigger flow control. If the actual waiting time exceeds this time, it will
-  return an error, otherwise waits for the traffic limit to be lifted. Nil means do not wait, and the maximum value is `unit`.
+- `threshold` - The maximum calls in one `unit`.
+- `unit` - The time slot for flow control.
+- `maxWaitTime` - The maximum waiting time that can be tolerated when notification calls trigger flow control. If the actual waiting time exceeds this time, 
+  an error will be returned, otherwise waits for the traffic limit to be lifted. Nil means do not wait, and the maximum value is `unit`.
 
 ##### Email options
 
-- `notificationTimeout` - Maximum time to send an email, and the default value is `3s`.
+- `notificationTimeout` - Timeout when sending an email, and the default value is `3s`.
 - `template` - The name of the template that generates the notification for all email receivers. For more information, please refer to [template](../template.md).
 - `subjectTemplate` - The name of the template that generates email subject.
 - `tmplType` - The type of the email content. The value can be `html` or `text`. 
@@ -164,35 +164,35 @@ A throttle supports the following fields:
 
 ##### Feishu options
 
-- `notificationTimeout` - Maximum time to send notifications to feishu, and the default value is `3s`.
+- `notificationTimeout` - Timeout when sending notifications to feishu, and the default value is `3s`.
 - `template` - The name of the template that generates the notification for all feishu receivers. For more information, please refer to [template](../template.md).
 - `tmplType` - The type of message sent to feishu. The value can be `text` or `post`. The `post` is Rich Text Format. For more information, please refer to [this](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/im-v1/message/create_json#45e0953e)  for more information.
 - `tokenExpires` - The expiry time of the token, and the default value is `2h`.
 
 ##### Pushover options
 
-- `notificationTimeout` - Maximum time to send notifications to pushover, and the default value is `3s`.
+- `notificationTimeout` - Timeout when sending notifications to pushover, and the default value is `3s`.
 - `template` - The name of the template that generates the notification for all pushover receivers. For more information, please refer to [template](../template.md).
 
 ##### Slack options
 
-- `notificationTimeout` - Maximum time to send notifications to slack, and the default value is `3s`.
+- `notificationTimeout` - Timeout when sending notifications to slack, and the default value is `3s`.
 - `template` - The name of the template that generates the notification for all slack receivers. For more information, please refer to [template](../template.md).
 - `titleTemplate` - The name of the template that generates message title.
 
 ##### SMS options
 
-- `notificationTimeout` - Maximum time to send notifications to short message service, and the default value is `3s`.
+- `notificationTimeout` - Timeout when sending notifications to short message service, and the default value is `3s`.
 - `template` - The name of the template that generates the notification for all sms receivers. For more information, please refer to [template](../template.md).
 
 ##### Webhook options
 
-- `notificationTimeout` - Maximum time to send notifications to webhook, and the default value is `3s`.
+- `notificationTimeout` - Timeout when sending notifications to webhook, and the default value is `3s`.
 - `template` - The name of the template that generates the notification for all webhook receivers. For more information, please refer to [template](../template.md).
 
 ##### WeChat options
 
-- `notificationTimeout` - Maximum time to send notifications to WeChat, and the default value is `3s`.
+- `notificationTimeout` - Timeout when sending notifications to WeChat, and the default value is `3s`.
 - `template` - The name of the template that generates the notification for all WeChat receivers. For more information, please refer to [template](../template.md).
 - `tmplType` - The type of message sent to WeChat. The value can be `text` or `markdown`. 
 - `tokenExpires` - The expiry time of the token, and the default value is `2h`.
@@ -217,10 +217,11 @@ The incoming data will be pushed into the cache first, Notification Manager will
 
 ### RoutePolicy
 
-There are two ways to determine which receivers the notifications will send to, router, or via namespace matching.
+There are two ways to determine to which receivers a notification will be sent: router or namespace matching.
 The `routePolicy` determines the priority of these two ways. Valid RoutePolicy include All, RouterFirst, and RouterOnly.
-- `All` - The notifications will be sent to the receivers that match any router, and also send to the receivers of those tenants with the right to access the namespace to which the notifications belong.
-- `RouterFirst` - The notifications will be sent to the receivers that match any router first. If no receivers match any router, notifications will send to the receivers of those tenants with the right to access the namespace to which the notifications belong.
+and will also be sent to the receivers whose tenants have the right to access the namespace the notifications belong to.
+- `All` - The notifications will be sent to the receivers that match any router, and will also be sent to the receivers whose tenants have the right to access the namespace the notifications belong to.
+- `RouterFirst` - The notifications will be sent to the receivers that match any router first. If no receivers match any router, notifications will be sent to the receivers whose tenants have the right to access the namespace the notifications belong to.
 - `RouterOnly` - The notifications will only be sent to the receivers that match any router.
 
 ### GroupLabels
@@ -234,7 +235,7 @@ If notifications grouping is not require, it can be set to nil.
 
 ### Sidecars
 
-`sidecars` will add sidecars to the Notification Manager webhook pod.
+`sidecars` will add sidecars to the Notification Manager pod.
 
 ```yaml
   sidecars:
@@ -244,12 +245,12 @@ If notifications grouping is not require, it can be set to nil.
       type: kubesphere
 ```
 
-The key `tenant` is the type of the sidecar, now it only supports tenant sidecar.
+The key `tenant` is the type of the sidecar which is the only supported sidecar type for now.
 
 #### Tenant sidecar
 
-A tenant sidecar is used to get all users who have the right to access a namespace.
-A tenant sidecar must provide `/api/v2/tenant?namespace=<namespace>` API on port 19094, Notification Manager calls this API to get all users who have the right to access a namespace.
+A tenant sidecar is used to receive all users who have the right to access a namespace.
+A tenant sidecar must provide `/api/v2/tenant?namespace=<namespace>` API on port 19094, Notification Manager calls this API to receive all users who have the right to access a namespace.
 The request parameter is the namespace, the response body is a list of users.
 
 A tenant sidecar supports the following fields:

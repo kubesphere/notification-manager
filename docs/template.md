@@ -2,8 +2,9 @@
 
 ## Overview
 
-The notifications are sent to receivers constructed via templates. The Notification Manager comes with default templates which also support customization.
-User can define global template and define template for receiver.
+The notifications are rendered by notification templates first before they're sent to receivers. The Notification Manager comes with a set of default templates and also supports customizing templates.
+
+Users can define global templates as well as templates for each receiver.
 
 ## Add global template
 
@@ -22,8 +23,8 @@ spec:
       namespace: kubesphere-monitoring-system
 ```
 
-The `template.text` is a `ConfigmapKeySelector` that specifying a configmap where the template text in. 
-Notification manager webhook will reload the template text on every `template.reloadCycle`.
+The `template.text` is a `ConfigmapKeySelector` that specifies a configmap containing the template content.. 
+Notification manager will reload the template text on every `template.reloadCycle`.
 
 A `ConfigmapKeySelector` allows user to define:
 
@@ -33,7 +34,7 @@ A `ConfigmapKeySelector` allows user to define:
 
 ## Add receiver template
 
-User can define template for receiver like this.
+Users can define templates for receiver like this.
 
 ```yaml
 apiVersion: notification.kubesphere.io/v2beta2
@@ -50,7 +51,7 @@ spec:
       namespace: kubesphere-monitoring-system
 ```
 
-The `template.text` is a `ConfigmapKeySelector` that specifying a configmap where the template text in. 
+The `template.text` is a `ConfigmapKeySelector` that specifies a configmap containing the template content.
 
 ## How to use template
 
