@@ -1,4 +1,4 @@
-apiVersion: notification.kubesphere.io/v2beta1
+apiVersion: notification.kubesphere.io/v2beta2
 kind: NotificationManager
 metadata:
   labels:
@@ -36,4 +36,8 @@ spec:
     name: tenant
     type: kubesphere
   {{- end}}
+  template:
+    { { - toYaml .Values.notificationmanager.template | nindent 4 } }
+  groupLabels:
+    { { - toYaml .Values.notificationmanager.groupLabels | nindent 4 } }
 
