@@ -36,4 +36,7 @@ spec:
     name: tenant
     type: kubesphere
   {{- end}}
-
+  template:
+    {{- toYaml .Values.notificationmanager.template | nindent 4 }}
+  groupLabels:
+    {{- toYaml .Values.notificationmanager.groupLabels | nindent 4 }}
