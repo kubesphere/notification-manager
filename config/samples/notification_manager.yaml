@@ -11,7 +11,7 @@ spec:
     requests:
       cpu: 100m
       memory: 20Mi
-  image: kubesphere/notification-manager:latest
+  image: kubesphere/notification-manager:v2.0.0
   imagePullPolicy: Always
   serviceAccountName: notification-manager-sa
   portName: webhook
