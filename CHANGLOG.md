@@ -2,12 +2,12 @@
 
 ### FEATURES
 
-- Support to route the specified notifications to the specified receivers using `Router` CRD (#121). @wanjunlei
-- Support to mute specified notifications for a given time using `Silence` CRD (#121). @wanjunlei
-- Add support for sending notifications to Feishu (#124). @wanjunlei
+- Support to route the specific notifications to the specific receivers using `Router` CRD (#121). @wanjunlei
+- Support to mute specific notifications for a given period using `Silence` CRD (#121). @wanjunlei
+- Add support to send notifications to Feishu (#124). @wanjunlei
 - Support the dynamic modification of the template (#123). @wanjunlei
-- Add support for e2e testing using GitHub action (#111). @zhu733756
-- Add support for building an pushing image after PR is merged (#122). @wenchajun
+- Add e2e tests with GitHub action (#111). @zhu733756
+- Add support to build and push a container image after PR is merged (#122). @wenchajun
 
 ### Enhancement
 
@@ -18,7 +18,7 @@
 
 ### BUGFIX
 
-- Fix bug the filtered notifications are recorded in the notification history (#117). @wanjunlei
+- Resolve the problem of filtered notifications being recorded in the notification history (#117). @wanjunlei
 
 ## v1.4.0 / 2021-10-14
 
