@@ -1,3 +1,35 @@
+## v2.0.0 / 2022-04-18
+
+### FEATURES
+
+- Support to route the specified notifications to the specified receivers using `Router` CRD (#121). @wanjunlei
+- Support to mute specified notifications for a given time using `Silence` CRD (#121). @wanjunlei
+- Add support for sending notifications to Feishu (#124). @wanjunlei
+- Support the dynamic modification of the template (#123). @wanjunlei
+- Add support for e2e testing using GitHub action (#111). @zhu733756
+- Add support for building an pushing image after PR is merged (#122). @wenchajun
+
+### Enhancement
+
+- Refactor the cache mechanism of receiver and config (#118). @wanjunlei
+- Add support for custom pushover title using template (#128). @wanjunlei
+- Optimize the mechanism of reloading the receivers and configs after Notification Manager CR changed (#127). @wanjunlei
+- Support to get KubeSphere cluster name from configmap (#125). @wanjunlei
+
+### BUGFIX
+
+- Fix bug the filtered notifications are recorded in the notification history (#117). @wanjunlei
+
+## v1.4.0 / 2021-10-14
+
+### FEATURES
+- Support collecting notification history (#102). @wanjunlei
+- Add tenant sidecar for KubeSphere v3.2.0 (#105). @wanjunlei
+
+### UPGRADE & BUGFIX
+- Fix the bug that the error is not returned to the caller during notification setting verification (#104). @wanjunlei
+- Fix WeChat alert selector doesn't work (#109). @wanjunlei
+
 ## v1.3.0 / 2021-08-10
 
 ### FEATURES
