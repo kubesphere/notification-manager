@@ -90,7 +90,7 @@ kubectl apply -f https://github.com/kubesphere/notification-manager/releases/dow
 #### Install with helm
 
 ```shell
-helm install notification-manager helm --create-namespace -n kubesphere-monitoring-system https://github.com/kubesphere/notification-manager/releases/download/v2.0.0/notification-manager.tgz
+helm install notification-manager --create-namespace -n kubesphere-monitoring-system https://github.com/kubesphere/notification-manager/releases/download/v2.0.0/notification-manager.tgz
 ```
 
 ### Configure NotificationManager 
