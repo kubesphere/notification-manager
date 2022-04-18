@@ -19,12 +19,12 @@ Supported receivers includes:
 - SMS (Short Message Service)  
 - [Slack](https://slack.com/) 
 - Webhook 
-- [WeCom](https://work.weixin.qq.com/)
+- [WeChat](https://work.weixin.qq.com/)
 
 ## Architecture
 
 Notification Manager uses [Receiver](docs/crds/receiver.md) and [Config](docs/crds/config.md) CRDs to store notification configs
-like email, WeCom and slack. It also includes an operator to create and reconcile [NotificationManager](docs/crds/notification-manager.md)
+like email, WeChat and slack. It also includes an operator to create and reconcile [NotificationManager](docs/crds/notification-manager.md)
 CRD which watches all [receivers](docs/crds/receiver.md) and [configs](docs/crds/config.md), updates notification settings accordingly and sends notifications to users.
 
 ![Architecture](docs/images/architecture.svg)
@@ -90,7 +90,7 @@ kubectl apply -f https://github.com/kubesphere/notification-manager/releases/dow
 #### Install with helm
 
 ```shell
-helm install notification-manager helm --create-namespace -n kubesphere-monitoring-system https://github.com/kubesphere/notification-manager/releases/download/v2.0.0/notification-manager.tgz
+helm install notification-manager --create-namespace -n kubesphere-monitoring-system https://github.com/kubesphere/notification-manager/releases/download/v2.0.0/notification-manager.tgz
 ```
 
 ### Configure NotificationManager 
