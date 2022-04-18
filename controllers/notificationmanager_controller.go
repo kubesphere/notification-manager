@@ -38,7 +38,7 @@ const (
 	defaultPortName               = "webhook"
 	defaultServiceAccountName     = "default"
 	kubesphereSidecar             = "kubesphere"
-	defaultkubesphereSidecarImage = "kubesphere/kubesphere-sidecar:v3.1.0"
+	defaultkubesphereSidecarImage = "kubesphere/kubesphere-sidecar:v3.2.0"
 )
 
 var (
@@ -46,7 +46,7 @@ var (
 	apiGVStr               = v2beta2.GroupVersion.String()
 	log                    logr.Logger
 	minReplicas            int32 = 1
-	defaultImage                 = "kubesphere/notification-manager:v1.0.0"
+	defaultImage                 = "kubesphere/notification-manager:v2.0.0"
 	defaultImagePullPolicy       = corev1.PullIfNotPresent
 )
 

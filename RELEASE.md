@@ -4,11 +4,13 @@ This page describes the release process and the currently planned schedule for u
 
 ## Release schedule
 
-| release series | date  (year-month-day) | release shepherd                            |
-|----------------|--------------------------------------------|---------------------------------------------|
-| v1.0.0           | 2021-04-22                                 | leiwanjun (GitHub: @leiwanjun) |
-| v1.2.0           | 2021-07-15                                | leiwanjun (GitHub: @leiwanjun) |
-| v1.3.0           | 2021-08-10                                 | zhu733756 (GitHub: @zhu733756) |
+| release series | date  (year-month-day) | release shepherd               |
+|----------------|------------------------|--------------------------------|
+| v1.0.0         | 2021-04-22             | leiwanjun (GitHub: @leiwanjun) |
+| v1.2.0         | 2021-07-15             | leiwanjun (GitHub: @leiwanjun) |
+| v1.3.0         | 2021-08-10             | zhu733756 (GitHub: @zhu733756) |
+| v1.4.0         | 2021-10-14             | leiwanjun (GitHub: @leiwanjun) |
+| v2.0.0         | 2022-04-18             | leiwanjun (GitHub: @leiwanjun) |
 
 # How to cut a new release
 
