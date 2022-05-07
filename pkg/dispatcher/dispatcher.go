@@ -106,7 +106,7 @@ func (d *Dispatcher) getWorker() error {
 }
 
 func (d *Dispatcher) releaseWorker() {
-	d.semCh <- struct{}{}
+	<-d.semCh
 }
 
 func (d *Dispatcher) worker(ctx context.Context, data interface{}, stopCh chan struct{}) {
