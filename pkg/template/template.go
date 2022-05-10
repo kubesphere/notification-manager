@@ -189,8 +189,13 @@ func (t *Template) Html(name string, data *Data) (string, error) {
 
 // Delete all `space`, `LF`, `CR` at the end of string.
 func cleanSuffix(s string) string {
+
 	for {
 		l := len(s)
+		if l == 0 {
+			return s
+		}
+
 		if byte(s[l-1]) == 10 || byte(s[l-1]) == 13 || byte(s[l-1]) == 32 {
 			s = s[:l-1]
 		} else {
@@ -225,14 +230,14 @@ func (t *Template) Split(data *Data, maxSize int, templateName string, subjectTe
 	for i := 0; i < len(data.Alerts); i++ {
 
 		d.Alerts = append(d.Alerts, data.Alerts[i])
-		msg, err := t.Text(templateName, d.Format())
+		msg, err := t.Text(t.transform(templateName), d.Format())
 		if err != nil {
 			return nil, nil, err
 		}
 
 		subject := ""
 		if subjectTemplateName != "" {
-			subject, err = t.Text(templateName, d)
+			subject, err = t.Text(t.transform(subjectTemplateName), d)
 			if err != nil {
 				return nil, nil, err
 			}

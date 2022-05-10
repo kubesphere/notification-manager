@@ -73,7 +73,7 @@ manifests: controller-gen
 	cd config/manager && kustomize edit set image controller=${IMG} && cd ../../
 	kustomize build config/default | sed -e '/creationTimestamp/d' > config/bundle.yaml
 	kustomize build config/samples | sed -e '/creationTimestamp/d' > config/samples/bundle.yaml
-	cp -r ./config/crd/bases/* ./helm/crds/
+	kustomize build config/helm | sed -e '/creationTimestamp/d' > helm/crds/bundle.yaml
 
 # Run go fmt against code
 fmt:
