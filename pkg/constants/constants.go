@@ -26,8 +26,8 @@ const (
 	AlertResolved = "resolved"
 
 	AlertName      = "alertname"
-	AlertType      = "alertype"
-	AlertTime      = "alertime"
+	AlertType      = "alerttype"
+	AlertTime      = "alerttime"
 	AlertMessage   = "message"
 	AlertSummary   = "summary"
 	AlertSummaryCN = "summaryCn"
