@@ -32,9 +32,10 @@ spec:
     {{- toYaml .Values.notificationmanager.defaultSecretNamespace | nindent 4 }}
   {{- if eq .Values.kubesphere true }}
   sidecars:
-    image: kubesphere/notification-tenant-sidecar:v3.2.0
-    name: tenant
-    type: kubesphere
+    tenant:
+      image: kubesphere/notification-tenant-sidecar:v3.2.0
+      name: tenant
+      type: kubesphere
   {{- end}}
   template:
     {{- toYaml .Values.notificationmanager.template | nindent 4 }}
