@@ -88,6 +88,10 @@ generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/apis/v2beta1"
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/apis/v2beta2"
 
+helm: controller-gen
+	kustomize build config/helm | sed -e '/creationTimestamp/d' > helm/crds/bundle.yaml
+	tar zcvf notification-manager.tgz helm
+
 # Build all docker images for amd64 and arm64
 build: test build-op build-nm
 

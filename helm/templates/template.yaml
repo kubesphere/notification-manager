@@ -67,4 +67,3 @@ data:
 kind: ConfigMap
 metadata:
   name: notification-manager-template
-  namespace: kubesphere-monitoring-system

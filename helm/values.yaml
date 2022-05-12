@@ -1,6 +1,10 @@
 # Whether Notification manager is running at the kubesphere.
 kubesphere: false
 
+hook:
+  postInstall:
+    backoffLimit: 1
+
 # value of notification-manager-operator
 operator: 
   containers:
@@ -78,4 +82,3 @@ notificationmanager:
   template:
     text:
       name: notification-manager-template
-      namespace: kubesphere-monitoring-system
