@@ -1,3 +1,11 @@
+## v2.0.1 / 2022-05-13
+
+### BUGFIX
+
+- Fix bug that the dispatcher worker routine is not released (#136). @gliffcheung
+- Fix bug that the template could not generate notifications correctly (#139). @wanjunlei
+- Fix bug that the namespace cannot be specified when installing with helm (#141). @wanjunlei
+
 ## v2.0.0 / 2022-04-18
 
 ### FEATURES
