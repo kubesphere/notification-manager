@@ -46,7 +46,7 @@ var (
 	apiGVStr               = v2beta2.GroupVersion.String()
 	log                    logr.Logger
 	minReplicas            int32 = 1
-	defaultImage                 = "kubesphere/notification-manager:v2.0.0"
+	defaultImage                 = "kubesphere/notification-manager:v2.0.1"
 	defaultImagePullPolicy       = corev1.PullIfNotPresent
 )
 

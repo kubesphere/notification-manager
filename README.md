@@ -101,7 +101,7 @@ ensures a deployment meeting the resource requirements is running.
 We should create a NotificationManager CR first, skip this when using helm install.
 
 ```shell
-kubectl apply -f https://github.com/kubesphere/notification-manager/releases/download/v2.0.0/notification_manager.yaml
+kubectl apply -f https://github.com/kubesphere/notification-manager/releases/download/v2.0.1/notification_manager.yaml
 ```
 
 ### Configure sender
