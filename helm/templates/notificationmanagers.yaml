@@ -24,6 +24,11 @@ spec:
     {{- toYaml .Values.notificationmanager.receivers | nindent 4 }}
   defaultConfigSelector:
     {{- toYaml .Values.notificationmanager.defaultConfigSelector | nindent 4 }}
+  {{- if .Values.timezone }}
+  env:
+  - name: TZ
+    value: {{ .Values.timezone }}
+  {{- end }}
   volumeMounts:
     {{- toYaml .Values.notificationmanager.volumeMounts | nindent 4 }}
   volumes:

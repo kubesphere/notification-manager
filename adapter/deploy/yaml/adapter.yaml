@@ -19,10 +19,12 @@ spec:
           args:
             - --with-stdout=true
           imagePullPolicy: Always
-          volumeMounts:
-            - mountPath: /etc/localtime
-              name: host-time
-              readOnly: true
+          env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
           lifecycle:
             preStop:
               httpGet:
@@ -48,12 +50,6 @@ spec:
             requests:
               cpu: 20m
               memory: 50Mi
-      volumes:
-        - hostPath:
-            path: /etc/localtime
-            type: ""
-          name: host-time
-
 ---
 apiVersion: v1
 kind: Service

@@ -188,13 +188,6 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      "host-time",
-					MountPath: "/etc/localtime",
-					ReadOnly:  true,
-				},
-			},
 		}
 
 		if utils.StringIsNil(nm.Spec.DefaultSecretNamespace) {
@@ -217,8 +210,12 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 			}
 		}
 
+		if nm.Spec.Env != nil {
+			newC.Env = append(newC.Env, nm.Spec.Env...)
+		}
+
 		if nm.Spec.VolumeMounts != nil {
-			newC.VolumeMounts = append(newC.VolumeMounts, nm.Spec.VolumeMounts...)
+			newC.VolumeMounts = nm.Spec.VolumeMounts
 		}
 
 		if nm.Spec.Args != nil {
@@ -231,17 +228,7 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 			deploy.Spec.Template.Spec.Containers = append(deploy.Spec.Template.Spec.Containers, *sidecar)
 		}
 
-		deploy.Spec.Template.Spec.Volumes = []corev1.Volume{
-			{
-				Name: "host-time",
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/etc/localtime",
-					},
-				},
-			},
-		}
-		deploy.Spec.Template.Spec.Volumes = append(deploy.Spec.Template.Spec.Volumes, nm.Spec.Volumes...)
+		deploy.Spec.Template.Spec.Volumes = nm.Spec.Volumes
 
 		deploy.SetOwnerReferences(nil)
 		return ctrl.SetControllerReference(nm, deploy, r.Scheme)
@@ -260,13 +247,13 @@ func (r *NotificationManagerReconciler) mutateTenantSidecar(nm *v2beta2.Notifica
 	}
 
 	if sidecar.Type == kubesphereSidecar {
-		return r.generateKubesphereSidecar(sidecar)
+		return r.generateKubesphereSidecar(sidecar, nm)
 	}
 
 	return sidecar.Container
 }
 
-func (r *NotificationManagerReconciler) generateKubesphereSidecar(sidecar *v2beta2.Sidecar) *corev1.Container {
+func (r *NotificationManagerReconciler) generateKubesphereSidecar(sidecar *v2beta2.Sidecar, nm *v2beta2.NotificationManager) *corev1.Container {
 
 	container := sidecar.Container
 	if container == nil {
@@ -290,11 +277,10 @@ func (r *NotificationManagerReconciler) generateKubesphereSidecar(sidecar *v2bet
 		}
 	}
 
-	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-		Name:      "host-time",
-		MountPath: "/etc/localtime",
-		ReadOnly:  true,
-	})
+	if nm.Spec.Env != nil {
+		container.Env = append(container.Env, nm.Spec.Env...)
+	}
+
 	return container
 }
 

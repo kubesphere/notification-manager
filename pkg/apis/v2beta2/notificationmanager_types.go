@@ -123,6 +123,8 @@ type NotificationManagerSpec struct {
 	Receivers *ReceiversSpec `json:"receivers"`
 	// The default namespace to which notification manager secrets belong.
 	DefaultSecretNamespace string `json:"defaultSecretNamespace,omitempty"`
+	// List of environment variable
+	Env []v1.EnvVar `json:"env,omitempty"`
 	// List of volumes that can be mounted by containers belonging to the pod.
 	Volumes []v1.Volume `json:"volumes,omitempty"`
 	// Pod volumes to mount into the container's filesystem.

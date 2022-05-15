@@ -55,6 +55,12 @@ rules:
 - apiGroups:
   - notification.kubesphere.io
   resources:
+  - notificationmanagers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - notification.kubesphere.io
+  resources:
   - notificationmanagers/status
   verbs:
   - get
