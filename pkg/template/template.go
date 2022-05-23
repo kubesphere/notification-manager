@@ -151,7 +151,7 @@ func (t *Template) Text(name string, data *Data) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	tmpl, err = tmpl.New("").Option("missingkey=zero").Parse(name)
+	tmpl, err = tmpl.New("").Option("missingkey=zero").Parse(t.transform(name))
 	if err != nil {
 		return "", err
 	}
@@ -174,7 +174,7 @@ func (t *Template) Html(name string, data *Data) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	tmpl, err = tmpl.New("").Option("missingkey=zero").Parse(name)
+	tmpl, err = tmpl.New("").Option("missingkey=zero").Parse(t.transform(name))
 	if err != nil {
 		return "", err
 	}
