@@ -55,7 +55,6 @@ replace (
 	github.com/konsorten/go-windows-terminal-sequences => github.com/konsorten/go-windows-terminal-sequences v1.0.2
 	github.com/kr/pretty => github.com/kr/pretty v0.2.0
 	github.com/kr/text => github.com/kr/text v0.1.0
-	github.com/kubernetes-csi/external-snapshotter/client/v3 => github.com/kubernetes-csi/external-snapshotter/client/v3 v3.0.0
 	github.com/mailru/easyjson => github.com/mailru/easyjson v0.7.1
 	github.com/matttproud/golang_protobuf_extensions => github.com/matttproud/golang_protobuf_extensions v1.0.1
 	github.com/modern-go/concurrent => github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
@@ -89,7 +88,7 @@ replace (
 	golang.org/x/oauth2 => golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
 	golang.org/x/sys => golang.org/x/sys v0.0.0-20190228124157-a34e9553db1e
 	golang.org/x/term => golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
-	golang.org/x/text => golang.org/x/text v0.3.0
+	golang.org/x/text => golang.org/x/text v0.3.7
 	golang.org/x/time => golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	golang.org/x/tools => golang.org/x/tools v0.0.0-20190710153321-831012c29e42
 	golang.org/x/xerrors => golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7

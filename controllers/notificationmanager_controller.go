@@ -67,8 +67,8 @@ type NotificationManagerReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;
 
-func (r *NotificationManagerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *NotificationManagerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+
 	log = r.Log.WithValues("NotificationManager Operator", req.NamespacedName)
 
 	var nm v2beta2.NotificationManager
@@ -303,7 +303,7 @@ func (r *NotificationManagerReconciler) makeCommonLabels(nm *v2beta2.Notificatio
 }
 
 func (r *NotificationManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(&corev1.Service{}, ownerKey, func(rawObj runtime.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Service{}, ownerKey, func(rawObj client.Object) []string {
 		// grab the service object, extract the owner.
 		svc := rawObj.(*corev1.Service)
 		owner := metav1.GetControllerOf(svc)
@@ -319,7 +319,7 @@ func (r *NotificationManagerReconciler) SetupWithManager(mgr ctrl.Manager) error
 		return err
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(&appsv1.Deployment{}, ownerKey, func(rawObj runtime.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &appsv1.Deployment{}, ownerKey, func(rawObj client.Object) []string {
 		// grab the deployment object, extract the owner.
 		deploy := rawObj.(*appsv1.Deployment)
 		owner := metav1.GetControllerOf(deploy)
