@@ -74,7 +74,7 @@ spec:
       valueFrom:
         secretKeyRef: 
           key: password
-          name: defalut-config-secret
+          name: default-config-secret
           namespace: kubesphere-monitoring-system
     authUsername: admin
     from: admin@kubesphere.io
@@ -82,7 +82,7 @@ spec:
     smartHost:
       host: imap.kubesphere.io
       port: 25
-    tls: []
+    tls: {}
 ```
 
 An email config allows the user to define:
