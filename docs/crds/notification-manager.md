@@ -68,6 +68,7 @@ A NotificationManager resource allows the user to define:
 
 Properties of Notification Manager webhook deployment.
 - `resources`
+- `env`
 - `image`
 - `imagePullPolicy`
 - `replicas`
