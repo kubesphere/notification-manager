@@ -20,11 +20,8 @@ spec:
             - --with-stdout=true
           imagePullPolicy: Always
           env:
-          - name: NAMESPACE
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: metadata.namespace
+          - name: TZ
+            value: GMT
           lifecycle:
             preStop:
               httpGet:
