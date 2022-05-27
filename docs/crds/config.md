@@ -314,4 +314,4 @@ A WeChat config allows the user to define:
 - `wechatApiSecret` - The secret of the application which to send messages. For more information, please refer to [secret](https://developer.work.weixin.qq.com/document/path/90665#secret).
 - `wechatApiAgentId` - The id of the application which to send messages. For more information, please refer to [agentid](https://developer.work.weixin.qq.com/document/path/90665#agentid).
 
-> Any user, party or tag who wants to receive notifications must be in the allowed users list of the application which to send message.
+> Any user, party, or tag that needs to be notified must be in the allowed user list of the application that sends the notification.
