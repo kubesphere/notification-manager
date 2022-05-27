@@ -11027,6 +11027,14 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - get
@@ -11074,14 +11082,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - rolebindings
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - '*'
   resources:
