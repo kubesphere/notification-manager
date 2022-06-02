@@ -113,7 +113,8 @@ func (r *Config) validateConfig() error {
 		defaultProvider := r.Spec.Sms.DefaultProvider
 		if (defaultProvider == "aliyun" && providers.Aliyun == nil) ||
 			(defaultProvider == "tencent" && providers.Tencent == nil) ||
-			(defaultProvider == "huawei" && providers.Huawei == nil) {
+			(defaultProvider == "huawei" && providers.Huawei == nil) ||
+			(defaultProvider == "aws" && providers.AWS == nil) {
 			err := field.Invalid(field.NewPath("spec", "sms", "defaultProvider"),
 				defaultProvider,
 				"cannot find provider")
@@ -164,6 +165,22 @@ func (r *Config) validateConfig() error {
 				credentials = append(credentials, map[string]interface{}{
 					"credential": r.Spec.Sms.Providers.Huawei.AppSecret,
 					"path":       field.NewPath("spec", "sms", "providers", "huawei", "appSecret"),
+				})
+			}
+		}
+
+		// Sms AWS provider parameters validation
+		if providers.AWS != nil {
+			if providers.AWS.AccessKeyId != nil {
+				credentials = append(credentials, map[string]interface{}{
+					"credential": r.Spec.Sms.Providers.AWS.AccessKeyId,
+					"path":       field.NewPath("spec", "sms", "providers", "aws", "accessKeyId"),
+				})
+			}
+			if providers.AWS.SecretAccessKey != nil {
+				credentials = append(credentials, map[string]interface{}{
+					"credential": r.Spec.Sms.Providers.AWS.SecretAccessKey,
+					"path":       field.NewPath("spec", "sms", "providers", "aws", "secretAccessKey"),
 				})
 			}
 		}

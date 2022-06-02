@@ -65,7 +65,7 @@ func (r *Receiver) Validate() error {
 	}
 
 	for _, phoneNumber := range r.PhoneNumbers {
-		if verifyPhoneFormat(phoneNumber) {
+		if !verifyPhoneFormat(phoneNumber) {
 			return fmt.Errorf("sms receiver: %s is not a valid phone number", phoneNumber)
 		}
 	}
@@ -127,6 +127,10 @@ func (c *Config) Validate() error {
 		return errors.New("sms config: cannot find default provider:tencent from providers")
 	}
 
+	if defaultProvider == constants.AWS && providers.AWS == nil {
+		return errors.New("sms config: cannot find default provider: AWS from providers")
+	}
+
 	// Sms aliyun provider parameters validation
 	if providers.Aliyun != nil {
 		if providers.Aliyun.AccessKeyId != nil {
@@ -169,6 +173,20 @@ func (c *Config) Validate() error {
 		}
 	}
 
+	// Sms AWS provider parameters validation
+	if providers.AWS != nil {
+		if providers.AWS.AccessKeyId != nil {
+			if err := internal.ValidateCredential(providers.AWS.AccessKeyId); err != nil {
+				return fmt.Errorf("sms config: accessKeyId error, %s", err.Error())
+			}
+		}
+		if providers.AWS.SecretAccessKey != nil {
+			if err := internal.ValidateCredential(providers.AWS.SecretAccessKey); err != nil {
+				return fmt.Errorf("sms config: secretAccessKey error, %s", err.Error())
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -182,7 +200,7 @@ func (c *Config) Clone() internal.Config {
 }
 
 func verifyPhoneFormat(phoneNumber string) bool {
-	regular := `(\+)?[\d*\s*]+`
+	regular := `^(\+)?(\d+)$`
 
 	reg := regexp.MustCompile(regular)
 	return reg.MatchString(phoneNumber)

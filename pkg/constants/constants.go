@@ -10,6 +10,7 @@ const (
 	Post    = "post"
 	Aliyun  = "aliyun"
 	Tencent = "tencent"
+	AWS     = "aws"
 
 	DingTalk = "dingtalk"
 	Email    = "email"

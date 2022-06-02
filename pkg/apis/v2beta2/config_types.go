@@ -147,10 +147,18 @@ type HuaweiSMS struct {
 	AppKey     *Credential `json:"appKey"`
 }
 
+// Sms AWS provider parameters
+type AWSSMS struct {
+	Region          string      `json:"region,omitempty"`
+	AccessKeyId     *Credential `json:"accessKeyId"`
+	SecretAccessKey *Credential `json:"secretAccessKey"`
+}
+
 type Providers struct {
 	Aliyun  *AliyunSMS  `json:"aliyun,omitempty"`
 	Tencent *TencentSMS `json:"tencent,omitempty"`
 	Huawei  *HuaweiSMS  `json:"huawei,omitempty"`
+	AWS     *AWSSMS     `json:"aws,omitempty"`
 }
 
 type SmsConfig struct {
