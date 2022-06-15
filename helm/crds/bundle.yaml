@@ -1415,7 +1415,6 @@ spec:
                                 labelSelector:
                                   description: A label query over a set of resources,
                                     in this case pods.
-<<<<<<< HEAD
                                   properties:
                                     matchExpressions:
                                       description: matchExpressions is a list of label
@@ -1474,8 +1473,6 @@ spec:
                                     ({}) matches all namespaces. This field is alpha-level
                                     and is only honored when PodAffinityNamespaceSelector
                                     feature is enabled.
-=======
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   properties:
                                     matchExpressions:
                                       description: matchExpressions is a list of label
@@ -1525,18 +1522,12 @@ spec:
                                       type: object
                                   type: object
                                 namespaces:
-<<<<<<< HEAD
                                   description: namespaces specifies a static list
                                     of namespace names that the term applies to. The
                                     term is applied to the union of the namespaces
                                     listed in this field and the ones selected by
                                     namespaceSelector. null or empty namespaces list
                                     and null namespaceSelector means "this pod's namespace"
-=======
-                                  description: namespaces specifies which namespaces
-                                    the labelSelector applies to (matches against);
-                                    null or empty list means "this pod's namespace"
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   items:
                                     type: string
                                   type: array
@@ -1584,7 +1575,6 @@ spec:
                             labelSelector:
                               description: A label query over a set of resources,
                                 in this case pods.
-<<<<<<< HEAD
                               properties:
                                 matchExpressions:
                                   description: matchExpressions is a list of label
@@ -1638,8 +1628,6 @@ spec:
                                 namespace". An empty selector ({}) matches all namespaces.
                                 This field is alpha-level and is only honored when
                                 PodAffinityNamespaceSelector feature is enabled.
-=======
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                               properties:
                                 matchExpressions:
                                   description: matchExpressions is a list of label
@@ -1685,18 +1673,12 @@ spec:
                                   type: object
                               type: object
                             namespaces:
-<<<<<<< HEAD
                               description: namespaces specifies a static list of namespace
                                 names that the term applies to. The term is applied
                                 to the union of the namespaces listed in this field
                                 and the ones selected by namespaceSelector. null or
                                 empty namespaces list and null namespaceSelector means
                                 "this pod's namespace"
-=======
-                              description: namespaces specifies which namespaces the
-                                labelSelector applies to (matches against); null or
-                                empty list means "this pod's namespace"
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                               items:
                                 type: string
                               type: array
@@ -1788,7 +1770,6 @@ spec:
                                         whose key field is "key", the operator is
                                         "In", and the values array contains only "value".
                                         The requirements are ANDed.
-<<<<<<< HEAD
                                       type: object
                                   type: object
                                 namespaceSelector:
@@ -1856,14 +1837,6 @@ spec:
                                     listed in this field and the ones selected by
                                     namespaceSelector. null or empty namespaces list
                                     and null namespaceSelector means "this pod's namespace"
-=======
-                                      type: object
-                                  type: object
-                                namespaces:
-                                  description: namespaces specifies which namespaces
-                                    the labelSelector applies to (matches against);
-                                    null or empty list means "this pod's namespace"
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   items:
                                     type: string
                                   type: array
@@ -1953,7 +1926,6 @@ spec:
                                     whose key field is "key", the operator is "In",
                                     and the values array contains only "value". The
                                     requirements are ANDed.
-<<<<<<< HEAD
                                   type: object
                               type: object
                             namespaceSelector:
@@ -2016,14 +1988,6 @@ spec:
                                 and the ones selected by namespaceSelector. null or
                                 empty namespaces list and null namespaceSelector means
                                 "this pod's namespace"
-=======
-                                  type: object
-                              type: object
-                            namespaces:
-                              description: namespaces specifies which namespaces the
-                                labelSelector applies to (matches against); null or
-                                empty list means "this pod's namespace"
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                               items:
                                 type: string
                               type: array
@@ -2393,11 +2357,7 @@ spec:
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
                     description: 'Limits describes the maximum amount of compute resources
-<<<<<<< HEAD
                       allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-=======
-                      allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                     type: object
                   requests:
                     additionalProperties:
@@ -2409,11 +2369,7 @@ spec:
                     description: 'Requests describes the minimum amount of compute
                       resources required. If Requests is omitted for a container,
                       it defaults to Limits if that is explicitly specified, otherwise
-<<<<<<< HEAD
                       to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-=======
-                      to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                     type: object
                 type: object
               serviceAccountName:
@@ -2669,7 +2625,6 @@ spec:
                         this volume
                       properties:
                         defaultMode:
-<<<<<<< HEAD
                           description: 'Optional: mode bits used to set permissions
                             on created files by default. Must be an octal value between
                             0000 and 0777 or a decimal value between 0 and 511. YAML
@@ -2679,14 +2634,6 @@ spec:
                             be in conflict with other options that affect the file
                             mode, like fsGroup, and the result can be other mode bits
                             set.'
-=======
-                          description: 'Optional: mode bits to use on created files
-                            by default. Must be a value between 0 and 0777. Defaults
-                            to 0644. Directories within the path are not affected
-                            by this setting. This might be in conflict with other
-                            options that affect the file mode, like fsGroup, and the
-                            result can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                           format: int32
                           type: integer
                         items:
@@ -2706,16 +2653,11 @@ spec:
                                 description: The key to project.
                                 type: string
                               mode:
-<<<<<<< HEAD
                                 description: 'Optional: mode bits used to set permissions
                                   on this file. Must be an octal value between 0000
                                   and 0777 or a decimal value between 0 and 511. YAML
                                   accepts both octal and decimal values, JSON requires
                                   decimal values for mode bits. If not specified,
-=======
-                                description: 'Optional: mode bits to use on this file,
-                                  must be a value between 0 and 0777. If not specified,
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   the volume defaultMode will be used. This might
                                   be in conflict with other options that affect the
                                   file mode, like fsGroup, and the result can be other
@@ -2743,14 +2685,9 @@ spec:
                           type: boolean
                       type: object
                     csi:
-<<<<<<< HEAD
                       description: CSI (Container Storage Interface) represents ephemeral
                         storage that is handled by certain external CSI drivers (Beta
                         feature).
-=======
-                      description: CSI (Container Storage Interface) represents storage
-                        that is handled by an external CSI driver (Alpha feature).
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                       properties:
                         driver:
                           description: Driver is the name of the CSI driver that handles
@@ -2797,7 +2734,6 @@ spec:
                       properties:
                         defaultMode:
                           description: 'Optional: mode bits to use on created files
-<<<<<<< HEAD
                             by default. Must be a Optional: mode bits used to set
                             permissions on created files by default. Must be an octal
                             value between 0000 and 0777 or a decimal value between
@@ -2807,13 +2743,6 @@ spec:
                             this setting. This might be in conflict with other options
                             that affect the file mode, like fsGroup, and the result
                             can be other mode bits set.'
-=======
-                            by default. Must be a value between 0 and 0777. Defaults
-                            to 0644. Directories within the path are not affected
-                            by this setting. This might be in conflict with other
-                            options that affect the file mode, like fsGroup, and the
-                            result can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                           format: int32
                           type: integer
                         items:
@@ -2839,16 +2768,11 @@ spec:
                                 - fieldPath
                                 type: object
                               mode:
-<<<<<<< HEAD
                                 description: 'Optional: mode bits used to set permissions
                                   on this file, must be an octal value between 0000
                                   and 0777 or a decimal value between 0 and 511. YAML
                                   accepts both octal and decimal values, JSON requires
                                   decimal values for mode bits. If not specified,
-=======
-                                description: 'Optional: mode bits to use on this file,
-                                  must be a value between 0 and 0777. If not specified,
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   the volume defaultMode will be used. This might
                                   be in conflict with other options that affect the
                                   file mode, like fsGroup, and the result can be other
@@ -3438,7 +3362,6 @@ spec:
                         and downward API
                       properties:
                         defaultMode:
-<<<<<<< HEAD
                           description: Mode bits used to set permissions on created
                             files by default. Must be an octal value between 0000
                             and 0777 or a decimal value between 0 and 511. YAML accepts
@@ -3447,14 +3370,6 @@ spec:
                             by this setting. This might be in conflict with other
                             options that affect the file mode, like fsGroup, and the
                             result can be other mode bits set.
-=======
-                          description: Mode bits to use on created files by default.
-                            Must be a value between 0 and 0777. Directories within
-                            the path are not affected by this setting. This might
-                            be in conflict with other options that affect the file
-                            mode, like fsGroup, and the result can be other mode bits
-                            set.
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                           format: int32
                           type: integer
                         sources:
@@ -3487,7 +3402,6 @@ spec:
                                           description: The key to project.
                                           type: string
                                         mode:
-<<<<<<< HEAD
                                           description: 'Optional: mode bits used to
                                             set permissions on this file. Must be
                                             an octal value between 0000 and 0777 or
@@ -3499,15 +3413,6 @@ spec:
                                             with other options that affect the file
                                             mode, like fsGroup, and the result can
                                             be other mode bits set.'
-=======
-                                          description: 'Optional: mode bits to use
-                                            on this file, must be a value between
-                                            0 and 0777. If not specified, the volume
-                                            defaultMode will be used. This might be
-                                            in conflict with other options that affect
-                                            the file mode, like fsGroup, and the result
-                                            can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                           format: int32
                                           type: integer
                                         path:
@@ -3562,7 +3467,6 @@ spec:
                                           - fieldPath
                                           type: object
                                         mode:
-<<<<<<< HEAD
                                           description: 'Optional: mode bits used to
                                             set permissions on this file, must be
                                             an octal value between 0000 and 0777 or
@@ -3574,15 +3478,6 @@ spec:
                                             with other options that affect the file
                                             mode, like fsGroup, and the result can
                                             be other mode bits set.'
-=======
-                                          description: 'Optional: mode bits to use
-                                            on this file, must be a value between
-                                            0 and 0777. If not specified, the volume
-                                            defaultMode will be used. This might be
-                                            in conflict with other options that affect
-                                            the file mode, like fsGroup, and the result
-                                            can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                           format: int32
                                           type: integer
                                         path:
@@ -3648,7 +3543,6 @@ spec:
                                           description: The key to project.
                                           type: string
                                         mode:
-<<<<<<< HEAD
                                           description: 'Optional: mode bits used to
                                             set permissions on this file. Must be
                                             an octal value between 0000 and 0777 or
@@ -3660,15 +3554,6 @@ spec:
                                             with other options that affect the file
                                             mode, like fsGroup, and the result can
                                             be other mode bits set.'
-=======
-                                          description: 'Optional: mode bits to use
-                                            on this file, must be a value between
-                                            0 and 0777. If not specified, the volume
-                                            defaultMode will be used. This might be
-                                            in conflict with other options that affect
-                                            the file mode, like fsGroup, and the result
-                                            can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                           format: int32
                                           type: integer
                                         path:
@@ -3877,7 +3762,6 @@ spec:
                         this volume. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret'
                       properties:
                         defaultMode:
-<<<<<<< HEAD
                           description: 'Optional: mode bits used to set permissions
                             on created files by default. Must be an octal value between
                             0000 and 0777 or a decimal value between 0 and 511. YAML
@@ -3887,14 +3771,6 @@ spec:
                             be in conflict with other options that affect the file
                             mode, like fsGroup, and the result can be other mode bits
                             set.'
-=======
-                          description: 'Optional: mode bits to use on created files
-                            by default. Must be a value between 0 and 0777. Defaults
-                            to 0644. Directories within the path are not affected
-                            by this setting. This might be in conflict with other
-                            options that affect the file mode, like fsGroup, and the
-                            result can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                           format: int32
                           type: integer
                         items:
@@ -3914,16 +3790,11 @@ spec:
                                 description: The key to project.
                                 type: string
                               mode:
-<<<<<<< HEAD
                                 description: 'Optional: mode bits used to set permissions
                                   on this file. Must be an octal value between 0000
                                   and 0777 or a decimal value between 0 and 511. YAML
                                   accepts both octal and decimal values, JSON requires
                                   decimal values for mode bits. If not specified,
-=======
-                                description: 'Optional: mode bits to use on this file,
-                                  must be a value between 0 and 0777. If not specified,
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   the volume defaultMode will be used. This might
                                   be in conflict with other options that affect the
                                   file mode, like fsGroup, and the result can be other
@@ -4328,7 +4199,6 @@ spec:
                                         whose key field is "key", the operator is
                                         "In", and the values array contains only "value".
                                         The requirements are ANDed.
-<<<<<<< HEAD
                                       type: object
                                   type: object
                                 namespaceSelector:
@@ -4396,14 +4266,6 @@ spec:
                                     listed in this field and the ones selected by
                                     namespaceSelector. null or empty namespaces list
                                     and null namespaceSelector means "this pod's namespace"
-=======
-                                      type: object
-                                  type: object
-                                namespaces:
-                                  description: namespaces specifies which namespaces
-                                    the labelSelector applies to (matches against);
-                                    null or empty list means "this pod's namespace"
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   items:
                                     type: string
                                   type: array
@@ -4493,7 +4355,6 @@ spec:
                                     whose key field is "key", the operator is "In",
                                     and the values array contains only "value". The
                                     requirements are ANDed.
-<<<<<<< HEAD
                                   type: object
                               type: object
                             namespaceSelector:
@@ -4556,14 +4417,6 @@ spec:
                                 and the ones selected by namespaceSelector. null or
                                 empty namespaces list and null namespaceSelector means
                                 "this pod's namespace"
-=======
-                                  type: object
-                              type: object
-                            namespaces:
-                              description: namespaces specifies which namespaces the
-                                labelSelector applies to (matches against); null or
-                                empty list means "this pod's namespace"
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                               items:
                                 type: string
                               type: array
@@ -4609,7 +4462,6 @@ spec:
                                 labelSelector:
                                   description: A label query over a set of resources,
                                     in this case pods.
-<<<<<<< HEAD
                                   properties:
                                     matchExpressions:
                                       description: matchExpressions is a list of label
@@ -4668,8 +4520,6 @@ spec:
                                     ({}) matches all namespaces. This field is alpha-level
                                     and is only honored when PodAffinityNamespaceSelector
                                     feature is enabled.
-=======
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   properties:
                                     matchExpressions:
                                       description: matchExpressions is a list of label
@@ -4719,18 +4569,12 @@ spec:
                                       type: object
                                   type: object
                                 namespaces:
-<<<<<<< HEAD
                                   description: namespaces specifies a static list
                                     of namespace names that the term applies to. The
                                     term is applied to the union of the namespaces
                                     listed in this field and the ones selected by
                                     namespaceSelector. null or empty namespaces list
                                     and null namespaceSelector means "this pod's namespace"
-=======
-                                  description: namespaces specifies which namespaces
-                                    the labelSelector applies to (matches against);
-                                    null or empty list means "this pod's namespace"
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   items:
                                     type: string
                                   type: array
@@ -4820,7 +4664,6 @@ spec:
                                     whose key field is "key", the operator is "In",
                                     and the values array contains only "value". The
                                     requirements are ANDed.
-<<<<<<< HEAD
                                   type: object
                               type: object
                             namespaceSelector:
@@ -4883,14 +4726,6 @@ spec:
                                 and the ones selected by namespaceSelector. null or
                                 empty namespaces list and null namespaceSelector means
                                 "this pod's namespace"
-=======
-                                  type: object
-                              type: object
-                            namespaces:
-                              description: namespaces specifies which namespaces the
-                                labelSelector applies to (matches against); null or
-                                empty list means "this pod's namespace"
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                               items:
                                 type: string
                               type: array
@@ -5014,7 +4849,7 @@ spec:
                           type: object
                         fieldRef:
                           description: 'Selects a field of the pod: supports metadata.name,
-                            metadata.namespace, metadata.labels, metadata.annotations,
+                            metadata.namespace, `metadata.labels[''<KEY>'']`, `metadata.annotations[''<KEY>'']`,
                             spec.nodeName, spec.serviceAccountName, status.hostIP,
                             status.podIP, status.podIPs.'
                           properties:
@@ -5807,11 +5642,7 @@ spec:
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
                     description: 'Limits describes the maximum amount of compute resources
-<<<<<<< HEAD
                       allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-=======
-                      allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                     type: object
                   requests:
                     additionalProperties:
@@ -5823,11 +5654,7 @@ spec:
                     description: 'Requests describes the minimum amount of compute
                       resources required. If Requests is omitted for a container,
                       it defaults to Limits if that is explicitly specified, otherwise
-<<<<<<< HEAD
                       to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-=======
-                      to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                     type: object
                 type: object
               routePolicy:
@@ -5923,16 +5750,10 @@ spec:
                                 type: object
                               fieldRef:
                                 description: 'Selects a field of the pod: supports
-<<<<<<< HEAD
                                   metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
                                   `metadata.annotations[''<KEY>'']`, spec.nodeName,
                                   spec.serviceAccountName, status.hostIP, status.podIP,
                                   status.podIPs.'
-=======
-                                  metadata.name, metadata.namespace, metadata.labels,
-                                  metadata.annotations, spec.nodeName, spec.serviceAccountName,
-                                  status.hostIP, status.podIP, status.podIPs.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                 properties:
                                   apiVersion:
                                     description: Version of the schema the FieldPath
@@ -6561,11 +6382,7 @@ spec:
                       type: object
                     resources:
                       description: 'Compute Resources required by this container.
-<<<<<<< HEAD
                         Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-=======
-                        Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                       properties:
                         limits:
                           additionalProperties:
@@ -6575,11 +6392,7 @@ spec:
                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                             x-kubernetes-int-or-string: true
                           description: 'Limits describes the maximum amount of compute
-<<<<<<< HEAD
                             resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-=======
-                            resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                           type: object
                         requests:
                           additionalProperties:
@@ -6592,11 +6405,7 @@ spec:
                             resources required. If Requests is omitted for a container,
                             it defaults to Limits if that is explicitly specified,
                             otherwise to an implementation-defined value. More info:
-<<<<<<< HEAD
                             https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-=======
-                            https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                           type: object
                       type: object
                     securityContext:
@@ -6697,7 +6506,6 @@ spec:
                             user:
                               description: User is a SELinux user label that applies
                                 to the container.
-<<<<<<< HEAD
                               type: string
                           type: object
                         seccompProfile:
@@ -6712,8 +6520,6 @@ spec:
                                 a descending path, relative to the kubelet's configured
                                 seccomp profile location. Must only be set if type
                                 is "Localhost".
-=======
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                               type: string
                             type:
                               description: "type indicates which kind of seccomp profile
@@ -6736,23 +6542,11 @@ spec:
                               description: GMSACredentialSpec is where the GMSA admission
                                 webhook (https://github.com/kubernetes-sigs/windows-gmsa)
                                 inlines the contents of the GMSA credential spec named
-<<<<<<< HEAD
                                 by the GMSACredentialSpecName field.
                               type: string
                             gmsaCredentialSpecName:
                               description: GMSACredentialSpecName is the name of the
                                 GMSA credential spec to use.
-=======
-                                by the GMSACredentialSpecName field. This field is
-                                alpha-level and is only honored by servers that enable
-                                the WindowsGMSA feature flag.
-                              type: string
-                            gmsaCredentialSpecName:
-                              description: GMSACredentialSpecName is the name of the
-                                GMSA credential spec to use. This field is alpha-level
-                                and is only honored by servers that enable the WindowsGMSA
-                                feature flag.
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                               type: string
                             runAsUserName:
                               description: The UserName in Windows to run the entrypoint
@@ -6760,13 +6554,7 @@ spec:
                                 in image metadata if unspecified. May also be set
                                 in PodSecurityContext. If set in both SecurityContext
                                 and PodSecurityContext, the value specified in SecurityContext
-<<<<<<< HEAD
                                 takes precedence.
-=======
-                                takes precedence. This field is beta-level and may
-                                be disabled with the WindowsRunAsUserName feature
-                                flag.
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                               type: string
                           type: object
                       type: object
@@ -6778,12 +6566,7 @@ spec:
                         can be used to provide different probe parameters at the beginning
                         of a Pod''s lifecycle, when it might take a long time to load
                         data or warm a cache, than during steady-state operation.
-<<<<<<< HEAD
                         This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
-=======
-                        This cannot be updated. This is an alpha feature enabled by
-                        the StartupProbe feature flag. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                       properties:
                         exec:
                           description: One and only one of the following should be
@@ -6961,11 +6744,7 @@ spec:
                       type: string
                     volumeDevices:
                       description: volumeDevices is the list of block devices to be
-<<<<<<< HEAD
                         used by the container.
-=======
-                        used by the container. This is a beta feature.
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                       items:
                         description: volumeDevice describes a mapping of a raw block
                           device within a container.
@@ -7340,7 +7119,6 @@ spec:
                         this volume
                       properties:
                         defaultMode:
-<<<<<<< HEAD
                           description: 'Optional: mode bits used to set permissions
                             on created files by default. Must be an octal value between
                             0000 and 0777 or a decimal value between 0 and 511. YAML
@@ -7350,14 +7128,6 @@ spec:
                             be in conflict with other options that affect the file
                             mode, like fsGroup, and the result can be other mode bits
                             set.'
-=======
-                          description: 'Optional: mode bits to use on created files
-                            by default. Must be a value between 0 and 0777. Defaults
-                            to 0644. Directories within the path are not affected
-                            by this setting. This might be in conflict with other
-                            options that affect the file mode, like fsGroup, and the
-                            result can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                           format: int32
                           type: integer
                         items:
@@ -7377,16 +7147,11 @@ spec:
                                 description: The key to project.
                                 type: string
                               mode:
-<<<<<<< HEAD
                                 description: 'Optional: mode bits used to set permissions
                                   on this file. Must be an octal value between 0000
                                   and 0777 or a decimal value between 0 and 511. YAML
                                   accepts both octal and decimal values, JSON requires
                                   decimal values for mode bits. If not specified,
-=======
-                                description: 'Optional: mode bits to use on this file,
-                                  must be a value between 0 and 0777. If not specified,
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   the volume defaultMode will be used. This might
                                   be in conflict with other options that affect the
                                   file mode, like fsGroup, and the result can be other
@@ -7414,14 +7179,9 @@ spec:
                           type: boolean
                       type: object
                     csi:
-<<<<<<< HEAD
                       description: CSI (Container Storage Interface) represents ephemeral
                         storage that is handled by certain external CSI drivers (Beta
                         feature).
-=======
-                      description: CSI (Container Storage Interface) represents storage
-                        that is handled by an external CSI driver (Alpha feature).
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                       properties:
                         driver:
                           description: Driver is the name of the CSI driver that handles
@@ -7468,7 +7228,6 @@ spec:
                       properties:
                         defaultMode:
                           description: 'Optional: mode bits to use on created files
-<<<<<<< HEAD
                             by default. Must be a Optional: mode bits used to set
                             permissions on created files by default. Must be an octal
                             value between 0000 and 0777 or a decimal value between
@@ -7478,13 +7237,6 @@ spec:
                             this setting. This might be in conflict with other options
                             that affect the file mode, like fsGroup, and the result
                             can be other mode bits set.'
-=======
-                            by default. Must be a value between 0 and 0777. Defaults
-                            to 0644. Directories within the path are not affected
-                            by this setting. This might be in conflict with other
-                            options that affect the file mode, like fsGroup, and the
-                            result can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                           format: int32
                           type: integer
                         items:
@@ -7510,16 +7262,11 @@ spec:
                                 - fieldPath
                                 type: object
                               mode:
-<<<<<<< HEAD
                                 description: 'Optional: mode bits used to set permissions
                                   on this file, must be an octal value between 0000
                                   and 0777 or a decimal value between 0 and 511. YAML
                                   accepts both octal and decimal values, JSON requires
                                   decimal values for mode bits. If not specified,
-=======
-                                description: 'Optional: mode bits to use on this file,
-                                  must be a value between 0 and 0777. If not specified,
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   the volume defaultMode will be used. This might
                                   be in conflict with other options that affect the
                                   file mode, like fsGroup, and the result can be other
@@ -8109,7 +7856,6 @@ spec:
                         and downward API
                       properties:
                         defaultMode:
-<<<<<<< HEAD
                           description: Mode bits used to set permissions on created
                             files by default. Must be an octal value between 0000
                             and 0777 or a decimal value between 0 and 511. YAML accepts
@@ -8118,14 +7864,6 @@ spec:
                             by this setting. This might be in conflict with other
                             options that affect the file mode, like fsGroup, and the
                             result can be other mode bits set.
-=======
-                          description: Mode bits to use on created files by default.
-                            Must be a value between 0 and 0777. Directories within
-                            the path are not affected by this setting. This might
-                            be in conflict with other options that affect the file
-                            mode, like fsGroup, and the result can be other mode bits
-                            set.
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                           format: int32
                           type: integer
                         sources:
@@ -8158,7 +7896,6 @@ spec:
                                           description: The key to project.
                                           type: string
                                         mode:
-<<<<<<< HEAD
                                           description: 'Optional: mode bits used to
                                             set permissions on this file. Must be
                                             an octal value between 0000 and 0777 or
@@ -8170,15 +7907,6 @@ spec:
                                             with other options that affect the file
                                             mode, like fsGroup, and the result can
                                             be other mode bits set.'
-=======
-                                          description: 'Optional: mode bits to use
-                                            on this file, must be a value between
-                                            0 and 0777. If not specified, the volume
-                                            defaultMode will be used. This might be
-                                            in conflict with other options that affect
-                                            the file mode, like fsGroup, and the result
-                                            can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                           format: int32
                                           type: integer
                                         path:
@@ -8233,7 +7961,6 @@ spec:
                                           - fieldPath
                                           type: object
                                         mode:
-<<<<<<< HEAD
                                           description: 'Optional: mode bits used to
                                             set permissions on this file, must be
                                             an octal value between 0000 and 0777 or
@@ -8245,15 +7972,6 @@ spec:
                                             with other options that affect the file
                                             mode, like fsGroup, and the result can
                                             be other mode bits set.'
-=======
-                                          description: 'Optional: mode bits to use
-                                            on this file, must be a value between
-                                            0 and 0777. If not specified, the volume
-                                            defaultMode will be used. This might be
-                                            in conflict with other options that affect
-                                            the file mode, like fsGroup, and the result
-                                            can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                           format: int32
                                           type: integer
                                         path:
@@ -8319,7 +8037,6 @@ spec:
                                           description: The key to project.
                                           type: string
                                         mode:
-<<<<<<< HEAD
                                           description: 'Optional: mode bits used to
                                             set permissions on this file. Must be
                                             an octal value between 0000 and 0777 or
@@ -8331,15 +8048,6 @@ spec:
                                             with other options that affect the file
                                             mode, like fsGroup, and the result can
                                             be other mode bits set.'
-=======
-                                          description: 'Optional: mode bits to use
-                                            on this file, must be a value between
-                                            0 and 0777. If not specified, the volume
-                                            defaultMode will be used. This might be
-                                            in conflict with other options that affect
-                                            the file mode, like fsGroup, and the result
-                                            can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                           format: int32
                                           type: integer
                                         path:
@@ -8548,7 +8256,6 @@ spec:
                         this volume. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret'
                       properties:
                         defaultMode:
-<<<<<<< HEAD
                           description: 'Optional: mode bits used to set permissions
                             on created files by default. Must be an octal value between
                             0000 and 0777 or a decimal value between 0 and 511. YAML
@@ -8558,14 +8265,6 @@ spec:
                             be in conflict with other options that affect the file
                             mode, like fsGroup, and the result can be other mode bits
                             set.'
-=======
-                          description: 'Optional: mode bits to use on created files
-                            by default. Must be a value between 0 and 0777. Defaults
-                            to 0644. Directories within the path are not affected
-                            by this setting. This might be in conflict with other
-                            options that affect the file mode, like fsGroup, and the
-                            result can be other mode bits set.'
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                           format: int32
                           type: integer
                         items:
@@ -8585,16 +8284,11 @@ spec:
                                 description: The key to project.
                                 type: string
                               mode:
-<<<<<<< HEAD
                                 description: 'Optional: mode bits used to set permissions
                                   on this file. Must be an octal value between 0000
                                   and 0777 or a decimal value between 0 and 511. YAML
                                   accepts both octal and decimal values, JSON requires
                                   decimal values for mode bits. If not specified,
-=======
-                                description: 'Optional: mode bits to use on this file,
-                                  must be a value between 0 and 0777. If not specified,
->>>>>>> 41601e2 (remove hostPath mounts, add TZ environment variable)
                                   the volume defaultMode will be used. This might
                                   be in conflict with other options that affect the
                                   file mode, like fsGroup, and the result can be other
