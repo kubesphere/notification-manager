@@ -5,6 +5,9 @@ hook:
   postInstall:
     backoffLimit: 1
 
+# Set timezone to be injected into containers
+# timezone: "America/Toronto"
+
 # value of notification-manager-operator
 operator: 
   containers:

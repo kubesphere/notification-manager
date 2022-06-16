@@ -973,6 +973,13 @@ func (in *NotificationManagerSpec) DeepCopyInto(out *NotificationManagerSpec) {
 		*out = new(ReceiversSpec)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.Volumes != nil {
 		in, out := &in.Volumes, &out.Volumes
 		*out = make([]v1.Volume, len(*in))

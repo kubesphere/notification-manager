@@ -69,7 +69,7 @@ undeploy:
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=controller-role webhook paths=./pkg/apis/v2beta1 paths=./pkg/apis/v2beta2 output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=controller-role webhook paths=./pkg/apis/v2beta1 paths=./pkg/apis/v2beta2 paths=./controllers output:crd:artifacts:config=config/crd/bases
 	cd config/manager && kustomize edit set image controller=${IMG} && cd ../../
 	kustomize build config/default | sed -e '/creationTimestamp/d' > config/bundle.yaml
 	kustomize build config/samples | sed -e '/creationTimestamp/d' > config/samples/bundle.yaml

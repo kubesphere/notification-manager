@@ -42,6 +42,10 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
+        {{- if .Values.timezone }}
+        - name: TZ
+          value: {{ .Values.timezone }}
+        {{- end }}
         image: {{ .Values.operator.containers.operator.image.repo }}:{{ .Values.operator.containers.operator.image.tag }}
         imagePullPolicy: {{ .Values.operator.containers.operator.image.pullPolicy }}
         name: notification-manager-operator
@@ -55,18 +59,11 @@ spec:
           - mountPath: /tmp/k8s-webhook-server/serving-certs
             name: cert
             readOnly: true
-          - mountPath: /etc/localtime
-            name: host-time
-            readOnly: true
       volumes:
         - name: cert
           secret:
             defaultMode: 420
             secretName: notification-manager-webhook-server-cert
-        - hostPath:
-            path: /etc/localtime
-            type: ""
-          name: host-time
       serviceAccount: notification-manager-sa
       serviceAccountName: notification-manager-sa
       nodeSelector:
