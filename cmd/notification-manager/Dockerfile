@@ -1,7 +1,7 @@
 ARG GOPROXY="https://goproxy.io"
 # Build the manager binary
 FROM golang:1.17 as builder
-#ARG GOPROXY
+ARG GOPROXY
 
 WORKDIR /workspace
 # Copy the Go Modules manifests

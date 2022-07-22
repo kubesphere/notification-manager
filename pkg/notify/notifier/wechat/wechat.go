@@ -306,14 +306,14 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
 func (n *Notifier) getToken(ctx context.Context, r *wechat.Receiver) (string, error) {
 
+	apiSecret, err := n.notifierCtl.GetCredential(r.APISecret)
+	if err != nil {
+		return "", err
+	}
+
 	get := func(ctx context.Context) (string, time.Duration, error) {
 		u := r.APIURL
 		u, err := utils.UrlWithPath(u, "gettoken")
-		if err != nil {
-			return "", 0, err
-		}
-
-		apiSecret, err := n.notifierCtl.GetCredential(r.APISecret)
 		if err != nil {
 			return "", 0, err
 		}
@@ -352,7 +352,7 @@ func (n *Notifier) getToken(ctx context.Context, r *wechat.Receiver) (string, er
 		return resp.AccessToken, DefaultExpires, nil
 	}
 
-	return n.ats.GetToken(ctx, r.CorpID+" | "+r.AgentID, get)
+	return n.ats.GetToken(ctx, r.CorpID+" | "+apiSecret, get)
 }
 
 func (n *Notifier) invalidToken(ctx context.Context, r *wechat.Receiver) {
