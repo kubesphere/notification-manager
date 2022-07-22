@@ -78,6 +78,14 @@ func New(language string, languagePack []string) (*Template, error) {
 		return t.translate(key)
 	}
 
+	funcMap["message"] = func(a *Alert) string {
+		if language == "zh-cn" {
+			return a.MessageCN()
+		} else {
+			return a.Message()
+		}
+	}
+
 	t.text = t.text.Funcs(funcMap)
 	t.html = t.html.Funcs(funcMap)
 
