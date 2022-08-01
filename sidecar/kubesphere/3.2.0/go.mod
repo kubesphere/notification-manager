@@ -7,12 +7,12 @@ module kubesphere
 go 1.16
 
 require (
-	github.com/emicklei/go-restful v2.14.3+incompatible
-	github.com/spf13/cobra v1.2.1
+	github.com/emicklei/go-restful/v3 v3.8.0
+	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
-	k8s.io/api v0.21.3
-	k8s.io/apimachinery v0.21.3
-	k8s.io/apiserver v0.21.2
+	k8s.io/api v0.22.5
+	k8s.io/apimachinery v0.22.5
+	k8s.io/apiserver v0.22.5
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
 	kubesphere.io/api v0.0.0
@@ -29,7 +29,7 @@ replace (
 	github.com/beorn7/perks => github.com/beorn7/perks v1.0.1
 	github.com/cespare/xxhash/v2 => github.com/cespare/xxhash/v2 v2.1.1
 	github.com/davecgh/go-spew => github.com/davecgh/go-spew v1.1.1
-	github.com/emicklei/go-restful => github.com/emicklei/go-restful v2.14.3+incompatible
+	github.com/emicklei/go-restful v2.14.3+incompatible => github.com/emicklei/go-restful/v3 v3.8.0
 	github.com/evanphx/json-patch => github.com/evanphx/json-patch v4.9.0+incompatible
 	github.com/ghodss/yaml => github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr => github.com/go-logr/logr v0.4.0
@@ -62,7 +62,7 @@ replace (
 	github.com/nxadm/tail => github.com/nxadm/tail v1.4.4
 	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega => github.com/onsi/gomega v1.10.1
-	github.com/open-policy-agent/opa => github.com/open-policy-agent/opa v0.18.0
+	github.com/open-policy-agent/opa => github.com/open-policy-agent/opa v0.40.0
 	github.com/pkg/errors => github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib => github.com/pmezard/go-difflib v1.0.0
 	github.com/projectcalico/go-json => github.com/projectcalico/go-json v0.0.0-20161128004156-6219dc7339ba
@@ -84,9 +84,9 @@ replace (
 	go.uber.org/tools => go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee
 	go.uber.org/zap => go.uber.org/zap v1.13.0
 	golang.org/x/lint => golang.org/x/lint v0.0.0-20190301231843-5614ed5bae6f
-	golang.org/x/net => golang.org/x/net v0.0.0-20210525063256-abc453219eb5
+	golang.org/x/net => golang.org/x/net v0.0.0-20211209124913-491a49abca63
 	golang.org/x/oauth2 => golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
-	golang.org/x/sys => golang.org/x/sys v0.0.0-20190228124157-a34e9553db1e
+	golang.org/x/sys => golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
 	golang.org/x/term => golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
 	golang.org/x/text => golang.org/x/text v0.3.7
 	golang.org/x/time => golang.org/x/time v0.0.0-20190308202827-9d24e82272b4

@@ -27,7 +27,7 @@ import (
 
 	"k8s.io/klog"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"kubesphere.io/kubesphere/pkg/utils/signals"
