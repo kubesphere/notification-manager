@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: kubesphere/notification-manager-operator
-  newTag: latest
+  newTag: v2.1.0-rc.0
