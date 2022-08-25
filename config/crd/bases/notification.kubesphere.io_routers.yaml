@@ -91,6 +91,21 @@ spec:
               receivers:
                 description: Receivers which need to receive the matched alert.
                 properties:
+                  channels:
+                    items:
+                      properties:
+                        tenant:
+                          type: string
+                        type:
+                          description: Receiver type, known values are dingtalk, email,
+                            slack, sms, pushover, webhook, wechat.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - tenant
+                      type: object
+                    type: array
                   name:
                     items:
                       type: string
