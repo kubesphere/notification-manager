@@ -711,6 +711,38 @@ func (c *Controller) RcvsFromSelector(selector *metav1.LabelSelector, receiverTy
 	return val.([]internal.Receiver)
 }
 
+func (c *Controller) RcvsFromTenant(channels []v2beta2.Channel) []internal.Receiver {
+
+	t := &task{
+		run: func(t *task) {
+			var rcvs []internal.Receiver
+			for _, channel := range channels {
+				for k := range c.receivers {
+					for _, v := range c.receivers[k] {
+						if v.GetTenantID() == channel.Tenant {
+							if (channel.Type == nil || len(channel.Type) == 0) ||
+								utils.StringInList(v.GetType(), channel.Type) {
+								if v.Enabled() {
+									rcv := v.Clone()
+									getMatchedConfig(rcv, c.configs)
+									rcvs = append(rcvs, rcv)
+								}
+							}
+						}
+					}
+				}
+			}
+
+			t.done <- rcvs
+		},
+		done: make(chan interface{}, 1),
+	}
+
+	c.ch <- t
+	val := <-t.done
+	return val.([]internal.Receiver)
+}
+
 func (c *Controller) getTenantID(label map[string]string) string {
 	// If crd is a global receiver, tenantID should be set to a unique tenantID.
 	if c.isGlobal(label) {
