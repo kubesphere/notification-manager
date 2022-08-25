@@ -116,6 +116,7 @@ func (s *routeStage) rcvsFromRouter(alert *template.Alert, routers []v2beta2.Rou
 		if router.Spec.Receivers.Selector != nil {
 			rcvs = append(rcvs, s.notifierCtl.RcvsFromSelector(router.Spec.Receivers.Selector, router.Spec.Receivers.Type)...)
 		}
+		rcvs = append(rcvs, s.notifierCtl.RcvsFromTenant(router.Spec.Receivers.Channels)...)
 	}
 
 	return rcvs
