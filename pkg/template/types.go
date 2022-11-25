@@ -9,6 +9,10 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/constants"
 )
 
+var (
+	keysNeedToHiden = []string{"rule_id"}
+)
+
 type Data struct {
 	Alerts Alerts `json:"alerts"`
 
@@ -100,6 +104,9 @@ func (kv KV) SortedPairs() Pairs {
 		sortStart = 0
 	)
 	for k := range kv {
+		if utils.StringInList(k, keysNeedToHiden) {
+			continue
+		}
 		if k == constants.AlertName {
 			keys = append([]string{k}, keys...)
 			sortStart = 1

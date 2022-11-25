@@ -1,0 +1,125 @@
+{
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "user": "admin",
+        "verb": "update",
+        "alertname": "ResourceChange",
+        "alerttype": "auditing",
+        "group": "[\"system:authenticated\"]",
+        "name": "default-email-config",
+        "requestReceivedTimestamp": "2022-11-03 15:11:56.676195 +0800 CST",
+        "resource": "configs"
+      },
+      "annotations": {
+        "message": "admin update configs 'default-email-config'"
+      },
+      "startsAt": "2022-11-03T07:11:59.012609645Z",
+      "endsAt": "0001-01-01T00:00:00Z"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alerttype": "auditing",
+        "group": "[\"system:authenticated\"]",
+        "name": "default-email-config",
+        "requestReceivedTimestamp": "2022-11-03 15:12:23.002229 +0800 CST",
+        "resource": "configs",
+        "user": "admin",
+        "verb": "update",
+        "alertname": "ResourceChange"
+      },
+      "annotations": {
+        "message": "admin update configs 'default-email-config'"
+      },
+      "startsAt": "2022-11-03T07:12:25.886979201Z",
+      "endsAt": "0001-01-01T00:00:00Z"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "user": "admin",
+        "verb": "update",
+        "alertname": "ResourceChange",
+        "alerttype": "auditing",
+        "group": "[\"system:authenticated\"]",
+        "name": "global-email-config-secret",
+        "requestReceivedTimestamp": "2022-11-03 15:11:57.575266 +0800 CST",
+        "resource": "secrets"
+      },
+      "annotations": {
+        "message": "admin update secrets 'global-email-config-secret'"
+      },
+      "startsAt": "2022-11-03T07:11:59.011971811Z",
+      "endsAt": "0001-01-01T00:00:00Z"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alerttype": "auditing",
+        "group": "[\"system:authenticated\"]",
+        "name": "global-email-config-secret",
+        "requestReceivedTimestamp": "2022-11-03 15:12:23.883493 +0800 CST",
+        "resource": "secrets",
+        "user": "admin",
+        "verb": "update",
+        "alertname": "ResourceChange"
+      },
+      "annotations": {
+        "message": "admin update secrets 'global-email-config-secret'"
+      },
+      "startsAt": "2022-11-03T07:12:25.886428149Z",
+      "endsAt": "0001-01-01T00:00:00Z"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alerttype": "auditing",
+        "group": "[\"system:authenticated\"]",
+        "name": "global-email-receiver",
+        "requestReceivedTimestamp": "2022-11-03 15:11:58.205487 +0800 CST",
+        "resource": "receivers",
+        "user": "admin",
+        "verb": "update",
+        "alertname": "ResourceChange"
+      },
+      "annotations": {
+        "message": "admin update receivers 'global-email-receiver'"
+      },
+      "startsAt": "2022-11-03T07:11:59.011508968Z",
+      "endsAt": "0001-01-01T00:00:00Z"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "ResourceChange",
+        "alerttype": "auditing",
+        "group": "[\"system:authenticated\"]",
+        "name": "global-email-receiver",
+        "requestReceivedTimestamp": "2022-11-03 15:12:24.59289 +0800 CST",
+        "resource": "receivers",
+        "user": "admin",
+        "verb": "update"
+      },
+      "annotations": {
+        "message": "admin update receivers 'global-email-receiver'"
+      },
+      "startsAt": "2022-11-03T07:12:25.882506111Z",
+      "endsAt": "0001-01-01T00:00:00Z"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "ResourceChange"
+  },
+  "commonLabels": {
+    "alertname": "ResourceChange",
+    "alerttype": "auditing",
+    "group": "[\"system:authenticated\"]",
+    "user": "admin",
+    "verb": "update"
+  },
+  "commonAnnotations": {
+
+  }
+}

@@ -482,9 +482,9 @@ An email receiver only receives "warning" notifications.
 email:
   alertSelector:
     matchExpressions:
-      - key: serverity
+      - key: severity
         operator: In
-        value:
+        values:
           - error
           - critical
 ```
