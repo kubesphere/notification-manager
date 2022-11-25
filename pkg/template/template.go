@@ -41,6 +41,9 @@ var DefaultFuncs = FuncMap{
 	"stringSlice": func(s ...string) []string {
 		return s
 	},
+	"escape": func(text string) string {
+		return strings.ReplaceAll(strings.ReplaceAll(text, "'", "\\'"), "\"", "\\")
+	},
 }
 
 type Template struct {
