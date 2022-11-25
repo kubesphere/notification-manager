@@ -31,6 +31,9 @@ data:
         rule_id: "告警规则"
         owner_kind: "目标类型"
         workload: "工作负载"
+        rule_group: "规则组"
+        rule_level: "规则级别"
+        name: "名称"
 kind: ConfigMap
 metadata:
   name: zh-cn
