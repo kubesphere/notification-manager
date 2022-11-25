@@ -85,3 +85,6 @@ notificationmanager:
   template:
     text:
       name: notification-manager-template
+  env:
+    - name: TZ
+      value: Asia/Shanghai
