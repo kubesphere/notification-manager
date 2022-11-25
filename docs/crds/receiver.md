@@ -100,7 +100,7 @@ metadata:
   name: global-receiver
   labels:
     type: tenant
-    user: admin
+    user: test
 spec:
   email:
     alertSelector:
@@ -110,7 +110,7 @@ spec:
     emailConfigSelector:
       matchLabels:
         type: tenant
-        user: admin
+        user: test
     enabled: true
     template: nm.default.html
     subjectTemplate: nm.default.subject
