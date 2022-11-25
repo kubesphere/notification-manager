@@ -76,8 +76,8 @@ spec:
           key: password
           name: default-config-secret
           namespace: kubesphere-monitoring-system
-    authUsername: admin
-    from: admin@kubesphere.io
+    authUsername: test
+    from: test@kubesphere.io
     requireTLS: true
     smartHost:
       host: imap.kubesphere.io
