@@ -12,6 +12,7 @@ This page describes the release process and the currently planned schedule for u
 | v1.4.0         | 2021-10-14             | leiwanjun (GitHub: @leiwanjun) |
 | v2.0.0         | 2022-04-18             | leiwanjun (GitHub: @leiwanjun) |
 | v2.0.1         | 2022-05-13             | leiwanjun (GitHub: @leiwanjun) |
+| v2.1.0         | 2022-11-29             | leiwanjun (GitHub: @leiwanjun) |
 
 
 # How to cut a new release
