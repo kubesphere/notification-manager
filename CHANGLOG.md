@@ -1,3 +1,19 @@
+## v2.1.0 / 2022-11-29
+
+### FEATURES
+
+- Add support to send notifications to AWS SMS (#159). @Bennu-Li
+- Use the `TZ` environment variable instead of the host path `/etc/localtime` to set the time zone (#148). @ctrought
+
+### Enhancement
+
+- Support to route notifications to specified tenants (#163). @wanjunlei
+- Enhanced notification template, support automatic selection of message based on notification language (#160). @wanjunlei
+
+### BUGFIX
+
+- Fix bug that `Feishu` not support short template name (#152). @wanjunlei
+
 ## v2.0.1 / 2022-05-13
 
 ### BUGFIX
