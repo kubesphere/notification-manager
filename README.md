@@ -80,17 +80,17 @@ We assume you already have a Kubernetes cluster (v1.16+). You can install one us
 
 ```shell
 # Deploy CRDs and the Notification Manager Operator:
-kubectl apply -f https://github.com/kubesphere/notification-manager/releases/download/v2.0.1/bundle.yaml
+kubectl apply -f https://github.com/kubesphere/notification-manager/releases/download/v2.1.0/bundle.yaml
 # Deploy default template:
-kubectl apply -f https://github.com/kubesphere/notification-manager/releases/download/v2.0.1/template.yaml
+kubectl apply -f https://github.com/kubesphere/notification-manager/releases/download/v2.1.0/template.yaml
 # Deploy built-in language packs.
-kubectl apply -f https://github.com/kubesphere/notification-manager/releases/download/v2.0.1/zh-cn.yaml
+kubectl apply -f https://github.com/kubesphere/notification-manager/releases/download/v2.1.0/zh-cn.yaml
 ```
 
 #### Install with helm
 
 ```shell
-helm install notification-manager --create-namespace -n kubesphere-monitoring-system https://github.com/kubesphere/notification-manager/releases/download/v2.0.1/notification-manager.tgz
+helm install notification-manager --create-namespace -n kubesphere-monitoring-system https://github.com/kubesphere/notification-manager/releases/download/v2.1.0/notification-manager.tgz
 ```
 
 ### Configure NotificationManager 
@@ -101,7 +101,7 @@ ensures a deployment meeting the resource requirements is running.
 We should create a NotificationManager CR first, skip this when using helm install.
 
 ```shell
-kubectl apply -f https://github.com/kubesphere/notification-manager/releases/download/v2.0.0/notification_manager.yaml
+kubectl apply -f https://github.com/kubesphere/notification-manager/releases/download/v2.1.0/notification_manager.yaml
 ```
 
 ### Configure sender
