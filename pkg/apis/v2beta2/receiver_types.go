@@ -195,6 +195,16 @@ type WechatReceiver struct {
 	TmplType *string `json:"tmplType,omitempty"`
 	// Template file.
 	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
+	ChatBot  *WechatChatBot        `json:"chatbot,omitempty"`
+}
+
+type WechatChatBot struct {
+	Webhook *Credential `json:"webhook"`
+
+	// The users who will be @.
+	AtUsers []string `json:"atUsers,omitempty"`
+
+	AtMobiles []string `json:"atMobiles,omitempty"`
 }
 
 type SmsReceiver struct {
@@ -282,7 +292,7 @@ type FeishuReceiver struct {
 	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
 }
 
-//ReceiverSpec defines the desired state of Receiver
+// ReceiverSpec defines the desired state of Receiver
 type ReceiverSpec struct {
 	DingTalk *DingTalkReceiver `json:"dingtalk,omitempty"`
 	Email    *EmailReceiver    `json:"email,omitempty"`

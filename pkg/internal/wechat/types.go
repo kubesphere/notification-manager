@@ -15,7 +15,14 @@ type Receiver struct {
 	ToUser  []string `json:"toUser,omitempty"`
 	ToParty []string `json:"toParty,omitempty"`
 	ToTag   []string `json:"toTag,omitempty"`
+	ChatBot *ChatBot `json:"chatbot,omitempty"`
 	*Config
+}
+
+type ChatBot struct {
+	Webhook   *v2beta2.Credential `json:"webhook"`
+	AtUsers   []string            `json:"atUsers,omitempty"`
+	AtMobiles []string            `json:"atMobiles,omitempty"`
 }
 
 func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
@@ -51,6 +58,14 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 		r.TmplType = *w.TmplType
 	}
 
+	if w.ChatBot != nil {
+		r.ChatBot = &ChatBot{
+			Webhook:   w.ChatBot.Webhook,
+			AtUsers:   w.ChatBot.AtUsers,
+			AtMobiles: w.ChatBot.AtMobiles,
+		}
+	}
+
 	return r
 }
 
@@ -66,16 +81,18 @@ func (r *Receiver) SetConfig(c internal.Config) {
 
 func (r *Receiver) Validate() error {
 
-	if len(r.ToUser) == 0 && len(r.ToParty) == 0 && len(r.ToTag) == 0 {
-		return fmt.Errorf("wechat receiver: must specify one of: `toUser`, `toParty` or `toTag`")
+	if len(r.ToUser) == 0 && len(r.ToParty) == 0 && len(r.ToTag) == 0 && r.ChatBot == nil {
+		return fmt.Errorf("wechat receiver: must specify one of: `toUser`, `toParty`, `toTag` or `chatbot`")
 	}
 
 	if r.TmplType != "" && r.TmplType != constants.Text && r.TmplType != constants.Markdown {
 		return fmt.Errorf("wechat receiver: tmplType must be one of: `text` or `markdown`")
 	}
 
-	if r.Config == nil {
-		return fmt.Errorf("wechat receiver: config is nil")
+	if len(r.ToUser) > 0 || len(r.ToParty) > 0 || len(r.ToTag) > 0 {
+		if r.Config == nil {
+			return fmt.Errorf("wechat receiver: config is nil")
+		}
 	}
 
 	return nil
@@ -84,8 +101,9 @@ func (r *Receiver) Validate() error {
 func (r *Receiver) Clone() internal.Receiver {
 
 	out := &Receiver{
-		Common: r.Common.Clone(),
-		Config: r.Config,
+		Common:  r.Common.Clone(),
+		Config:  r.Config,
+		ChatBot: r.ChatBot,
 	}
 
 	out.ToParty = append(out.ToParty, r.ToParty...)

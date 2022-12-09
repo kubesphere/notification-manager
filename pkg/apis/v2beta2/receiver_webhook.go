@@ -98,6 +98,13 @@ func (r *Receiver) validateReceiver() error {
 		})
 	}
 
+	if r.Spec.Wechat != nil && r.Spec.Wechat.ChatBot != nil {
+		credentials = append(credentials, map[string]interface{}{
+			"credential": r.Spec.Wechat.ChatBot.Webhook,
+			"path":       field.NewPath("spec", "wechat", "chatbot", "webhook"),
+		})
+	}
+
 	if r.Spec.Webhook != nil && r.Spec.Webhook.HTTPConfig != nil {
 		httpConfig := r.Spec.Webhook.HTTPConfig
 		credentials = append(credentials, map[string]interface{}{
@@ -229,9 +236,9 @@ func (r *Receiver) validateReceiver() error {
 
 	if r.Spec.Wechat != nil {
 		wechat := r.Spec.Wechat
-		if len(wechat.ToUser) == 0 && len(wechat.ToParty) == 0 && len(wechat.ToTag) == 0 {
+		if len(wechat.ToUser) == 0 && len(wechat.ToParty) == 0 && len(wechat.ToTag) == 0 && wechat.ChatBot == nil {
 			allErrs = append(allErrs, field.Required(field.NewPath("spec", "wechat"),
-				"must specify one of: `toUser`, `toParty` or `toTag`"))
+				"must specify one of: `toUser`, `toParty`, `toTag` or `chatbot`"))
 		}
 
 		if wechat.TmplType != nil {

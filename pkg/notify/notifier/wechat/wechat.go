@@ -21,16 +21,18 @@ import (
 )
 
 const (
-	DefaultApiURL           = "https://qyapi.weixin.qq.com/cgi-bin/"
-	DefaultSendTimeout      = time.Second * 3
-	ToUserBatchSize         = 1000
-	ToPartyBatchSize        = 100
-	ToTagBatchSize          = 100
-	AccessTokenInvalid      = 42001
-	DefaultTextTemplate     = `{{ template "nm.default.text" . }}`
-	DefaultMarkdownTemplate = `{{ template "nm.default.markdown" . }}`
-	MessageMaxSize          = 2048
-	DefaultExpires          = time.Hour * 2
+	DefaultApiURL                 = "https://qyapi.weixin.qq.com/cgi-bin/"
+	DefaultSendTimeout            = time.Second * 3
+	ToUserBatchSize               = 1000
+	ToPartyBatchSize              = 100
+	ToTagBatchSize                = 100
+	AccessTokenInvalid            = 42001
+	DefaultTextTemplate           = `{{ template "nm.default.text" . }}`
+	DefaultMarkdownTemplate       = `{{ template "nm.default.markdown" . }}`
+	MessageMaxSize                = 2048
+	DefaultExpires                = time.Hour * 2
+	ChatbotMessageMaxTextSize     = 2048
+	ChatbotMessageMaxMarkdownSize = 4096
 )
 
 type Notifier struct {
@@ -46,7 +48,9 @@ type Notifier struct {
 }
 
 type weChatMessageContent struct {
-	Content string `json:"content"`
+	Content             string   `json:"content"`
+	MentionedList       []string `json:"mentioned_list,omitempty"`
+	MentionedMobileList []string `json:"mentioned_mobile_list,omitempty"`
 }
 
 type weChatMessage struct {
@@ -111,13 +115,14 @@ func NewWechatNotifier(logger log.Logger, receiver internal.Receiver, notifierCt
 	}
 
 	n.receiver = receiver.(*wechat.Receiver)
-	if n.receiver.Config == nil {
+	if n.receiver.Config == nil && n.receiver.ChatBot == nil {
 		_ = level.Warn(logger).Log("msg", "WechatNotifier: ignore receiver because of empty config")
 		return nil, utils.Error("ignore receiver because of empty config")
 	}
-
-	if utils.StringIsNil(n.receiver.APIURL) {
-		n.receiver.APIURL = DefaultApiURL
+	if n.receiver.Config != nil {
+		if utils.StringIsNil(n.receiver.APIURL) {
+			n.receiver.APIURL = DefaultApiURL
+		}
 	}
 
 	if utils.StringIsNil(n.receiver.TmplType) {
@@ -283,6 +288,12 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 	toTag := n.receiver.ToTag
 
 	group := async.NewGroup(ctx)
+	if n.receiver.ChatBot != nil {
+
+		group.Add(func(stopCh chan interface{}) {
+			stopCh <- n.sendToChatBot(ctx, data)
+		})
+	}
 	for {
 		if us >= len(toUser) && ps >= len(toParty) && ts >= len(toTag) {
 			break
@@ -299,6 +310,119 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 				stopCh <- send(r, msg)
 			})
 		}
+	}
+
+	return group.Wait()
+}
+
+func (n *Notifier) sendToChatBot(ctx context.Context, data *template.Data) error {
+
+	bot := n.receiver.ChatBot
+
+	webhook := bot.Webhook
+
+	send := func(msg string) error {
+
+		start := time.Now()
+		defer func() {
+			_ = level.Debug(n.logger).Log("msg", "wechatBotNotifier: send message to chatbot", "used", time.Since(start).String())
+		}()
+
+		var buf bytes.Buffer
+
+		if n.receiver.TmplType == constants.Markdown {
+			chatBotMsgMarkdown := weChatMessage{
+				Type: constants.Markdown,
+				Markdown: weChatMessageContent{
+					Content: msg,
+				},
+			}
+			if err := utils.JsonEncode(&buf, chatBotMsgMarkdown); err != nil {
+				_ = level.Error(n.logger).Log("msg", "wechatBotNotifier: encode markdown message error", "error", err.Error())
+				return err
+			}
+		} else if n.receiver.TmplType == constants.Text {
+			chatBotMsgText := weChatMessage{
+				Type: constants.Text,
+				Text: weChatMessageContent{
+					Content:             msg,
+					MentionedList:       bot.AtUsers,
+					MentionedMobileList: bot.AtMobiles,
+				},
+			}
+			if err := utils.JsonEncode(&buf, chatBotMsgText); err != nil {
+				_ = level.Error(n.logger).Log("msg", "wechatBotNotifier: encode text message error", "error", err.Error())
+				return err
+			}
+		} else {
+			_ = level.Error(n.logger).Log("msg", "wechatBotkNotifier: unknown message type", "type", n.receiver.TmplType)
+			return utils.Errorf("Unknown message type, %s", n.receiver.TmplType)
+		}
+		webhookStr, err := n.notifierCtl.GetCredential(webhook)
+		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "WechatNotifier: get webhook error", "error", err)
+			return err
+		}
+		request, err := http.NewRequest(http.MethodPost, webhookStr, &buf)
+		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "wechatBotNotifier: create http request error", "error", err)
+			return err
+		}
+		request.Header.Set("Content-Type", "application/json")
+
+		body, err := utils.DoHttpRequest(context.Background(), nil, request)
+		if err != nil {
+			_ = level.Error(n.logger).Log("msg", "wechatBotNotifier: do http error", "error", err)
+			return err
+		}
+
+		res := &weChatResponse{}
+		if err := utils.JsonUnmarshal(body, res); err != nil {
+			_ = level.Error(n.logger).Log("msg", "wechatBotNotifier: decode response body error", "error", err)
+			return err
+		}
+
+		if res.ErrorCode != 0 {
+			_ = level.Error(n.logger).Log("msg", "wechatBotNotifier: send message to chatbot error", "errcode", res.ErrorCode, "errmsg", res.ErrorMsg)
+			return utils.Errorf("%d, %s", res.ErrorCode, res.ErrorMsg)
+		}
+
+		_ = level.Debug(n.logger).Log("msg", "wechatBotNotifier: send message to chatbot")
+
+		return nil
+	}
+
+	atUsers := ""
+	// Note that in markdown format, you can only use <@userid> to @someone, @all is not supported, and @phone number is not allowed.
+	if len(bot.AtUsers) > 0 {
+		var temp []string
+		for _, user := range bot.AtUsers {
+			temp = append(temp, fmt.Sprintf("<@%s>", user))
+		}
+		atUsers = strings.Join(temp, "")
+	}
+
+	// Need to limit the length of the message, the longest is not more than 4096 bytes.
+	var msgSize int
+	if n.receiver.TmplType == constants.Markdown {
+		msgSize = ChatbotMessageMaxMarkdownSize - len(atUsers)
+	} else {
+		msgSize = ChatbotMessageMaxTextSize
+	}
+	messages, _, err := n.tmpl.Split(data, msgSize, n.receiver.TmplName, n.receiver.TitleTmplName, n.logger)
+	if err != nil {
+		_ = level.Error(n.logger).Log("msg", "wechatBotNotifier: split message error", "error", err.Error())
+		return err
+	}
+	group := async.NewGroup(ctx)
+	for index := range messages {
+		msg := fmt.Sprintf("%s", messages[index])
+		if n.receiver.TmplType == constants.Markdown {
+			msg = fmt.Sprintf("%s\n%s", msg, atUsers)
+		}
+		group.Add(func(stopCh chan interface{}) {
+			stopCh <- send(msg)
+		})
 	}
 
 	return group.Wait()
