@@ -459,6 +459,57 @@ A WeChat receiver allows the user to define:
 - `toPart` - The id of the party, all users in the party will receive notifications.
 - `toTag` - The id of the tag, all users who have this tag will receive notifications.
 
+### WeChat Chatbot
+
+The wechat chatbot is a webhook that receives messages and forwards them to the conversation.
+> Note: When using the markdown type, the WeChat robot only supports @userid.
+
+A chatbot allows the user to define:
+
+- `webhook` - The webhook url of chatbot, and `type` is [credential](./credential.md).
+
+```yaml
+apiVersion: notification.kubesphere.io/v2beta2
+kind: Receiver
+metadata:
+  name: test-wechat-receiver
+  labels:
+    type: global
+spec:
+  wechat:
+    enabled: true
+    template: nm.default.text
+    tmplType: text
+    tmplText:
+      name: notification-manager-template
+      namespace: kubesphere-monitoring-system
+    chatbot:
+      atMobiles:
+        - "13455431234"
+      atUsers:
+        - "@all"
+        - "userid"
+      webhook:
+        valueFrom:
+          secretKeyRef:
+            key: test
+            name: wechat-bot-secret
+            namespace: kubesphere-monitoring-federated
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: wechat-bot-secret
+  namespace: kubesphere-monitoring-federated
+  labels:
+    notification.kubesphere.io/managed: 'true'
+    type: global
+  annotations:
+    kubesphere.io/creator: admin
+data:
+  test: aHR0cHfgbftyjiuyfdfgnzZW5kP2tleT05ZWY5ZDAyZC0xOTcwLTRhM2ItOTY5Ni1hMWIwOGUxOTdlMzc=
+```
+
 ## How to select config
 
 The `Receiver` defines where to send notifications, and the [Config](config.md) define how to send notifications to receiver.
