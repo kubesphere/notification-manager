@@ -11,6 +11,12 @@ on:
     branches:
       - 'master'
       - 'release-*'
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'RELEASE.md'
+      - 'LICENSE'
+      - 'CHANGELOG.md'
 env:
   OP_IMAGE: kubesphere/notification-manager-operator:latest
   NM_IMAGE: kubesphere/notification-manager:latest
