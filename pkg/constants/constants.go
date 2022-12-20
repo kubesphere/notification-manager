@@ -20,6 +20,10 @@ const (
 	SMS      = "sms"
 	Webhook  = "webhook"
 	WeChat   = "wechat"
+	Discord  = "discord"
+
+	DiscordContent = "content"
+	DiscordEmbed   = "embed"
 
 	Namespace = "namespace"
 

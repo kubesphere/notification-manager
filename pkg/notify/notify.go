@@ -11,6 +11,7 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/dingtalk"
+	"github.com/kubesphere/notification-manager/pkg/notify/notifier/discord"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/email"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/feishu"
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier/pushover"
@@ -38,6 +39,7 @@ func init() {
 	Register(constants.SMS, sms.NewSmsNotifier)
 	Register(constants.Pushover, pushover.NewPushoverNotifier)
 	Register(constants.Feishu, feishu.NewFeishuNotifier)
+	Register(constants.Discord, discord.NewDiscordNotifier)
 }
 
 func Register(name string, factory Factory) {

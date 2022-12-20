@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"github.com/kubesphere/notification-manager/pkg/internal/discord"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/constants"
@@ -34,6 +35,7 @@ func init() {
 	receiverFactories[constants.SMS] = sms.NewReceiver
 	receiverFactories[constants.Webhook] = webhook.NewReceiver
 	receiverFactories[constants.WeChat] = wechat.NewReceiver
+	receiverFactories[constants.Discord] = discord.NewReceiver
 
 	configFactories = make(map[string]configFactory)
 	configFactories[constants.DingTalk] = dingtalk.NewConfig
@@ -44,6 +46,7 @@ func init() {
 	configFactories[constants.SMS] = sms.NewConfig
 	configFactories[constants.Webhook] = webhook.NewConfig
 	configFactories[constants.WeChat] = wechat.NewConfig
+	configFactories[constants.Discord] = discord.NewConfig
 }
 
 func NewReceivers(tenantID string, obj *v2beta2.Receiver) map[string]internal.Receiver {

@@ -4292,6 +4292,15 @@ spec:
                             format: int64
                             type: integer
                         type: object
+                      discord:
+                        properties:
+                          notificationTimeout:
+                            description: Notification Sending Timeout
+                            format: int32
+                            type: integer
+                          template:
+                            type: string
+                        type: object
                       email:
                         properties:
                           deliveryType:

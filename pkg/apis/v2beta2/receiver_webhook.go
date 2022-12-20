@@ -149,6 +149,21 @@ func (r *Receiver) validateReceiver() error {
 		})
 	}
 
+	if r.Spec.Discord != nil && r.Spec.Discord.Webhook != nil {
+		credentials = append(credentials, map[string]interface{}{
+			"credential": r.Spec.Discord.Webhook,
+			"path":       field.NewPath("spec", "discord", "webhook"),
+		})
+		if r.Spec.Discord.Type != nil {
+			if *r.Spec.Discord.Type != "content" && *r.Spec.Discord.Type != "embed" {
+				allErrs = append(allErrs,
+					field.NotSupported(field.NewPath("spec", "discord", "type"),
+						*r.Spec.Email.TmplType,
+						[]string{"content", "embed"}))
+			}
+		}
+	}
+
 	for _, v := range credentials {
 		err := validateCredential(v["credential"].(*Credential), v["path"].(*field.Path))
 		if err != nil {
@@ -254,6 +269,20 @@ func (r *Receiver) validateReceiver() error {
 			allErrs = append(allErrs,
 				field.Invalid(field.NewPath("spec", "wechat", "alertSelector"),
 					wechat.AlertSelector,
+					err.Error()))
+		}
+	}
+
+	if r.Spec.Discord != nil {
+		if r.Spec.Discord.Webhook == nil {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec", "discord", "webhook"),
+				"must be specified"))
+		}
+
+		if err := validateSelector(r.Spec.Discord.AlertSelector); err != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec", "discord", "alertSelector"),
+					r.Spec.Discord.AlertSelector,
 					err.Error()))
 		}
 	}

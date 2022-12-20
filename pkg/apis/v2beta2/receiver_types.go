@@ -207,6 +207,30 @@ type WechatChatBot struct {
 	AtMobiles []string `json:"atMobiles,omitempty"`
 }
 
+type DiscordReceiver struct {
+
+	// whether the receiver is enabled
+	Enabled *bool `json:"enabled,omitempty"`
+
+	Webhook *Credential `json:"webhook"`
+
+	Template *string `json:"template,omitempty"`
+	// Template file.
+	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
+
+	// content or embed
+	Type *string `json:"type,omitempty"`
+
+	// Mentioned users
+	MentionedUsers []string `json:"mentionedUsers,omitempty"`
+
+	// Mentioned roles
+	MentionedRoles []string `json:"mentionedRoles,omitempty"`
+
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+}
+
 type SmsReceiver struct {
 	// whether the receiver is enabled
 	Enabled *bool `json:"enabled,omitempty"`
@@ -302,6 +326,7 @@ type ReceiverSpec struct {
 	Sms      *SmsReceiver      `json:"sms,omitempty"`
 	Pushover *PushoverReceiver `json:"pushover,omitempty"`
 	Feishu   *FeishuReceiver   `json:"feishu,omitempty"`
+	Discord  *DiscordReceiver  `json:"discord,omitempty"`
 }
 
 // ReceiverStatus defines the observed state of Receiver
