@@ -1,3 +1,11 @@
+## v2.2.0 / 2023-01-06
+
+### FEATURES
+
+- Support Wechat bot receiver(#168). @Gentleelephant
+- Support discord receiver(#169). @Gentleelephant
+
+
 ## v2.1.0 / 2022-11-29
 
 ### FEATURES
