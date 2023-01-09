@@ -17,6 +17,7 @@ A receiver resource allows the user to define:
 - [sms](#SMS-Receiver)
 - [webhook](#Webhook-Receiver)
 - [wechat](#WeChat-Receiver)
+- [discord](#Discord-Receiver)
 
 ## DingTalk Receiver
 
@@ -508,6 +509,56 @@ metadata:
     kubesphere.io/creator: admin
 data:
   test: aHR0cHfgbftyjiuyfdfgnzZW5kP2tleT05ZWY5ZDAyZC0xOTcwLTRhM2ItOTY5Ni1hMWIwOGUxOTdlMzc=
+```
+
+### Discord Receiver
+
+Discord receiver allows the user to define:
+
+- `webhook` - The webhook url of channel, and `type` is [credential](./credential.md).
+- `mentionedUsers` - Users who need to be mentioned.
+- `mentionedRoles` - Roles that need to be mentioned.
+
+```yaml
+apiVersion: notification.kubesphere.io/v2beta2
+kind: Receiver
+metadata:
+  name: test-discord-receiver
+  labels:
+    type: global
+spec:
+  discord:
+    enabled: true
+    template: nm.default.text
+    type: embed   # content or embed
+    tmplText:
+      name: notification-manager-template
+      namespace: kubesphere-monitoring-system
+    enabled: true
+    mentionedUsers:
+      - everyone
+      - "1045280620097572914"
+    mentionedRoles:
+      - "1057234958281887744"
+    webhook:
+      valueFrom:
+        secretKeyRef:
+          key: webhook
+          name: discord-secret
+          namespace: kubesphere-monitoring-federated
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: discord-secret
+  namespace: kubesphere-monitoring-federated
+  labels:
+    notification.kubesphere.io/managed: 'true'
+    type: global
+  annotations:
+    kubesphere.io/creator: admin
+data:
+  webhook: aHR0cHM6Ly9kaXNjETRWERViaG9va3MvMTA0NTMxNTk5MzQ2NTAxMjI0NC9KYjBvRk9qVnpkUldsSGZURWROWFZJNXBDbUxKN1NtVUJtYkpOcEhSTFFGTl9YSXhQbW1xMWNrVTlEZlM1N1NuT0VKSg==
 ```
 
 ## How to select config
