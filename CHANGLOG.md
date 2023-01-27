@@ -2,9 +2,12 @@
 
 ### FEATURES
 
-- Support Wechat bot receiver(#168). @Gentleelephant
-- Support discord receiver(#169). @Gentleelephant
+- Support Wechat bot receiver(#179). @Gentleelephant
+- Support discord receiver(#185). @Gentleelephant
 
+### Enhancements & Updates
+
+- Update kube-rbac-proxy to 0.11.0(#189). @Gentleelephant
 
 ## v2.1.0 / 2022-11-29
 
