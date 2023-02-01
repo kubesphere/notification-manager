@@ -20,6 +20,7 @@ Supported receivers includes:
 - [Slack](https://slack.com/) 
 - Webhook 
 - [WeChat](https://work.weixin.qq.com/)
+- [Discord](https://discord.com/)
 
 ## Architecture
 
