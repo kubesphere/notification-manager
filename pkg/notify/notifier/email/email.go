@@ -49,6 +49,8 @@ type Notifier struct {
 	delivery string
 	// The maximum size of receivers in one email.
 	maxEmailReceivers int
+
+	sentSuccessfulHandler *func([]*template.Alert)
 }
 
 func NewEmailNotifier(logger log.Logger, receiver internal.Receiver, notifierCtl *controller.Controller) (notifier.Notifier, error) {
@@ -126,6 +128,10 @@ func NewEmailNotifier(logger log.Logger, receiver internal.Receiver, notifierCtl
 	return n, nil
 }
 
+func (n *Notifier) SetSentSuccessfulHandler(h *func([]*template.Alert)) {
+	n.sentSuccessfulHandler = h
+}
+
 func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
 	sendEmail := func(to, subject, body string) error {
@@ -165,7 +171,14 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 	for _, t := range n.receiver.To {
 		to := t
 		group.Add(func(stopCh chan interface{}) {
-			stopCh <- sendEmail(to, subject, body)
+			err := sendEmail(to, subject, body)
+			if err == nil {
+				if n.sentSuccessfulHandler != nil {
+					(*n.sentSuccessfulHandler)(data.Alerts)
+				}
+			}
+			stopCh <- err
+
 		})
 	}
 

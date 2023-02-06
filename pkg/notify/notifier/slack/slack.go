@@ -29,6 +29,8 @@ type Notifier struct {
 	timeout     time.Duration
 	logger      log.Logger
 	tmpl        *template.Template
+
+	sentSuccessfulHandler *func([]*template.Alert)
 }
 
 type slackRequest struct {
@@ -84,6 +86,10 @@ func NewSlackNotifier(logger log.Logger, receiver internal.Receiver, notifierCtl
 	}
 
 	return n, nil
+}
+
+func (n *Notifier) SetSentSuccessfulHandler(h *func([]*template.Alert)) {
+	n.sentSuccessfulHandler = h
 }
 
 func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
@@ -151,7 +157,13 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 	for _, channel := range n.receiver.Channels {
 		ch := channel
 		group.Add(func(stopCh chan interface{}) {
-			stopCh <- send(ch)
+			err := send(ch)
+			if err == nil {
+				if n.sentSuccessfulHandler != nil {
+					(*n.sentSuccessfulHandler)(data.Alerts)
+				}
+			}
+			stopCh <- err
 		})
 	}
 

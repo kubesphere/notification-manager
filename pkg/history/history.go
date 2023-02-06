@@ -11,7 +11,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify"
 	"github.com/kubesphere/notification-manager/pkg/stage"
 	"github.com/kubesphere/notification-manager/pkg/template"
-	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/modern-go/reflect2"
 )
 
@@ -31,7 +30,6 @@ func NewStage(notifierCtl *controller.Controller) stage.Stage {
 }
 
 func (s *historyStage) Exec(ctx context.Context, l log.Logger, data interface{}) (context.Context, interface{}, error) {
-
 	if reflect2.IsNil(data) {
 		return ctx, nil, nil
 	}
@@ -43,27 +41,19 @@ func (s *historyStage) Exec(ctx context.Context, l log.Logger, data interface{})
 
 	_ = level.Debug(l).Log("msg", "Start history stage", "seq", ctx.Value("seq"))
 
-	alertMap := data.(map[internal.Receiver][]*template.Data)
-	m := make(map[string]*template.Alert)
-	for _, v := range alertMap {
-		for _, d := range v {
-			for _, alert := range d.Alerts {
-				hash := utils.Hash(alert)
-				m[hash] = alert
-			}
-		}
-	}
-
+	input := data.(map[string]*template.Alert)
 	d := &template.Data{}
-	for _, v := range m {
-		d.Alerts = append(d.Alerts, v)
+	for _, alert := range input {
+		if alert.NotifySuccessful {
+			d.Alerts = append(d.Alerts, alert)
+		}
 	}
 
 	if len(d.Alerts) == 0 {
 		return ctx, nil, nil
 	}
 
-	alertMap = make(map[internal.Receiver][]*template.Data)
+	alertMap := make(map[internal.Receiver][]*template.Data)
 	for _, receiver := range receivers {
 		alertMap[receiver] = []*template.Data{d}
 	}

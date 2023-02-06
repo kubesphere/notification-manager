@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"sync"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -69,11 +70,30 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 
 	_ = level.Debug(l).Log("msg", "Start notify stage", "seq", ctx.Value("seq"))
 
+	input := data.(map[internal.Receiver][]*template.Data)
+	alertMap := make(map[string]*template.Alert)
+	for _, dataList := range input {
+		for _, d := range dataList {
+			for _, alert := range d.Alerts {
+				alertMap[alert.ID] = alert
+			}
+		}
+	}
+
+	var mutex sync.Mutex
+	handler := func(alerts []*template.Alert) {
+		mutex.Lock()
+		defer mutex.Unlock()
+
+		for _, alert := range alerts {
+			if a := alertMap[alert.ID]; a != nil {
+				a.NotifySuccessful = true
+			}
+		}
+	}
+
 	group := async.NewGroup(ctx)
-
-	alertMap := data.(map[internal.Receiver][]*template.Data)
-
-	for k, v := range alertMap {
+	for k, v := range input {
 		receiver := k
 		ds := v
 		nf, err := factories[receiver.GetType()](l, receiver, s.notifierCtl)
@@ -84,6 +104,7 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 			})
 			continue
 		}
+		nf.SetSentSuccessfulHandler(&handler)
 
 		for _, d := range ds {
 			alert := d
@@ -91,8 +112,7 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 				stopCh <- nf.Notify(ctx, alert)
 			})
 		}
-
 	}
 
-	return ctx, data, group.Wait()
+	return ctx, alertMap, group.Wait()
 }

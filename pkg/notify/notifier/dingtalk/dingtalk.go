@@ -57,6 +57,8 @@ type Notifier struct {
 	conversationThreshold      int
 	conversationUnit           time.Duration
 	conversationMaxWaitTime    time.Duration
+
+	sentSuccessfulHandler *func([]*template.Alert)
 }
 
 type dingtalkText struct {
@@ -216,6 +218,10 @@ func NewDingTalkNotifier(logger log.Logger, receiver internal.Receiver, notifier
 	return n, nil
 }
 
+func (n *Notifier) SetSentSuccessfulHandler(h *func([]*template.Alert)) {
+	n.sentSuccessfulHandler = h
+}
+
 func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
 	group := async.NewGroup(ctx)
@@ -357,27 +363,35 @@ func (n *Notifier) sendToChatBot(ctx context.Context, data *template.Data) error
 		maxSize = maxSize - len(atMobiles)
 	}
 
-	messages, titles, err := n.tmpl.Split(data, n.chatbotMessageMaxSize-len(keywords)-len(atMobiles), n.receiver.TmplName, n.receiver.TitleTmplName, n.logger)
+	splitData, err := n.tmpl.Split(data, n.chatbotMessageMaxSize-len(keywords)-len(atMobiles), n.receiver.TmplName, n.receiver.TitleTmplName, n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: split message error", "error", err.Error())
 		return err
 	}
 
 	group := async.NewGroup(ctx)
-	for index := range messages {
-		title := titles[index]
-		msg := fmt.Sprintf("%s%s", messages[index], keywords)
+	for index := range splitData {
+		d := splitData[index]
+		alerts := d.Alerts
+		title := d.Title
+		msg := fmt.Sprintf("%s%s", d.Message, keywords)
 		if n.receiver.TmplType == constants.Markdown {
 			msg = fmt.Sprintf("%s %s", msg, atMobiles)
 		}
 		group.Add(func(stopCh chan interface{}) {
 			n.throttle.TryAdd(webhook, n.chatbotThreshold, n.chatbotUnit, n.chatbotMaxWaitTime)
-			if n.throttle.Allow(webhook, n.logger) {
-				stopCh <- send(title, msg)
-			} else {
+			if !n.throttle.Allow(webhook, n.logger) {
 				_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: message to chatbot dropped because of flow control")
 				stopCh <- utils.Error("")
 			}
+
+			err := send(title, msg)
+			if err == nil {
+				if n.sentSuccessfulHandler != nil {
+					(*n.sentSuccessfulHandler)(alerts)
+				}
+			}
+			stopCh <- err
 		})
 	}
 
@@ -486,26 +500,34 @@ func (n *Notifier) sendToConversation(ctx context.Context, data *template.Data) 
 		return nil
 	}
 
-	messages, titles, err := n.tmpl.Split(data, n.conversationMessageMaxSize, n.receiver.TmplName, n.receiver.TitleTmplName, n.logger)
+	splitData, err := n.tmpl.Split(data, n.conversationMessageMaxSize, n.receiver.TmplName, n.receiver.TitleTmplName, n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: split message error", "error", err.Error())
 		return nil
 	}
 
 	group := async.NewGroup(ctx)
-	for index := range messages {
-		title := titles[index]
-		msg := messages[index]
+	for index := range splitData {
+		d := splitData[index]
+		alerts := d.Alerts
+		title := d.Title
+		msg := d.Message
 		for _, chatID := range n.receiver.ChatIDs {
 			id := chatID
 			group.Add(func(stopCh chan interface{}) {
 				n.throttle.TryAdd(appkey, n.conversationThreshold, n.conversationUnit, n.conversationMaxWaitTime)
-				if n.throttle.Allow(appkey, n.logger) {
-					stopCh <- send(id, title, msg)
-				} else {
+				if !n.throttle.Allow(appkey, n.logger) {
 					_ = level.Error(n.logger).Log("msg", "DingTalkNotifier: message to conversation dropped because of flow control", "conversation", chatID)
 					stopCh <- utils.Error("")
 				}
+
+				err := send(id, title, msg)
+				if err == nil {
+					if n.sentSuccessfulHandler != nil {
+						(*n.sentSuccessfulHandler)(alerts)
+					}
+				}
+				stopCh <- err
 			})
 		}
 	}

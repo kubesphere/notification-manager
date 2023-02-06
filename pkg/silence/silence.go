@@ -23,14 +23,13 @@ func NewStage(notifierCtl *controller.Controller) stage.Stage {
 }
 
 func (s *silenceStage) Exec(ctx context.Context, l log.Logger, data interface{}) (context.Context, interface{}, error) {
-
 	if reflect2.IsNil(data) {
 		return ctx, nil, nil
 	}
 
-	alerts := data.([]*template.Alert)
+	input := data.([]*template.Alert)
 
-	_ = level.Debug(l).Log("msg", "Start silence stage", "seq", ctx.Value("seq"), "alert", len(alerts))
+	_ = level.Debug(l).Log("msg", "Start silence stage", "seq", ctx.Value("seq"), "alert", len(input))
 
 	ss, err := s.notifierCtl.GetActiveSilences(ctx, "")
 	if err != nil {
@@ -39,11 +38,11 @@ func (s *silenceStage) Exec(ctx context.Context, l log.Logger, data interface{})
 	}
 
 	if len(ss) == 0 {
-		return ctx, alerts, nil
+		return ctx, input, nil
 	}
 
-	var as []*template.Alert
-	for _, alert := range alerts {
+	var output []*template.Alert
+	for _, alert := range input {
 		mute := false
 		for _, silence := range ss {
 			if utils.LabelMatchSelector(alert.Labels, silence.Spec.Matcher) {
@@ -53,9 +52,9 @@ func (s *silenceStage) Exec(ctx context.Context, l log.Logger, data interface{})
 		}
 
 		if !mute {
-			as = append(as, alert)
+			output = append(output, alert)
 		}
 	}
 
-	return ctx, as, nil
+	return ctx, output, nil
 }

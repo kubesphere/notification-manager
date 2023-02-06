@@ -8,4 +8,5 @@ import (
 
 type Notifier interface {
 	Notify(ctx context.Context, data *template.Data) error
+	SetSentSuccessfulHandler(*func([]*template.Alert))
 }

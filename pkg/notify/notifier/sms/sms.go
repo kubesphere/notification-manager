@@ -27,6 +27,8 @@ type Notifier struct {
 	timeout     time.Duration
 	logger      log.Logger
 	tmpl        *template.Template
+
+	sentSuccessfulHandler *func([]*template.Alert)
 }
 
 func NewSmsNotifier(logger log.Logger, receiver internal.Receiver, notifierCtl *controller.Controller) (notifier.Notifier, error) {
@@ -74,6 +76,10 @@ func NewSmsNotifier(logger log.Logger, receiver internal.Receiver, notifierCtl *
 	return n, nil
 }
 
+func (n *Notifier) SetSentSuccessfulHandler(h *func([]*template.Alert)) {
+	n.sentSuccessfulHandler = h
+}
+
 func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
 	start := time.Now()
@@ -105,10 +111,13 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 		_ = level.Error(n.logger).Log("msg", "SmsNotifier: send request failed", "error", err.Error())
 		return err
 	}
+
+	if n.sentSuccessfulHandler != nil {
+		(*n.sentSuccessfulHandler)(data.Alerts)
+	}
+
 	_ = level.Info(n.logger).Log("msg", "SmsNotifier: send request successfully")
-
 	return nil
-
 }
 
 func stringValue(a *string) string {

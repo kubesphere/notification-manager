@@ -42,6 +42,8 @@ type Notifier struct {
 	tmpl         *template.Template
 	ats          *notifier.AccessTokenService
 	tokenExpires time.Duration
+
+	sentSuccessfulHandler *func([]*template.Alert)
 }
 
 type Message struct {
@@ -134,6 +136,10 @@ func NewFeishuNotifier(logger log.Logger, receiver internal.Receiver, notifierCt
 	return n, nil
 }
 
+func (n *Notifier) SetSentSuccessfulHandler(h *func([]*template.Alert)) {
+	n.sentSuccessfulHandler = h
+}
+
 func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
 	content, err := n.tmpl.Text(n.receiver.TmplName, data)
@@ -145,13 +151,25 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 	group := async.NewGroup(ctx)
 	if n.receiver.ChatBot != nil {
 		group.Add(func(stopCh chan interface{}) {
-			stopCh <- n.sendToChatBot(ctx, content)
+			err := n.sendToChatBot(ctx, content)
+			if err == nil {
+				if n.sentSuccessfulHandler != nil {
+					(*n.sentSuccessfulHandler)(data.Alerts)
+				}
+			}
+			stopCh <- err
 		})
 	}
 
 	if len(n.receiver.User) > 0 || len(n.receiver.Department) > 0 {
 		group.Add(func(stopCh chan interface{}) {
-			stopCh <- n.batchSend(ctx, content)
+			err := n.batchSend(ctx, content)
+			if err == nil {
+				if n.sentSuccessfulHandler != nil {
+					(*n.sentSuccessfulHandler)(data.Alerts)
+				}
+			}
+			stopCh <- err
 		})
 	}
 

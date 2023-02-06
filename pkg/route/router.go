@@ -41,9 +41,9 @@ func (s *routeStage) Exec(ctx context.Context, l log.Logger, data interface{}) (
 		return ctx, nil, nil
 	}
 
-	alertArray := data.([]*template.Alert)
+	input := data.([]*template.Alert)
 
-	_ = level.Debug(l).Log("msg", "RouteStage: start", "seq", ctx.Value("seq"), "alert", len(alertArray))
+	_ = level.Debug(l).Log("msg", "RouteStage: start", "seq", ctx.Value("seq"), "alert", len(input))
 
 	routers, err := s.notifierCtl.GetActiveRouters(ctx)
 	if err != nil {
@@ -53,7 +53,7 @@ func (s *routeStage) Exec(ctx context.Context, l log.Logger, data interface{}) (
 
 	// Grouping alerts by namespace
 	alertMap := make(map[string][]*template.Alert)
-	for _, alert := range alertArray {
+	for _, alert := range input {
 		ns := alert.Labels[constants.Namespace]
 		as := alertMap[ns]
 		as = append(as, alert)
@@ -94,12 +94,12 @@ func (s *routeStage) Exec(ctx context.Context, l log.Logger, data interface{}) (
 		return ctx, nil, nil
 	}
 
-	res := make(map[internal.Receiver][]*template.Alert)
+	output := make(map[internal.Receiver][]*template.Alert)
 	for _, p := range m {
-		res[p.receiver] = p.alerts
+		output[p.receiver] = p.alerts
 	}
 
-	return ctx, res, nil
+	return ctx, output, nil
 }
 
 func (s *routeStage) rcvsFromRouter(alert *template.Alert, routers []v2beta2.Router) []internal.Receiver {

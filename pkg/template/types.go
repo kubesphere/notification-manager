@@ -61,10 +61,13 @@ func (d *Data) Format() *Data {
 }
 
 func (d *Data) Status() string {
-	if len(d.Alerts.Firing()) > 0 {
+	if len(d.Alerts.Firing()) == len(d.Alerts) {
 		return constants.AlertFiring
+	} else if len(d.Alerts.Resolved()) == len(d.Alerts) {
+		return constants.AlertResolved
+	} else {
+		return ""
 	}
-	return constants.AlertResolved
 }
 
 // Pair is a key/value string pair.
@@ -157,12 +160,15 @@ func (kv KV) Clone() KV {
 }
 
 type Alert struct {
+	ID          string `json:"id"`
 	Status      string `json:"status"`
 	Labels      KV     `json:"labels"`
 	Annotations KV     `json:"annotations"`
 
 	StartsAt time.Time `json:"startsAt,omitempty"`
 	EndsAt   time.Time `json:"endsAt,omitempty"`
+
+	NotifySuccessful bool
 }
 
 func (a *Alert) Message() string {
