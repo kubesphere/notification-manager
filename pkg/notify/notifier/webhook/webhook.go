@@ -32,6 +32,8 @@ type Notifier struct {
 	timeout     time.Duration
 	logger      log.Logger
 	tmpl        *template.Template
+
+	sentSuccessfulHandler *func([]*template.Alert)
 }
 
 func NewWebhookNotifier(logger log.Logger, receiver internal.Receiver, notifierCtl *controller.Controller) (notifier.Notifier, error) {
@@ -72,6 +74,10 @@ func NewWebhookNotifier(logger log.Logger, receiver internal.Receiver, notifierC
 	}
 
 	return n, nil
+}
+
+func (n *Notifier) SetSentSuccessfulHandler(h *func([]*template.Alert)) {
+	n.sentSuccessfulHandler = h
 }
 
 func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
@@ -144,8 +150,11 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 		return err
 	}
 
-	_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "to", n.receiver.URL)
+	if n.sentSuccessfulHandler != nil {
+		(*n.sentSuccessfulHandler)(data.Alerts)
+	}
 
+	_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "to", n.receiver.URL)
 	return nil
 
 }

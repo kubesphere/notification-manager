@@ -229,61 +229,74 @@ func (t *Template) transform(name string) string {
 	return fmt.Sprintf("{{ template \"%s\" . }}", name)
 }
 
-func (t *Template) Split(data *Data, maxSize int, templateName string, subjectTemplateName string, l log.Logger) ([]string, []string, error) {
+type DataSlice struct {
+	*Data
+	Message string
+	Title   string
+}
 
-	var messages []string
-	var subjects []string
+func (t *Template) Split(data *Data, maxSize int, templateName string, subjectTemplateName string, l log.Logger) ([]*DataSlice, error) {
+	var output []*DataSlice
 	lastMsg := ""
-	lastSubject := ""
-	d := &Data{
-		GroupLabels: data.GroupLabels,
-	}
+	lastTitle := ""
+	var d *Data
 	for i := 0; i < len(data.Alerts); i++ {
+		if d == nil {
+			d = &Data{
+				GroupLabels: data.GroupLabels,
+			}
+		}
 
 		d.Alerts = append(d.Alerts, data.Alerts[i])
 		msg, err := t.Text(t.transform(templateName), d.Format())
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
-		subject := ""
+		title := ""
 		if subjectTemplateName != "" {
-			subject, err = t.Text(t.transform(subjectTemplateName), d)
+			title, err = t.Text(t.transform(subjectTemplateName), d)
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
 		}
 
 		if Len(msg) < maxSize {
 			lastMsg = msg
-			lastSubject = subject
+			lastTitle = title
 			continue
 		}
 
 		// If there is only alert, and the message length is greater than MaxMessageSize, drop this alert.
 		if len(d.Alerts) == 1 {
 			_ = level.Error(l).Log("msg", "alert is too large, drop it")
-			d.Alerts = nil
+			d = nil
 			lastMsg = ""
-			lastSubject = ""
+			lastTitle = ""
 			continue
 		}
 
-		messages = append(messages, lastMsg)
-		subjects = append(subjects, subject)
+		output = append(output, &DataSlice{
+			Data:    d,
+			Message: lastMsg,
+			Title:   lastTitle,
+		})
 
-		d.Alerts = nil
+		d = nil
 		i = i - 1
 		lastMsg = ""
-		lastSubject = ""
+		lastTitle = ""
 	}
 
 	if len(lastMsg) > 0 {
-		messages = append(messages, lastMsg)
-		subjects = append(subjects, lastSubject)
+		output = append(output, &DataSlice{
+			Data:    d,
+			Message: lastMsg,
+			Title:   lastTitle,
+		})
 	}
 
-	return messages, subjects, nil
+	return output, nil
 }
 
 // Len return the length of string after serialized.

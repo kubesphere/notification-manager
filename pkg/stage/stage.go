@@ -25,7 +25,7 @@ func (ms MultiStage) Exec(ctx context.Context, l log.Logger, data interface{}) (
 
 		ctx, data, err = s.Exec(ctx, l, data)
 		if err != nil {
-			return ctx, nil, err
+			return ctx, data, err
 		}
 	}
 	return ctx, data, nil

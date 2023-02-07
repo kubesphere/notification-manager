@@ -122,12 +122,20 @@ func (d *Dispatcher) worker(ctx context.Context, data interface{}, stopCh chan s
 	pipeline = append(pipeline, aggregation.NewStage(d.notifierCtl))
 	// Notify stage
 	pipeline = append(pipeline, notify.NewStage(d.notifierCtl))
-	// History stage
-	pipeline = append(pipeline, history.NewStage(d.notifierCtl))
 
-	if _, _, err := pipeline.Exec(ctx, d.l, data); err != nil {
+	_, output, err := pipeline.Exec(ctx, d.l, data)
+	if err != nil {
 		_ = level.Error(d.l).Log("msg", "Dispatcher: process alerts failed", "seq", ctx.Value("seq"))
 	}
 
+	go d.execHistoryStage(ctx.Value("seq"), output)
+
 	stopCh <- struct{}{}
+}
+
+func (d *Dispatcher) execHistoryStage(seq, input interface{}) {
+	s := history.NewStage(d.notifierCtl)
+	if _, _, err := s.Exec(context.WithValue(context.Background(), "seq", seq), d.l, input); err != nil {
+		_ = level.Error(d.l).Log("msg", "Dispatcher: exec history stage failed", "seq", seq)
+	}
 }

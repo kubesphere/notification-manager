@@ -3,6 +3,10 @@ kubesphere: false
 
 hook:
   postInstall:
+    image:
+      repo: kubesphere/kubectl
+      tag: v1.22.0
+      pullPolicy: IfNotPresent
     backoffLimit: 1
 
 # Set timezone to be injected into containers

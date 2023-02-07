@@ -45,6 +45,8 @@ type Notifier struct {
 	ats            *notifier.AccessTokenService
 	messageMaxSize int
 	tokenExpires   time.Duration
+
+	sentSuccessfulHandler *func([]*template.Alert)
 }
 
 type weChatMessageContent struct {
@@ -149,6 +151,10 @@ func NewWechatNotifier(logger log.Logger, receiver internal.Receiver, notifierCt
 	}
 
 	return n, nil
+}
+
+func (n *Notifier) SetSentSuccessfulHandler(h *func([]*template.Alert)) {
+	n.sentSuccessfulHandler = h
 }
 
 func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
@@ -276,7 +282,7 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 		return err
 	}
 
-	messages, _, err := n.tmpl.Split(data, MessageMaxSize, n.receiver.TmplName, "", n.logger)
+	splitData, err := n.tmpl.Split(data, MessageMaxSize, n.receiver.TmplName, "", n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "WechatNotifier: split message error", "error", err.Error())
 		return nil
@@ -289,7 +295,6 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
 	group := async.NewGroup(ctx)
 	if n.receiver.ChatBot != nil {
-
 		group.Add(func(stopCh chan interface{}) {
 			stopCh <- n.sendToChatBot(ctx, data)
 		})
@@ -304,10 +309,18 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 		r.ToParty = batch(toParty, &ps, ToPartyBatchSize)
 		r.ToTag = batch(toTag, &ts, ToTagBatchSize)
 
-		for index := range messages {
-			msg := messages[index]
+		for index := range splitData {
+			d := splitData[index]
+			alerts := d.Alerts
+			msg := d.Message
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- send(r, msg)
+				err := send(r, msg)
+				if err == nil {
+					if n.sentSuccessfulHandler != nil {
+						(*n.sentSuccessfulHandler)(alerts)
+					}
+				}
+				stopCh <- err
 			})
 		}
 	}
@@ -409,19 +422,27 @@ func (n *Notifier) sendToChatBot(ctx context.Context, data *template.Data) error
 	} else {
 		msgSize = ChatbotMessageMaxTextSize
 	}
-	messages, _, err := n.tmpl.Split(data, msgSize, n.receiver.TmplName, n.receiver.TitleTmplName, n.logger)
+	splitData, err := n.tmpl.Split(data, msgSize, n.receiver.TmplName, "", n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "wechatBotNotifier: split message error", "error", err.Error())
 		return err
 	}
 	group := async.NewGroup(ctx)
-	for index := range messages {
-		msg := fmt.Sprintf("%s", messages[index])
+	for index := range splitData {
+		d := splitData[index]
+		alerts := d.Alerts
+		msg := d.Message
 		if n.receiver.TmplType == constants.Markdown {
 			msg = fmt.Sprintf("%s\n%s", msg, atUsers)
 		}
 		group.Add(func(stopCh chan interface{}) {
-			stopCh <- send(msg)
+			err := send(msg)
+			if err == nil {
+				if n.sentSuccessfulHandler != nil {
+					(*n.sentSuccessfulHandler)(alerts)
+				}
+			}
+			stopCh <- err
 		})
 	}
 

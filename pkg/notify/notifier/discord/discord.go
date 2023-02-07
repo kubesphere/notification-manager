@@ -32,6 +32,8 @@ type Notifier struct {
 	timeout     time.Duration
 	logger      log.Logger
 	tmpl        *template.Template
+
+	sentSuccessfulHandler *func([]*template.Alert)
 }
 type Message struct {
 	Content string   `json:"content"`
@@ -89,6 +91,10 @@ func NewDiscordNotifier(logger log.Logger, receiver internal.Receiver, notifierC
 	return n, nil
 }
 
+func (n *Notifier) SetSentSuccessfulHandler(h *func([]*template.Alert)) {
+	n.sentSuccessfulHandler = h
+}
+
 func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
 	mentionedUsers := n.receiver.MentionedUsers
@@ -113,7 +119,7 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 	} else {
 		length = EmbedLimit - len(atUsers) - len(atRoles)
 	}
-	messages, _, err := n.tmpl.Split(data, length, n.receiver.TmplName, "", n.logger)
+	splitData, err := n.tmpl.Split(data, length, n.receiver.TmplName, "", n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "DiscordNotifier: generate message error", "error", err.Error())
 		return err
@@ -121,10 +127,19 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
 	group := async.NewGroup(ctx)
 	if n.receiver.Webhook != nil {
-		for index := range messages {
+		for index := range splitData {
+			d := splitData[index]
+			alerts := d.Alerts
+			msg := d.Message
 			group.Add(func(stopCh chan interface{}) {
-				msg := fmt.Sprintf("%s\n%s%s", messages[index], atUsers, atRoles)
-				stopCh <- n.sendTo(ctx, msg)
+				msg := fmt.Sprintf("%s\n%s%s", msg, atUsers, atRoles)
+				err := n.sendTo(ctx, msg)
+				if err == nil {
+					if n.sentSuccessfulHandler != nil {
+						(*n.sentSuccessfulHandler)(alerts)
+					}
+				}
+				stopCh <- err
 			})
 		}
 	}
@@ -165,7 +180,7 @@ func (n *Notifier) sendTo(ctx context.Context, content string) error {
 			return true, err
 		}
 		code := resp.StatusCode
-		level.Debug(n.logger).Log("msg", "DiscordNotifier", "response code:", code)
+		_ = level.Debug(n.logger).Log("msg", "DiscordNotifier", "response code:", code)
 
 		if code != http.StatusNoContent {
 			return false, fmt.Errorf("DiscordNotifier: send message error, code: %d", code)

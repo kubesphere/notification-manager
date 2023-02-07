@@ -37,6 +37,8 @@ type Notifier struct {
 	timeout     time.Duration
 	logger      log.Logger
 	tmpl        *template.Template
+
+	sentSuccessfulHandler *func([]*template.Alert)
 }
 
 // Pushover message struct
@@ -118,6 +120,10 @@ func NewPushoverNotifier(logger log.Logger, receiver internal.Receiver, notifier
 	}
 
 	return n, nil
+}
+
+func (n *Notifier) SetSentSuccessfulHandler(h *func([]*template.Alert)) {
+	n.sentSuccessfulHandler = h
 }
 
 // Notify sends messages to Pushover server.
@@ -226,19 +232,27 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 	}
 
 	// split new data along with its Alerts to ensure each message is small enough to fit the Pushover's message length limit
-	messages, _, err := n.tmpl.Split(data, MessageMaxLength, n.receiver.TmplName, "", n.logger)
+	splitData, err := n.tmpl.Split(data, MessageMaxLength, n.receiver.TmplName, "", n.logger)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "PushoverNotifier: split alerts error", "error", err.Error())
 		return err
 	}
 
 	group := async.NewGroup(ctx)
-	for _, m := range messages {
-		message := m
+	for index := range splitData {
+		d := splitData[index]
+		alerts := d.Alerts
+		message := d.Message
 		for _, p := range n.receiver.Profiles {
 			profile := p
 			group.Add(func(stopCh chan interface{}) {
-				stopCh <- send(profile, title, message)
+				err := send(profile, title, message)
+				if err == nil {
+					if n.sentSuccessfulHandler != nil {
+						(*n.sentSuccessfulHandler)(alerts)
+					}
+				}
+				stopCh <- err
 			})
 		}
 	}
