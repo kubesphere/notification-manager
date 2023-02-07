@@ -1,3 +1,9 @@
+## v2.3.0-rc.0 / 2023-02-07
+
+### Enhancements
+
+- Optimize the logic of notification history(#193). @wanjunlei
+
 ## v2.2.0 / 2023-01-06
 
 ### FEATURES
