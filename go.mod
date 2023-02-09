@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.15.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.12.2
 	github.com/aws/aws-sdk-go-v2/service/sns v1.17.6
-	github.com/emicklei/go-restful v2.9.5+incompatible
+	github.com/emicklei/go-restful v2.16.0+incompatible
 	github.com/go-chi/chi v4.0.3+incompatible
 	github.com/go-kit/kit v0.9.0
 	github.com/go-logr/logr v1.2.0
