@@ -3,7 +3,7 @@ module kubesphere
 go 1.13
 
 require (
-	github.com/emicklei/go-restful v2.14.3+incompatible
+	github.com/emicklei/go-restful v2.16.0+incompatible
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.19.3
