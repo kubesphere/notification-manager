@@ -3,32 +3,17 @@ repo: github.com/kubesphere/notification-manager
 resources:
 - group: notification
   kind: NotificationManager
-  version: v1alpha1
+  version: v2beta2
 - group: notification
-  kind: EmailConfig
-  version: v1alpha1
-- group: notification
-  kind: EmailReceiver
-  version: v1alpha1
+  kind: Config
+  version: v2beta2
 - group: notification
   kind: Receiver
-  version: v1alpha1
+  version: v2beta2
 - group: notification
-  kind: SlackConfig
-  version: v1alpha1
+  kind: Router
+  version: v2beta2
 - group: notification
-  kind: SlackReceiver
-  version: v1alpha1
-- group: notification
-  kind: WebhookConfig
-  version: v1alpha1
-- group: notification
-  kind: WebhookReceiver
-  version: v1alpha1
-- group: notification
-  kind: WechatConfig
-  version: v1alpha1
-- group: notification
-  kind: WechatReceiver
-  version: v1alpha1
+  kind: Silence
+  version: v2beta2
 version: "2"
