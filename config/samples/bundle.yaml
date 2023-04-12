@@ -185,7 +185,7 @@ spec:
   groupLabels:
   - alertname
   - namespace
-  image: kubesphere/notification-manager:latest
+  image: kubesphere/notification-manager:v2.3.0
   imagePullPolicy: Always
   portName: webhook
   receivers:
