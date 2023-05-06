@@ -182,7 +182,13 @@ type FeishuConfig struct {
 	AppSecret *Credential `json:"appSecret"`
 }
 
-//ConfigSpec defines the desired state of Config
+type TelegramConfig struct {
+	Labels map[string]string `json:"labels,omitempty"`
+	// The token of user or bot.
+	TelegramTokenSecret *Credential `json:"telegramTokenSecret"`
+}
+
+// ConfigSpec defines the desired state of Config
 type ConfigSpec struct {
 	DingTalk *DingTalkConfig `json:"dingtalk,omitempty"`
 	Email    *EmailConfig    `json:"email,omitempty"`
@@ -192,6 +198,7 @@ type ConfigSpec struct {
 	Sms      *SmsConfig      `json:"sms,omitempty"`
 	Pushover *PushoverConfig `json:"pushover,omitempty"`
 	Feishu   *FeishuConfig   `json:"feishu,omitempty"`
+	Telegram *TelegramConfig `json:"telegram,omitempty"`
 }
 
 // ConfigStatus defines the observed state of Config

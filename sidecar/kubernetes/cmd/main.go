@@ -104,13 +104,13 @@ func handler(req *restful.Request, resp *restful.Response) {
 	responseWithJson(resp, tenants)
 }
 
-//readiness
+// readiness
 func readiness(_ *restful.Request, resp *restful.Response) {
 
 	responseWithHeaderAndEntity(resp, http.StatusOK, "")
 }
 
-//preStop
+// preStop
 func preStop(_ *restful.Request, resp *restful.Response) {
 
 	glog.Errorf("waitting for message handler close")
