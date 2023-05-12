@@ -306,6 +306,14 @@ type DiscordOptions struct {
 	Template string `json:"template,omitempty"`
 }
 
+type TelegramOptions struct {
+	// Notification Sending Timeout
+	NotificationTimeout *int32 `json:"notificationTimeout,omitempty"`
+	// The name of the template to generate telegram message.
+	// If the global template is not set, it will use default.
+	Template string `json:"template,omitempty"`
+}
+
 type Options struct {
 	Global   *GlobalOptions   `json:"global,omitempty"`
 	Email    *EmailOptions    `json:"email,omitempty"`
@@ -317,6 +325,7 @@ type Options struct {
 	Pushover *PushoverOptions `json:"pushover,omitempty"`
 	Feishu   *FeishuOptions   `json:"feishu,omitempty"`
 	Discord  *DiscordOptions  `json:"discord,omitempty"`
+	Telegram *TelegramOptions `json:"telegram,omitempty"`
 }
 
 // NotificationManagerStatus defines the observed state of NotificationManager

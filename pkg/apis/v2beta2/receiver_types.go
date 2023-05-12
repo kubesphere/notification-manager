@@ -316,6 +316,25 @@ type FeishuReceiver struct {
 	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
 }
 
+type TelegramReceiver struct {
+	// whether the receiver is enabled
+	Enabled *bool `json:"enabled,omitempty"`
+	// TelegramConfigSelector to be selected for this receiver
+	TelegramConfigSelector *metav1.LabelSelector `json:"telegramConfigSelector,omitempty"`
+	// Selector to filter alerts.
+	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	// The channel or user to send notifications to.
+	Channels []string `json:"channels"`
+	//optional
+	// Mentioned users
+	MentionedUsers []string `json:"mentionedUsers,omitempty"`
+	// The name of the template to generate notification.
+	// If the global template is not set, it will use default.
+	Template *string `json:"template,omitempty"`
+	// Template file.
+	TmplText *ConfigmapKeySelector `json:"tmplText,omitempty"`
+}
+
 // ReceiverSpec defines the desired state of Receiver
 type ReceiverSpec struct {
 	DingTalk *DingTalkReceiver `json:"dingtalk,omitempty"`
@@ -327,6 +346,7 @@ type ReceiverSpec struct {
 	Pushover *PushoverReceiver `json:"pushover,omitempty"`
 	Feishu   *FeishuReceiver   `json:"feishu,omitempty"`
 	Discord  *DiscordReceiver  `json:"discord,omitempty"`
+	Telegram *TelegramReceiver `json:"telegram,omitempty"`
 }
 
 // ReceiverStatus defines the observed state of Receiver

@@ -365,7 +365,21 @@ func (r *Receiver) validateReceiver() error {
 		}
 	}
 
-	if allErrs == nil || len(allErrs) == 0 {
+	if r.Spec.Telegram != nil {
+		if len(r.Spec.Telegram.Channels) == 0 {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("telegram").Child("channels"),
+				"must be specified"))
+		}
+
+		if err := validateSelector(r.Spec.Telegram.AlertSelector); err != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec", "telegram", "alertSelector"),
+					r.Spec.Slack.AlertSelector,
+					err.Error()))
+		}
+	}
+
+	if len(allErrs) == 0 {
 		return nil
 	}
 

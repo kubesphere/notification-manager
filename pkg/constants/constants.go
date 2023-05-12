@@ -21,6 +21,7 @@ const (
 	Webhook  = "webhook"
 	WeChat   = "wechat"
 	Discord  = "discord"
+	Telegram = "telegram"
 
 	DiscordContent = "content"
 	DiscordEmbed   = "embed"

@@ -101,6 +101,13 @@ func (r *Config) validateConfig() error {
 		})
 	}
 
+	if r.Spec.Telegram != nil {
+		credentials = append(credentials, map[string]interface{}{
+			"credential": r.Spec.Telegram.TelegramTokenSecret,
+			"path":       field.NewPath("spec", "telegram", "telegramTokenSecret"),
+		})
+	}
+
 	if r.Spec.Wechat != nil {
 		credentials = append(credentials, map[string]interface{}{
 			"credential": r.Spec.Wechat.WechatApiSecret,
