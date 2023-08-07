@@ -47,9 +47,9 @@ type DingTalkReceiver struct {
 	// whether the receiver is enabled
 	Enabled *bool `json:"enabled,omitempty"`
 	// DingTalkConfig to be selected for this receiver
-	DingTalkConfigSelector *metav1.LabelSelector `json:"dingtalkConfigSelector,omitempty"`
+	DingTalkConfigSelector *LabelSelector `json:"dingtalkConfigSelector,omitempty"`
 	// Selector to filter alerts.
-	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	AlertSelector *LabelSelector `json:"alertSelector,omitempty"`
 	// Be careful, a ChatBot only can send 20 message per minute.
 	ChatBot *DingTalkChatBot `json:"chatbot,omitempty"`
 	// The conversation which message will send to.
@@ -71,9 +71,9 @@ type EmailReceiver struct {
 	// Receivers' email addresses
 	To []string `json:"to"`
 	// EmailConfig to be selected for this receiver
-	EmailConfigSelector *metav1.LabelSelector `json:"emailConfigSelector,omitempty"`
+	EmailConfigSelector *LabelSelector `json:"emailConfigSelector,omitempty"`
 	// Selector to filter alerts.
-	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	AlertSelector *LabelSelector `json:"alertSelector,omitempty"`
 	// The name of the template to generate notification.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
@@ -89,9 +89,9 @@ type SlackReceiver struct {
 	// whether the receiver is enabled
 	Enabled *bool `json:"enabled,omitempty"`
 	// SlackConfig to be selected for this receiver
-	SlackConfigSelector *metav1.LabelSelector `json:"slackConfigSelector,omitempty"`
+	SlackConfigSelector *LabelSelector `json:"slackConfigSelector,omitempty"`
 	// Selector to filter alerts.
-	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	AlertSelector *LabelSelector `json:"alertSelector,omitempty"`
 	// The channel or user to send notifications to.
 	Channels []string `json:"channels"`
 	// The name of the template to generate notification.
@@ -131,9 +131,9 @@ type WebhookReceiver struct {
 	// whether the receiver is enabled
 	Enabled *bool `json:"enabled,omitempty"`
 	// WebhookConfig to be selected for this receiver
-	WebhookConfigSelector *metav1.LabelSelector `json:"webhookConfigSelector,omitempty"`
+	WebhookConfigSelector *LabelSelector `json:"webhookConfigSelector,omitempty"`
 	// Selector to filter alerts.
-	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	AlertSelector *LabelSelector `json:"alertSelector,omitempty"`
 	// `url` gives the location of the webhook, in standard URL form
 	// (`scheme://host:port/path`). Exactly one of `url` or `service`
 	// must be specified.
@@ -181,9 +181,9 @@ type WechatReceiver struct {
 	// whether the receiver is enabled
 	Enabled *bool `json:"enabled,omitempty"`
 	// WechatConfig to be selected for this receiver
-	WechatConfigSelector *metav1.LabelSelector `json:"wechatConfigSelector,omitempty"`
+	WechatConfigSelector *LabelSelector `json:"wechatConfigSelector,omitempty"`
 	// Selector to filter alerts.
-	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	AlertSelector *LabelSelector `json:"alertSelector,omitempty"`
 	// +optional
 	ToUser  []string `json:"toUser,omitempty"`
 	ToParty []string `json:"toParty,omitempty"`
@@ -228,16 +228,16 @@ type DiscordReceiver struct {
 	MentionedRoles []string `json:"mentionedRoles,omitempty"`
 
 	// Selector to filter alerts.
-	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	AlertSelector *LabelSelector `json:"alertSelector,omitempty"`
 }
 
 type SmsReceiver struct {
 	// whether the receiver is enabled
 	Enabled *bool `json:"enabled,omitempty"`
 	// SmsConfig to be selected for this receiver
-	SmsConfigSelector *metav1.LabelSelector `json:"smsConfigSelector,omitempty"`
+	SmsConfigSelector *LabelSelector `json:"smsConfigSelector,omitempty"`
 	// Selector to filter alerts.
-	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	AlertSelector *LabelSelector `json:"alertSelector,omitempty"`
 	// Receivers' phone numbers
 	PhoneNumbers []string `json:"phoneNumbers"`
 	// The name of the template to generate notification.
@@ -267,9 +267,9 @@ type PushoverReceiver struct {
 	// whether the receiver is enabled
 	Enabled *bool `json:"enabled,omitempty"`
 	// PushoverConfig to be selected for this receiver
-	PushoverConfigSelector *metav1.LabelSelector `json:"pushoverConfigSelector,omitempty"`
+	PushoverConfigSelector *LabelSelector `json:"pushoverConfigSelector,omitempty"`
 	// Selector to filter alerts.
-	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	AlertSelector *LabelSelector `json:"alertSelector,omitempty"`
 	// The name of the template to generate notification.
 	// If the global template is not set, it will use default.
 	Template *string `json:"template,omitempty"`
@@ -297,9 +297,9 @@ type FeishuReceiver struct {
 	// whether the receiver is enabled
 	Enabled *bool `json:"enabled,omitempty"`
 	// FeishuConfig to be selected for this receiver
-	FeishuConfigSelector *metav1.LabelSelector `json:"feishuConfigSelector,omitempty"`
+	FeishuConfigSelector *LabelSelector `json:"feishuConfigSelector,omitempty"`
 	// Selector to filter alerts.
-	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	AlertSelector *LabelSelector `json:"alertSelector,omitempty"`
 	// +optional
 	// +kubebuilder:validation:MaxItems=200
 	User []string `json:"user,omitempty"`
@@ -320,9 +320,9 @@ type TelegramReceiver struct {
 	// whether the receiver is enabled
 	Enabled *bool `json:"enabled,omitempty"`
 	// TelegramConfigSelector to be selected for this receiver
-	TelegramConfigSelector *metav1.LabelSelector `json:"telegramConfigSelector,omitempty"`
+	TelegramConfigSelector *LabelSelector `json:"telegramConfigSelector,omitempty"`
 	// Selector to filter alerts.
-	AlertSelector *metav1.LabelSelector `json:"alertSelector,omitempty"`
+	AlertSelector *LabelSelector `json:"alertSelector,omitempty"`
 	// The channel or user to send notifications to.
 	Channels []string `json:"channels"`
 	//optional

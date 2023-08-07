@@ -29,7 +29,7 @@ type Channel struct {
 type ReceiverSelector struct {
 	Name      []string              `json:"name,omitempty"`
 	RegexName string                `json:"regexName,omitempty"`
-	Selector  *metav1.LabelSelector `json:"selector,omitempty"`
+	Selector  *LabelSelector `json:"selector,omitempty"`
 	Channels  []Channel             `json:"channels,omitempty"`
 	// Receiver type, known values are dingtalk, email, slack, sms, pushover, webhook, wechat.
 	Type string `json:"type,omitempty"`
@@ -39,7 +39,7 @@ type ReceiverSelector struct {
 type RouterSpec struct {
 	// whether the router is enabled
 	Enabled       *bool                 `json:"enabled,omitempty"`
-	AlertSelector *metav1.LabelSelector `json:"alertSelector"`
+	AlertSelector *LabelSelector `json:"alertSelector"`
 	// Receivers which need to receive the matched alert.
 	Receivers ReceiverSelector `json:"receivers"`
 }

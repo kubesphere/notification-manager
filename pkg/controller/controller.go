@@ -577,7 +577,7 @@ func (c *Controller) tenantIDFromNs(namespace string) ([]string, error) {
 // It will return true when config is found.
 func getMatchedConfig(r internal.Receiver, configs map[string]map[string]internal.Config) bool {
 
-	match := func(configs map[string]internal.Config, selector *metav1.LabelSelector) bool {
+	match := func(configs map[string]internal.Config, selector *v2beta2.LabelSelector) bool {
 		p := math.MaxInt32
 		for k, v := range configs {
 			if strings.HasPrefix(k, r.GetType()) {
@@ -680,7 +680,7 @@ func (c *Controller) RcvsFromName(names []string, regexName, receiverType string
 	return val.([]internal.Receiver)
 }
 
-func (c *Controller) RcvsFromSelector(selector *metav1.LabelSelector, receiverType string) []internal.Receiver {
+func (c *Controller) RcvsFromSelector(selector *v2beta2.LabelSelector, receiverType string) []internal.Receiver {
 
 	t := &task{
 		run: func(t *task) {

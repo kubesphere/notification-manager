@@ -18,10 +18,10 @@ package v2beta2
 
 import (
 	"fmt"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 	"regexp"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -388,12 +388,12 @@ func (r *Receiver) validateReceiver() error {
 		r.Name, allErrs)
 }
 
-func validateSelector(selector *metav1.LabelSelector) error {
+func validateSelector(selector *LabelSelector) error {
 
 	if selector == nil {
 		return nil
 	}
 
-	_, err := metav1.LabelSelectorAsSelector(selector)
+	_, err := utils.LabelSelectorAsSelector(selector)
 	return err
 }

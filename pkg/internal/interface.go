@@ -1,6 +1,8 @@
 package internal
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
+)
 
 type Receiver interface {
 	GetTenantID() string
@@ -9,8 +11,8 @@ type Receiver interface {
 	Enabled() bool
 	GetType() string
 	GetLabels() map[string]string
-	GetAlertSelector() *metav1.LabelSelector
-	GetConfigSelector() *metav1.LabelSelector
+	GetAlertSelector() *v2beta2.LabelSelector
+	GetConfigSelector() *v2beta2.LabelSelector
 	SetConfig(c Config)
 	Validate() error
 	Clone() Receiver

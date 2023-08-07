@@ -1,17 +1,17 @@
 package utils
 
 import (
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-func LabelMatchSelector(label map[string]string, selector *v1.LabelSelector) bool {
+func LabelMatchSelector(label map[string]string, selector *v2beta2.LabelSelector) bool {
 
 	if selector == nil {
 		return true
 	}
 
-	labelSelector, err := v1.LabelSelectorAsSelector(selector)
+	labelSelector, err := LabelSelectorAsSelector(selector)
 	if err != nil {
 		return false
 	}
