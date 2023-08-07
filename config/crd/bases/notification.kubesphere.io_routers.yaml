@@ -39,18 +39,11 @@ spec:
             description: RouterSpec defines the desired state of Router
             properties:
               alertSelector:
-                description: A label selector is a label query over a set of resources.
-                  The result of matchLabels and matchExpressions are ANDed. An empty
-                  label selector matches all objects. A null label selector matches
-                  no objects.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
                       The requirements are ANDed.
                     items:
-                      description: A label selector requirement is a selector that
-                        contains values, a key, and an operator that relates the key
-                        and values.
                       properties:
                         key:
                           description: key is the label key that the selector applies
@@ -60,6 +53,8 @@ spec:
                           description: operator represents a key's relationship to
                             a set of values. Valid operators are In, NotIn, Exists
                             and DoesNotExist.
+                          type: string
+                        regexValue:
                           type: string
                         values:
                           description: values is an array of string values. If the
@@ -113,18 +108,11 @@ spec:
                   regexName:
                     type: string
                   selector:
-                    description: A label selector is a label query over a set of resources.
-                      The result of matchLabels and matchExpressions are ANDed. An
-                      empty label selector matches all objects. A null label selector
-                      matches no objects.
                     properties:
                       matchExpressions:
                         description: matchExpressions is a list of label selector
                           requirements. The requirements are ANDed.
                         items:
-                          description: A label selector requirement is a selector
-                            that contains values, a key, and an operator that relates
-                            the key and values.
                           properties:
                             key:
                               description: key is the label key that the selector
@@ -134,6 +122,8 @@ spec:
                               description: operator represents a key's relationship
                                 to a set of values. Valid operators are In, NotIn,
                                 Exists and DoesNotExist.
+                              type: string
+                            regexValue:
                               type: string
                             values:
                               description: values is an array of string values. If

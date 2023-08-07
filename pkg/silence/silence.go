@@ -8,7 +8,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/stage"
 	"github.com/kubesphere/notification-manager/pkg/template"
-	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/modern-go/reflect2"
 )
 
@@ -45,7 +44,11 @@ func (s *silenceStage) Exec(ctx context.Context, l log.Logger, data interface{})
 	for _, alert := range input {
 		mute := false
 		for _, silence := range ss {
-			if utils.LabelMatchSelector(alert.Labels, silence.Spec.Matcher) {
+			ok, err := silence.Spec.Matcher.Matches(alert.Labels)
+			if err != nil {
+				return nil, nil, err
+			}
+			if ok {
 				mute = true
 				break
 			}

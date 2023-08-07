@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -21,15 +20,15 @@ type Template struct {
 }
 
 type Common struct {
-	Name            string                `json:"name,omitempty"`
-	ResourceVersion uint64                `json:"resourceVersion,omitempty"`
-	Type            string                `json:"type,omitempty"`
-	TenantID        string                `json:"tenantID,omitempty"`
-	Labels          map[string]string     `json:"labels,omitempty"`
-	Enable          *bool                 `json:"enable,omitempty"`
-	AlertSelector   *metav1.LabelSelector `json:"alertSelector,omitempty"`
-	ConfigSelector  *metav1.LabelSelector `json:"configSelector,omitempty"`
-	Hash            string                `json:"hash,omitempty"`
+	Name            string                 `json:"name,omitempty"`
+	ResourceVersion uint64                 `json:"resourceVersion,omitempty"`
+	Type            string                 `json:"type,omitempty"`
+	TenantID        string                 `json:"tenantID,omitempty"`
+	Labels          map[string]string      `json:"labels,omitempty"`
+	Enable          *bool                  `json:"enable,omitempty"`
+	AlertSelector   *v2beta2.LabelSelector `json:"alertSelector,omitempty"`
+	ConfigSelector  *v2beta2.LabelSelector `json:"configSelector,omitempty"`
+	Hash            string                 `json:"hash,omitempty"`
 	Template        `json:"template,omitempty"`
 }
 
@@ -74,11 +73,11 @@ func (c *Common) GetType() string {
 	return c.Type
 }
 
-func (c *Common) GetAlertSelector() *metav1.LabelSelector {
+func (c *Common) GetAlertSelector() *v2beta2.LabelSelector {
 	return c.AlertSelector
 }
 
-func (c *Common) GetConfigSelector() *metav1.LabelSelector {
+func (c *Common) GetConfigSelector() *v2beta2.LabelSelector {
 	return c.ConfigSelector
 }
 

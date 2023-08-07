@@ -2,17 +2,14 @@ package filter
 
 import (
 	"context"
-
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/controller"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/stage"
 	"github.com/kubesphere/notification-manager/pkg/template"
-	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/modern-go/reflect2"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
 type filterStage struct {
@@ -73,7 +70,7 @@ func (s *filterStage) mute(ctx context.Context, alerts []*template.Alert, receiv
 				continue
 			}
 
-			if utils.LabelMatchSelector(alert.Labels, silence.Spec.Matcher) {
+			if v2beta2.LabelMatchSelector(alert.Labels, silence.Spec.Matcher) {
 				flag = true
 				break
 			}
@@ -88,24 +85,19 @@ func (s *filterStage) mute(ctx context.Context, alerts []*template.Alert, receiv
 }
 
 // FilterAlerts filter the alerts with label selector,if the selector is not correct, return all of the alerts.
-func filter(alerts []*template.Alert, selector *v1.LabelSelector) ([]*template.Alert, error) {
+func filter(alerts []*template.Alert, selector *v2beta2.LabelSelector) ([]*template.Alert, error) {
 
 	if selector == nil {
 		return alerts, nil
 	}
 
-	labelSelector, err := v1.LabelSelectorAsSelector(selector)
-	if err != nil {
-		return alerts, err
-	}
-
-	if labelSelector.Empty() {
-		return alerts, nil
-	}
-
 	var as []*template.Alert
 	for _, alert := range alerts {
-		if labelSelector.Matches(labels.Set(alert.Labels)) {
+		ok, err := selector.Matches(alert.Labels)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
 			as = append(as, alert)
 		}
 	}
