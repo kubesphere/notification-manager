@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"k8s.io/apimachinery/pkg/labels"
+
 )
 
 func LabelMatchSelector(label map[string]string, selector *v2beta2.LabelSelector) bool {
@@ -11,7 +12,7 @@ func LabelMatchSelector(label map[string]string, selector *v2beta2.LabelSelector
 		return true
 	}
 
-	labelSelector, err := LabelSelectorAsSelector(selector)
+	labelSelector, err := LabelSelectorDeal(selector)
 	if err != nil {
 		return false
 	}

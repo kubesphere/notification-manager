@@ -95,7 +95,7 @@ func filter(alerts []*template.Alert, selector *v2beta2.LabelSelector) ([]*templ
 		return alerts, nil
 	}
 
-	labelSelector, err := utils.LabelSelectorAsSelector(selector)
+	labelSelector, err := utils.LabelSelectorDeal(selector)
 	if err != nil {
 		return alerts, err
 	}

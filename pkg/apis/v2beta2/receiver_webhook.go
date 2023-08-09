@@ -394,6 +394,6 @@ func validateSelector(selector *LabelSelector) error {
 		return nil
 	}
 
-	_, err := utils.LabelSelectorAsSelector(selector)
+	_, err := utils.LabelSelectorDeal(selector)
 	return err
 }
