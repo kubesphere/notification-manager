@@ -106,7 +106,8 @@ func (s *routeStage) rcvsFromRouter(alert *template.Alert, routers []v2beta2.Rou
 
 	var rcvs []internal.Receiver
 	for _, router := range routers {
-		if !utils.LabelMatchSelector(alert.Labels, router.Spec.AlertSelector) {
+		ok, _ := router.Spec.AlertSelector.Matches(alert.Labels)
+		if !ok {
 			continue
 		}
 

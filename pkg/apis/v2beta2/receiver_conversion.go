@@ -18,6 +18,7 @@ package v2beta2
 
 import (
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -88,8 +89,8 @@ func (src *Receiver) convertDingTalkTo(dst *v2beta1.Receiver) error {
 	dingtalk := src.Spec.DingTalk
 	dst.Spec.DingTalk = &v2beta1.DingTalkReceiver{
 		Enabled:                dingtalk.Enabled,
-		DingTalkConfigSelector: dingtalk.DingTalkConfigSelector,
-		AlertSelector:          dingtalk.AlertSelector,
+		DingTalkConfigSelector: convertToNativeLabelSelector(dingtalk.DingTalkConfigSelector),
+		AlertSelector:          convertToNativeLabelSelector(dingtalk.AlertSelector),
 	}
 
 	if dingtalk.Conversation != nil {
@@ -119,8 +120,8 @@ func (src *Receiver) convertEmailTo(dst *v2beta1.Receiver) error {
 	dst.Spec.Email = &v2beta1.EmailReceiver{
 		Enabled:             email.Enabled,
 		To:                  email.To,
-		EmailConfigSelector: email.EmailConfigSelector,
-		AlertSelector:       email.AlertSelector,
+		EmailConfigSelector: convertToNativeLabelSelector(email.EmailConfigSelector),
+		AlertSelector:       convertToNativeLabelSelector(email.AlertSelector),
 	}
 
 	return nil
@@ -135,8 +136,8 @@ func (src *Receiver) convertSlackTo(dst *v2beta1.Receiver) error {
 	slack := src.Spec.Slack
 	dst.Spec.Slack = &v2beta1.SlackReceiver{
 		Enabled:             slack.Enabled,
-		SlackConfigSelector: slack.SlackConfigSelector,
-		AlertSelector:       slack.AlertSelector,
+		SlackConfigSelector: convertToNativeLabelSelector(slack.SlackConfigSelector),
+		AlertSelector:       convertToNativeLabelSelector(slack.AlertSelector),
 		Channels:            slack.Channels,
 	}
 
@@ -152,8 +153,8 @@ func (src *Receiver) convertWebhookTo(dst *v2beta1.Receiver) error {
 	webhook := src.Spec.Webhook
 	dst.Spec.Webhook = &v2beta1.WebhookReceiver{
 		Enabled:               webhook.Enabled,
-		WebhookConfigSelector: webhook.WebhookConfigSelector,
-		AlertSelector:         webhook.AlertSelector,
+		WebhookConfigSelector: convertToNativeLabelSelector(webhook.WebhookConfigSelector),
+		AlertSelector:         convertToNativeLabelSelector(webhook.AlertSelector),
 		URL:                   webhook.URL,
 	}
 
@@ -194,8 +195,8 @@ func (src *Receiver) convertWechatTo(dst *v2beta1.Receiver) error {
 	wechat := src.Spec.Wechat
 	dst.Spec.Wechat = &v2beta1.WechatReceiver{
 		Enabled:              wechat.Enabled,
-		WechatConfigSelector: wechat.WechatConfigSelector,
-		AlertSelector:        wechat.AlertSelector,
+		WechatConfigSelector: convertToNativeLabelSelector(wechat.WechatConfigSelector),
+		AlertSelector:        convertToNativeLabelSelector(wechat.AlertSelector),
 		ToUser:               wechat.ToUser,
 		ToParty:              wechat.ToParty,
 		ToTag:                wechat.ToTag,
@@ -213,8 +214,8 @@ func (dst *Receiver) convertDingTalkFrom(src *v2beta1.Receiver) error {
 	dingtalk := src.Spec.DingTalk
 	dst.Spec.DingTalk = &DingTalkReceiver{
 		Enabled:                dingtalk.Enabled,
-		DingTalkConfigSelector: dingtalk.DingTalkConfigSelector,
-		AlertSelector:          dingtalk.AlertSelector,
+		DingTalkConfigSelector: convertToLabelSelector(dingtalk.DingTalkConfigSelector),
+		AlertSelector:          convertToLabelSelector(dingtalk.AlertSelector),
 	}
 
 	if dingtalk.Conversation != nil {
@@ -244,8 +245,8 @@ func (dst *Receiver) convertEmailFrom(src *v2beta1.Receiver) error {
 	dst.Spec.Email = &EmailReceiver{
 		Enabled:             email.Enabled,
 		To:                  email.To,
-		EmailConfigSelector: email.EmailConfigSelector,
-		AlertSelector:       email.AlertSelector,
+		EmailConfigSelector: convertToLabelSelector(email.EmailConfigSelector),
+		AlertSelector:       convertToLabelSelector(email.AlertSelector),
 	}
 
 	return nil
@@ -260,8 +261,8 @@ func (dst *Receiver) convertSlackFrom(src *v2beta1.Receiver) error {
 	slack := src.Spec.Slack
 	dst.Spec.Slack = &SlackReceiver{
 		Enabled:             slack.Enabled,
-		SlackConfigSelector: slack.SlackConfigSelector,
-		AlertSelector:       slack.AlertSelector,
+		SlackConfigSelector: convertToLabelSelector(slack.SlackConfigSelector),
+		AlertSelector:       convertToLabelSelector(slack.AlertSelector),
 		Channels:            slack.Channels,
 	}
 
@@ -277,8 +278,8 @@ func (dst *Receiver) convertWebhookFrom(src *v2beta1.Receiver) error {
 	webhook := src.Spec.Webhook
 	dst.Spec.Webhook = &WebhookReceiver{
 		Enabled:               webhook.Enabled,
-		WebhookConfigSelector: webhook.WebhookConfigSelector,
-		AlertSelector:         webhook.AlertSelector,
+		WebhookConfigSelector: convertToLabelSelector(webhook.WebhookConfigSelector),
+		AlertSelector:         convertToLabelSelector(webhook.AlertSelector),
 		URL:                   webhook.URL,
 	}
 
@@ -319,12 +320,46 @@ func (dst *Receiver) convertWechatFrom(src *v2beta1.Receiver) error {
 	wechat := src.Spec.Wechat
 	dst.Spec.Wechat = &WechatReceiver{
 		Enabled:              wechat.Enabled,
-		WechatConfigSelector: wechat.WechatConfigSelector,
-		AlertSelector:        wechat.AlertSelector,
+		WechatConfigSelector: convertToLabelSelector(wechat.WechatConfigSelector),
+		AlertSelector:        convertToLabelSelector(wechat.AlertSelector),
 		ToUser:               wechat.ToUser,
 		ToParty:              wechat.ToParty,
 		ToTag:                wechat.ToTag,
 	}
 
 	return nil
+}
+
+func convertToLabelSelector(ls *metav1.LabelSelector) *LabelSelector {
+	var selector *LabelSelector
+	selector.MatchLabels = ls.MatchLabels
+
+	for _, requirement := range ls.MatchExpressions {
+		selector.MatchExpressions = append(selector.MatchExpressions, LabelSelectorRequirement{
+			Key: requirement.Key,
+			Operator: LabelSelectorOperator(requirement.Operator),
+			Values: requirement.Values,
+		})
+	}
+
+	return selector
+}
+
+func convertToNativeLabelSelector(ls *LabelSelector) *metav1.LabelSelector {
+	var selector *metav1.LabelSelector
+	selector.MatchLabels = ls.MatchLabels
+
+	for _, requirement := range ls.MatchExpressions {
+		if requirement.Operator == LabelSelectorOpMatch {
+			continue
+		} else {
+			selector.MatchExpressions = append(selector.MatchExpressions, metav1.LabelSelectorRequirement{
+				Key:      requirement.Key,
+				Operator: metav1.LabelSelectorOperator(requirement.Operator),
+				Values:   requirement.Values,
+			})
+		}
+	}
+
+	return selector
 }

@@ -101,7 +101,6 @@ func (t *Throttle) Get(url string) *rateLimiter {
 // The queue stores the time of the last (threshold - 1) call.
 //
 // The logic of flow control is that the time of any `threshold` consecutive calls cannot be greater than `unitTime`.
-//
 func (t *Throttle) Allow(key string, logger log.Logger) bool {
 
 	r := t.Get(key)
