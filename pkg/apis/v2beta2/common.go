@@ -34,20 +34,17 @@ type LabelSelectorRequirement struct {
 	RegexValue string   `json:"regexValue,omitempty" protobuf:"bytes,3,rep,name=regexValue"`
 }
 
-// A label selector operator is the set of operators that can be used in a selector requirement.
+// LabelSelectorOperator is a label selector operator is the set of operators that can be used in a selector requirement.
 type LabelSelectorOperator string
 
 const (
-	LabelSelectorOpIn           LabelSelectorOperator = "In"
-	LabelSelectorOpNotIn        LabelSelectorOperator = "NotIn"
-	LabelSelectorOpExists       LabelSelectorOperator = "Exists"
-	LabelSelectorOpDoesNotExist LabelSelectorOperator = "DoesNotExist"
-	LabelSelectorOpMatch        LabelSelectorOperator = "Match"
+	LabelSelectorOpMatch LabelSelectorOperator = "Match"
 )
 
 func (ls *LabelSelector) Matches(label map[string]string) (bool, error) {
-	var selector *metav1.LabelSelector
-	selector.MatchLabels = ls.MatchLabels
+	selector := &metav1.LabelSelector{
+		MatchLabels: ls.MatchLabels,
+	}
 
 	for _, requirement := range ls.MatchExpressions {
 		if requirement.Operator != LabelSelectorOpMatch {
@@ -75,8 +72,9 @@ func (ls *LabelSelector) Matches(label map[string]string) (bool, error) {
 }
 
 func (ls *LabelSelector) Validate() error {
-	var selector *metav1.LabelSelector
-	selector.MatchLabels = ls.MatchLabels
+	selector := &metav1.LabelSelector{
+		MatchLabels: ls.MatchLabels,
+	}
 
 	for _, requirement := range ls.MatchExpressions {
 		if requirement.Operator != LabelSelectorOpMatch {
