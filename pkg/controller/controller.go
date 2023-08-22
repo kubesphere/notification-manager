@@ -1154,11 +1154,11 @@ func (c *Controller) GetCluster() string {
 		return c.ReceiverOpts.Global.Cluster
 	}
 
-	if cluster := c.getClusterFromConfigmap(); !utils.StringIsNil(cluster) {
+	if cluster := c.getClusterFromAnnotation(); !utils.StringIsNil(cluster) {
 		return cluster
 	}
 
-	if cluster := c.getClusterFromAnnotation(); !utils.StringIsNil(cluster) {
+	if cluster := c.getClusterFromConfigmap(); !utils.StringIsNil(cluster) {
 		return cluster
 	}
 
