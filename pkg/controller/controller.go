@@ -1150,11 +1150,41 @@ type multiCluster struct {
 // from the configmap kubesphere-config.
 // Otherwise, the default cluster name "default" will be returned.
 func (c *Controller) GetCluster() string {
-
 	if c.ReceiverOpts != nil && c.ReceiverOpts.Global != nil && !utils.StringIsNil(c.ReceiverOpts.Global.Cluster) {
 		return c.ReceiverOpts.Global.Cluster
 	}
 
+	if cluster := c.getClusterFromAnnotation(); !utils.StringIsNil(cluster) {
+		return cluster
+	}
+
+	if cluster := c.getClusterFromConfigmap(); !utils.StringIsNil(cluster) {
+		return cluster
+	}
+
+	return constants.DefaultClusterName
+}
+
+func (c *Controller) getClusterFromAnnotation() string {
+	ns := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kubesphere-system",
+		},
+	}
+
+	if err := c.cache.Get(c.ctx, client.ObjectKeyFromObject(ns), ns); err != nil {
+		_ = level.Debug(c.logger).Log("msg", "get kubesphere-system namespace error", "err", err)
+		return ""
+	}
+
+	if ns.Annotations != nil {
+		return ns.Annotations["cluster.kubesphere.io/name"]
+	}
+
+	return ""
+}
+
+func (c *Controller) getClusterFromConfigmap() string {
 	files, err := c.GetConfigmap(&v2beta2.ConfigmapKeySelector{
 		Namespace: constants.KubesphereConfigNamespace,
 		Name:      constants.KubesphereConfigName,
@@ -1162,23 +1192,19 @@ func (c *Controller) GetCluster() string {
 	})
 	if err != nil {
 		_ = level.Debug(c.logger).Log("msg", "get kubesphere config configmap error", "err", err)
-		return constants.DefaultClusterName
+		return ""
 	}
 
 	if len(files) == 0 {
 		_ = level.Debug(c.logger).Log("msg", "get kubesphere cluster name error, key is not found")
-		return constants.DefaultClusterName
+		return ""
 	}
 
 	cc := &clusterConfig{}
 	if err := yaml.Unmarshal([]byte(files[0]), cc); err != nil {
 		_ = level.Debug(c.logger).Log("msg", "decode kubesphere config error", "error", err)
-		return constants.DefaultClusterName
+		return ""
 	}
 
-	if !utils.StringIsNil(cc.MultiCluster.ClusterName) {
-		return cc.MultiCluster.ClusterName
-	}
-
-	return constants.DefaultClusterName
+	return cc.MultiCluster.ClusterName
 }
