@@ -148,7 +148,7 @@ jobs:
           kubectl -n kubesphere-monitoring-system patch svc notification-manager-svc --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"},{"op":"replace","path":"/spec/ports/0/nodePort","value":30008}]'
 
       - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+        uses: mxschmitt/action-tmate@v1
 
 
       - name: Send alerts
