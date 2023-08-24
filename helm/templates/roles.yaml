@@ -24,6 +24,14 @@ rules:
   - update
   - patch
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -41,4 +49,4 @@ rules:
   - events
   verbs:
   - create
-  
+
