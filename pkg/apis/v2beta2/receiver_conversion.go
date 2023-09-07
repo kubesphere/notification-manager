@@ -331,14 +331,18 @@ func (dst *Receiver) convertWechatFrom(src *v2beta1.Receiver) error {
 }
 
 func convertToLabelSelector(ls *metav1.LabelSelector) *LabelSelector {
-	var selector *LabelSelector
+	selector := &LabelSelector{}
+	if ls == nil {
+		return selector
+	}
+
 	selector.MatchLabels = ls.MatchLabels
 
 	for _, requirement := range ls.MatchExpressions {
 		selector.MatchExpressions = append(selector.MatchExpressions, LabelSelectorRequirement{
-			Key: requirement.Key,
+			Key:      requirement.Key,
 			Operator: LabelSelectorOperator(requirement.Operator),
-			Values: requirement.Values,
+			Values:   requirement.Values,
 		})
 	}
 
@@ -346,7 +350,10 @@ func convertToLabelSelector(ls *metav1.LabelSelector) *LabelSelector {
 }
 
 func convertToNativeLabelSelector(ls *LabelSelector) *metav1.LabelSelector {
-	var selector *metav1.LabelSelector
+	selector := &metav1.LabelSelector{}
+	if ls == nil {
+		return selector
+	}
 	selector.MatchLabels = ls.MatchLabels
 
 	for _, requirement := range ls.MatchExpressions {
