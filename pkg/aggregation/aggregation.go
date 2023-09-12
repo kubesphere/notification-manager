@@ -76,5 +76,10 @@ func groupKeyToLabel(groupKey string) template.KV {
 
 	label := template.KV{}
 	_ = utils.JsonUnmarshal([]byte(groupKey), &label)
+	for k, v := range label {
+		if v == "" {
+			delete(label, k)
+		}
+	}
 	return label
 }
