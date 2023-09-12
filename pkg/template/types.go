@@ -49,12 +49,16 @@ func (d *Data) Format() *Data {
 
 	d.CommonLabels = make(map[string]string)
 	for k, v := range commonLabels {
-		d.CommonLabels[k] = v
+		if !utils.StringIsNil(v) {
+			d.CommonLabels[k] = v
+		}
 	}
 
 	d.CommonAnnotations = make(map[string]string)
 	for k, v := range commonAnnotations {
-		d.CommonAnnotations[k] = v
+		if !utils.StringIsNil(v) {
+			d.CommonAnnotations[k] = v
+		}
 	}
 
 	return d
