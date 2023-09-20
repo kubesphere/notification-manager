@@ -1,3 +1,13 @@
+## v2.4.0 / 2023-09-20
+
+### FEATURES
+
+-  Support sending notifications to telegram(#210). @mangoGoForward
+
+### Enhancements
+
+- Supports regular expression matching in Receiver, Silence, and Router(#215). @wenchajun
+
 ## v2.3.0 / 2023-04-12
 
 ### Enhancements
