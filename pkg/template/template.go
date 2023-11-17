@@ -162,11 +162,10 @@ func (t *Template) Text(name string, data *Data) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	tmpl, err = tmpl.New("").Option("missingkey=zero").Parse(t.transform(name))
+	tmpl, err = tmpl.New("").Option("missingkey=zero").Parse(t.Transform(name))
 	if err != nil {
 		return "", err
 	}
-
 	var buf bytes.Buffer
 	if err = tmpl.Execute(&buf, data); err != nil {
 		return "", err
@@ -185,7 +184,7 @@ func (t *Template) Html(name string, data *Data) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	tmpl, err = tmpl.New("").Option("missingkey=zero").Parse(t.transform(name))
+	tmpl, err = tmpl.New("").Option("missingkey=zero").Parse(t.Transform(name))
 	if err != nil {
 		return "", err
 	}
@@ -217,7 +216,7 @@ func cleanSuffix(s string) string {
 	return s
 }
 
-func (t *Template) transform(name string) string {
+func (t *Template) Transform(name string) string {
 
 	n := strings.ReplaceAll(name, " ", "")
 
@@ -248,14 +247,14 @@ func (t *Template) Split(data *Data, maxSize int, templateName string, subjectTe
 		}
 
 		d.Alerts = append(d.Alerts, data.Alerts[i])
-		msg, err := t.Text(t.transform(templateName), d.Format())
+		msg, err := t.Text(t.Transform(templateName), d.Format())
 		if err != nil {
 			return nil, err
 		}
 
 		title := ""
 		if subjectTemplateName != "" {
-			title, err = t.Text(t.transform(subjectTemplateName), d)
+			title, err = t.Text(t.Transform(subjectTemplateName), d)
 			if err != nil {
 				return nil, err
 			}
