@@ -42,6 +42,7 @@ const (
 	Notification = "notification"
 
 	DefaultWebhookTemplate = `{{ template "webhook.default.message" . }}`
+	DefaultHistoryTemplate = `{{ template "nm.default.history" . }}`
 
 	DefaultClusterName = "default"
 

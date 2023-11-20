@@ -24,6 +24,15 @@ import (
 
 const (
 	DefaultSendTimeout = time.Second * 5
+
+	Status           = "status"
+	StartsAt         = "startsAt"
+	EndsAt           = "endsAt"
+	NotificationTime = "notificationTime"
+	RunbookURL       = "runbook_url"
+	Message          = "message"
+	Summary          = "summary"
+	SummaryCn        = "summaryCn"
 )
 
 type Notifier struct {
@@ -88,7 +97,18 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 	}()
 
 	var buf bytes.Buffer
-	if n.receiver.TmplName != constants.DefaultWebhookTemplate {
+	if n.tmpl.Transform(n.receiver.TmplName) == constants.DefaultWebhookTemplate {
+		if err := utils.JsonEncode(&buf, data); err != nil {
+			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: encode message error", "error", err.Error())
+			return err
+		}
+	} else if n.tmpl.Transform(n.receiver.TmplName) == constants.DefaultHistoryTemplate {
+		// just for notification history
+		if err := generateNotificationHistory(&buf, data); err != nil {
+			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: generate notification history error", "error", err.Error())
+			return err
+		}
+	} else {
 		msg, err := n.tmpl.Text(n.receiver.TmplName, data)
 		if err != nil {
 			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: generate message error", "error", err.Error())
@@ -96,11 +116,6 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 		}
 
 		buf.WriteString(msg)
-	} else {
-		if err := utils.JsonEncode(&buf, data); err != nil {
-			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: encode message error", "error", err.Error())
-			return err
-		}
 	}
 
 	request, err := http.NewRequest(http.MethodPost, n.receiver.URL, &buf)
@@ -156,7 +171,40 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 
 	_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "to", n.receiver.URL)
 	return nil
+}
 
+func generateNotificationHistory(buf *bytes.Buffer, data *template.Data) error {
+	var res []interface{}
+	for _, alert := range data.Alerts {
+		m := make(map[string]interface{})
+		m[Status] = alert.Status
+		m[StartsAt] = alert.StartsAt
+		m[EndsAt] = alert.EndsAt
+		m[NotificationTime] = time.Now()
+
+		for k, v := range alert.Labels {
+			m[k] = v
+		}
+
+		for k, v := range alert.Annotations {
+			if k != RunbookURL && k != Message && k != Summary && k != SummaryCn {
+				m[k] = v
+			}
+		}
+
+		message := alert.Annotations[Message]
+		if message == "" {
+			message = alert.Annotations[Summary]
+			if message == "" {
+				message = alert.Annotations[SummaryCn]
+			}
+		}
+		m[Message] = message
+
+		res = append(res, m)
+	}
+
+	return utils.JsonEncode(buf, res)
 }
 
 func (n *Notifier) getTransport(r *webhook.Receiver) (http.RoundTripper, error) {

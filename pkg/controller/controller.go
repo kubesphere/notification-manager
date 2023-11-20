@@ -957,8 +957,11 @@ func (c *Controller) GetHistoryReceivers() []internal.Receiver {
 				Webhook: c.history.Webhook,
 			},
 		}
-		tmpl := constants.DefaultWebhookTemplate
-		receiver.Spec.Webhook.Template = &tmpl
+		if receiver.Spec.Webhook.Template == nil || *receiver.Spec.Webhook.Template == "" {
+			tmpl := constants.DefaultWebhookTemplate
+			receiver.Spec.Webhook.Template = &tmpl
+		}
+
 		historyReceivers := NewReceivers("", receiver)
 		if historyReceivers != nil {
 			for _, v := range historyReceivers {
