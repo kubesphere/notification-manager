@@ -174,7 +174,6 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 }
 
 func generateNotificationHistory(buf *bytes.Buffer, data *template.Data) error {
-	var res []interface{}
 	for _, alert := range data.Alerts {
 		m := make(map[string]interface{})
 		m[Status] = alert.Status
@@ -201,10 +200,12 @@ func generateNotificationHistory(buf *bytes.Buffer, data *template.Data) error {
 		}
 		m[Message] = message
 
-		res = append(res, m)
+		if err := utils.JsonEncode(buf, m); err != nil {
+			return err
+		}
 	}
 
-	return utils.JsonEncode(buf, res)
+	return nil
 }
 
 func (n *Notifier) getTransport(r *webhook.Receiver) (http.RoundTripper, error) {

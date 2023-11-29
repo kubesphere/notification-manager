@@ -3,6 +3,7 @@ package webhook
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/constants"
@@ -58,7 +59,7 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 		}
 
 		if service.Path != nil {
-			r.URL = fmt.Sprintf("%s%s", r.URL, *service.Path)
+			r.URL = fmt.Sprintf("%s%s", r.URL, strings.TrimPrefix(*service.Path, "/"))
 		}
 	}
 
