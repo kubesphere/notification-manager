@@ -21,7 +21,6 @@ import (
 	"os"
 
 	"github.com/kubesphere/notification-manager/controllers"
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta1"
 	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -39,7 +38,6 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
-	_ = v2beta1.AddToScheme(scheme)
 	_ = v2beta2.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
