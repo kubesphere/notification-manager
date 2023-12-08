@@ -163,6 +163,9 @@ type NotificationManagerSpec struct {
 	RoutePolicy string `json:"routePolicy,omitempty"`
 	// Template used to define information about templates
 	Template *Template `json:"template,omitempty"`
+
+	Annotations map[string]string `json:"annotations,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
 }
 
 type ReceiversSpec struct {

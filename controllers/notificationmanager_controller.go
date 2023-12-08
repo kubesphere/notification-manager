@@ -163,14 +163,17 @@ func (r *NotificationManagerReconciler) mutateDeployment(deploy *appsv1.Deployme
 			nm.Spec.ServiceAccountName = defaultServiceAccountName
 		}
 
-		deploy.ObjectMeta.Labels = *r.makeCommonLabels(nm)
 		deploy.Spec.Replicas = nm.Spec.Replicas
-		podLabels := deploy.ObjectMeta.Labels
+		podLabels := *r.makeCommonLabels(nm)
+		for k, v := range nm.Spec.Labels {
+			podLabels[k] = v
+		}
 		deploy.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: podLabels,
+			MatchLabels: *r.makeCommonLabels(nm),
 		}
 		deploy.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-			Labels: podLabels,
+			Labels:      podLabels,
+			Annotations: nm.Spec.Annotations,
 		}
 		deploy.Spec.Template.Spec.NodeSelector = nm.Spec.NodeSelector
 		deploy.Spec.Template.Spec.Affinity = nm.Spec.Affinity
