@@ -1735,6 +1735,10 @@ spec:
                         type: array
                     type: object
                 type: object
+              annotations:
+                additionalProperties:
+                  type: string
+                type: object
               args:
                 description: Arguments to the entrypoint. The docker image's CMD is
                   used if this is not provided.
@@ -2282,6 +2286,10 @@ spec:
                 description: Image pull policy. One of Always, Never, IfNotPresent.
                   Defaults to IfNotPresent if not specified
                 type: string
+              labels:
+                additionalProperties:
+                  type: string
+                type: object
               nodeSelector:
                 additionalProperties:
                   type: string
