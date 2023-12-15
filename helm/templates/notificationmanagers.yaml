@@ -35,13 +35,13 @@ spec:
     {{- toYaml .Values.notificationmanager.volumes | nindent 4 }}
   defaultSecretNamespace:
     {{- toYaml .Values.notificationmanager.defaultSecretNamespace | nindent 4 }}
-  {{- if eq .Values.kubesphere true }}
+  {{- if .Values.kubesphere.enabled }}
   sidecars:
     tenant:
-      image: kubesphere/notification-tenant-sidecar:v3.2.0
+      image: kubesphere/notification-tenant-sidecar:{{ .Values.kubesphere.version }}
       name: tenant
       type: kubesphere
-  {{- end}}
+  {{- end }}
   template:
     {{- toYaml .Values.notificationmanager.template | nindent 4 }}
   groupLabels:

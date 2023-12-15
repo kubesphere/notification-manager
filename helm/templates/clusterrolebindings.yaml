@@ -25,7 +25,8 @@ subjects:
   name: notification-manager-sa
   namespace: {{ .Release.Namespace }}
 
-{{- if eq .Values.kubesphere true }}
+{{- if .Values.kubesphere.enabled }}
+{{- if or (eq .Values.kubesphere.version "v3.1.0")  (eq .Values.kubesphere.version "v3.2.0") }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -39,4 +40,5 @@ subjects:
   - kind: ServiceAccount
     name: notification-manager-sa
     namespace: {{ .Release.Namespace }}
+{{- end}}
 {{- end}}
