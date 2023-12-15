@@ -1,16 +1,7 @@
-# Whether Notification manager is running at the kubesphere.
-kubesphere: false
-
-hook:
-  postInstall:
-    image:
-      repo: kubesphere/kubectl
-      tag: v1.22.0
-      pullPolicy: IfNotPresent
-    backoffLimit: 1
-
-# Set timezone to be injected into containers
-# timezone: "America/Toronto"
+kubesphere:
+  enabled: fase
+  # supported version: v3.1.0, v3.2.0
+  version: v3.2.0
 
 # value of notification-manager-operator
 operator: 
