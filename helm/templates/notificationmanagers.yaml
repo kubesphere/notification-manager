@@ -38,7 +38,11 @@ spec:
   {{- if .Values.kubesphere.enabled }}
   sidecars:
     tenant:
+  {{- if .Values.kubesphere.image }}
+      image: {{ .Values.kubesphere.image }}
+  {{- else }}
       image: kubesphere/notification-tenant-sidecar:{{ .Values.kubesphere.version }}
+  {{- end }}
       name: tenant
       type: kubesphere
   {{- end }}
@@ -46,3 +50,7 @@ spec:
     {{- toYaml .Values.notificationmanager.template | nindent 4 }}
   groupLabels:
     {{- toYaml .Values.notificationmanager.groupLabels | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.notificationmanager.annotations | nindent 4 }}
+  labels:
+    {{- toYaml .Values.notificationmanager.labels | nindent 4 }}

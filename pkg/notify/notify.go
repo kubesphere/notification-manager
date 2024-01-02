@@ -98,6 +98,7 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 	for k, v := range input {
 		receiver := k
 		ds := v
+		s.addExtensionLabels(receiver, ds)
 		nf, err := factories[receiver.GetType()](l, receiver, s.notifierCtl)
 		if err != nil {
 			e := err
@@ -117,4 +118,12 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 	}
 
 	return ctx, alertMap, group.Wait()
+}
+
+func (s *notifyStage) addExtensionLabels(receiver internal.Receiver, data []*template.Data) {
+	for _, d := range data {
+		for _, alert := range d.Alerts {
+			alert.Labels[constants.ReceiverName] = receiver.GetName()
+		}
+	}
 }

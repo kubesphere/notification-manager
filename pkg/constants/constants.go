@@ -38,6 +38,8 @@ const (
 	AlertSummary   = "summary"
 	AlertSummaryCN = "summaryCn"
 
+	ReceiverName = "receiver"
+
 	Verify       = "verify"
 	Notification = "notification"
 

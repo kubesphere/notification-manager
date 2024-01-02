@@ -9,7 +9,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: notification-manager-sa
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "nm.namespaceOverride" . }}
   
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -23,7 +23,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: notification-manager-sa
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "nm.namespaceOverride" . }}
 
 {{- if .Values.kubesphere.enabled }}
 {{- if or (eq .Values.kubesphere.version "v3.1.0")  (eq .Values.kubesphere.version "v3.2.0") }}
@@ -39,6 +39,6 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: notification-manager-sa
-    namespace: {{ .Release.Namespace }}
+    namespace: {{ include "nm.namespaceOverride" . }}
 {{- end}}
 {{- end}}
