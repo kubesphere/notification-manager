@@ -4,6 +4,7 @@ metadata:
   labels:
     control-plane: controller-manager
   name: notification-manager-operator
+  namespace: {{ include "nm.namespaceOverride" . }}
 spec:
   replicas: 1
   selector:

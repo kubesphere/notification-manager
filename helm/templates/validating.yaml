@@ -1,5 +1,6 @@
+{{- $name := include "nm.namespaceOverride" . }}
 {{- $ca := genCA "webhook-ca" 36500 -}}
-{{- $dns := cat "notification-manager-webhook." .Release.Namespace ".svc" | nospace -}}
+{{- $dns := cat "notification-manager-webhook." $name ".svc" | nospace -}}
 {{- $cert := genSignedCert "notification-manager-webhook" (list) (list $dns) 36500 $ca -}}
 apiVersion: v1
 data:
@@ -8,6 +9,7 @@ data:
 kind: Secret
 metadata:
   name: notification-manager-webhook-server-cert
+  namespace: {{ include "nm.namespaceOverride" . }}
 type: kubernetes.io/tls
 
 ---
@@ -22,7 +24,7 @@ webhooks:
     caBundle: {{ $ca.Cert  | b64enc  }}
     service:
       name: notification-manager-webhook
-      namespace: {{ .Release.Namespace }}
+      namespace: {{ include "nm.namespaceOverride" . }}
       path: /validate-notification-kubesphere-io-v2beta2-config
   failurePolicy: Fail
   name: vconfig.notification.kubesphere.io
@@ -43,7 +45,7 @@ webhooks:
     caBundle: {{ $ca.Cert  | b64enc  }}
     service:
       name: notification-manager-webhook
-      namespace: {{ .Release.Namespace }}
+      namespace: {{ include "nm.namespaceOverride" . }}
       path: /validate-notification-kubesphere-io-v2beta2-receiver
   failurePolicy: Fail
   name: vreceiver.notification.kubesphere.io
@@ -64,7 +66,7 @@ webhooks:
     caBundle: {{ $ca.Cert  | b64enc  }}
     service:
       name: notification-manager-webhook
-      namespace: {{ .Release.Namespace }}
+      namespace: {{ include "nm.namespaceOverride" . }}
       path: /validate-notification-kubesphere-io-v2beta2-router
   failurePolicy: Fail
   name: vrouter.notification.kubesphere.io
@@ -85,7 +87,7 @@ webhooks:
     caBundle: {{ $ca.Cert  | b64enc  }}
     service:
       name: notification-manager-webhook
-      namespace: {{ .Release.Namespace }}
+      namespace: {{ include "nm.namespaceOverride" . }}
       path: /validate-notification-kubesphere-io-v2beta2-silence
   failurePolicy: Fail
   name: vsilence.notification.kubesphere.io

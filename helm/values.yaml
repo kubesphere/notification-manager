@@ -1,5 +1,7 @@
+namespaceOverride: ""
+
 kubesphere:
-  enabled: fase
+  enabled: false
   # supported version: v3.1.0, v3.2.0
   version: v3.2.0
 
@@ -78,8 +80,13 @@ notificationmanager:
     - alertname
     - namespace
   template:
+    language: English
+    languagePack:
+      - name: zh-cn
+        namespace: kubesphere-monitoring-system
     text:
       name: notification-manager-template
+      namespace: kubesphere-monitoring-system
   env:
     - name: TZ
       value: Asia/Shanghai

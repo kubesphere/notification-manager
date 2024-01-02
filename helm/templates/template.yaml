@@ -155,3 +155,5 @@ data:
 kind: ConfigMap
 metadata:
   name: notification-manager-template
+  namespace: {{ include "nm.namespaceOverride" . }}
+
