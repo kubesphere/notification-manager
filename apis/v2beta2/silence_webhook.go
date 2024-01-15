@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 func (r *Silence) SetupWebhookWithManager(mgr ctrl.Manager) error {
@@ -36,22 +37,22 @@ func (r *Silence) SetupWebhookWithManager(mgr ctrl.Manager) error {
 var _ webhook.Validator = &Silence{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (s *Silence) ValidateCreate() error {
+func (s *Silence) ValidateCreate() (warnings admission.Warnings, err error) {
 
 	return s.validateSilence()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (s *Silence) ValidateUpdate(_ runtime.Object) error {
+func (s *Silence) ValidateUpdate(_ runtime.Object) (warnings admission.Warnings, err error) {
 	return s.validateSilence()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (s *Silence) ValidateDelete() error {
-	return nil
+func (s *Silence) ValidateDelete() (warnings admission.Warnings, err error) {
+	return admission.Warnings{}, nil
 }
 
-func (s *Silence) validateSilence() error {
+func (s *Silence) validateSilence() (warnings admission.Warnings, err error) {
 	var allErrs field.ErrorList
 
 	if err := validateSelector(s.Spec.Matcher); err != nil {
@@ -65,10 +66,10 @@ func (s *Silence) validateSilence() error {
 	}
 
 	if allErrs == nil || len(allErrs) == 0 {
-		return nil
+		return admission.Warnings{}, nil
 	}
 
-	return errors.NewInvalid(
+	return admission.Warnings{}, errors.NewInvalid(
 		schema.GroupKind{Group: "notification.kubesphere.io", Kind: "Receiver"},
 		s.Name, allErrs)
 }

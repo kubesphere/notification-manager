@@ -14,7 +14,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
+	"github.com/kubesphere/notification-manager/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/constants"
 	"github.com/kubesphere/notification-manager/pkg/internal"
 	"github.com/kubesphere/notification-manager/pkg/template"
@@ -22,16 +22,13 @@ import (
 	"github.com/modern-go/reflect2"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 	kcache "k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	kconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/yaml"
 )
@@ -57,7 +54,6 @@ type Controller struct {
 	logger log.Logger
 	ctx    context.Context
 	cache  cache.Cache
-	client client.Client
 	// Default config selector
 	defaultConfigSelector *metav1.LabelSelector
 	// Label key used to distinguish different user
@@ -121,12 +117,6 @@ func New(ctx context.Context, logger log.Logger) (*Controller, error) {
 		return nil, err
 	}
 
-	c, err := newClient(cfg, informerCache, scheme)
-	if err != nil {
-		_ = level.Error(logger).Log("msg", "Failed to create client", "err", err)
-		return nil, err
-	}
-
 	ns := os.Getenv(nsEnvironment)
 	if len(ns) == 0 {
 		return nil, level.Error(logger).Log("msg", "namespace is empty")
@@ -136,7 +126,6 @@ func New(ctx context.Context, logger log.Logger) (*Controller, error) {
 		ctx:                    ctx,
 		logger:                 logger,
 		cache:                  informerCache,
-		client:                 c,
 		tenantKey:              defaultTenantKey,
 		defaultConfigSelector:  nil,
 		tenantReceiverSelector: nil,
@@ -147,27 +136,6 @@ func New(ctx context.Context, logger log.Logger) (*Controller, error) {
 		ch:                     make(chan *task, ChannelCapacity),
 		namespace:              ns,
 	}, nil
-}
-
-// Setting up client
-func newClient(cfg *rest.Config, cache cache.Cache, scheme *runtime.Scheme) (client.Client, error) {
-	mapper, err := func(c *rest.Config) (meta.RESTMapper, error) {
-		return apiutil.NewDynamicRESTMapper(c)
-	}(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme, Mapper: mapper})
-	if err != nil {
-		return nil, err
-	}
-
-	return client.NewDelegatingClient(
-		client.NewDelegatingClientInput{
-			CacheReader: cache,
-			Client:      c,
-		})
 }
 
 func (c *Controller) Run() error {
@@ -328,7 +296,7 @@ func (c *Controller) reload(needToReloadConfig, needToReloadReceiver bool) {
 		for {
 			if needToReloadConfig {
 				configList := v2beta2.ConfigList{}
-				if err := c.client.List(c.ctx, &configList); err != nil {
+				if err := c.cache.List(c.ctx, &configList); err != nil {
 					_ = level.Error(c.logger).Log("msg", "Failed to list config", "err", err)
 					time.Sleep(time.Second)
 					continue
@@ -352,7 +320,7 @@ func (c *Controller) reload(needToReloadConfig, needToReloadReceiver bool) {
 
 			if needToReloadReceiver {
 				receiverList := v2beta2.ReceiverList{}
-				if err := c.client.List(c.ctx, &receiverList); err != nil {
+				if err := c.cache.List(c.ctx, &receiverList); err != nil {
 					_ = level.Error(c.logger).Log("msg", "Failed to list receiver", "err", err)
 					time.Sleep(time.Second)
 					continue

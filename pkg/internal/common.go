@@ -5,7 +5,7 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
+	"github.com/kubesphere/notification-manager/apis/v2beta2"
 )
 
 const (

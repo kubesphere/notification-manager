@@ -1,6 +1,6 @@
 ARG GOPROXY="https://goproxy.io"
 # Build the manager binary
-FROM golang:1.17 as builder
+FROM golang:1.20 as builder
 ARG GOPROXY
 
 WORKDIR /workspace
@@ -16,6 +16,7 @@ RUN GOPROXY=$GOPROXY go mod download
 COPY cmd/operator/main.go main.go
 COPY controllers/ controllers/
 COPY pkg/ pkg/
+COPY apis/ apis/
 
 # Build
 RUN GOPROXY=$GOPROXY CGO_ENABLED=0 GO111MODULE=on go build -a -o notification-manager-operator main.go

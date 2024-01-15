@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var (
@@ -67,22 +68,22 @@ func (r *Receiver) SetupWebhookWithManager(mgr ctrl.Manager) error {
 var _ webhook.Validator = &Receiver{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Receiver) ValidateCreate() error {
+func (r *Receiver) ValidateCreate() (warnings admission.Warnings, err error) {
 
 	return r.validateReceiver()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Receiver) ValidateUpdate(_ runtime.Object) error {
+func (r *Receiver) ValidateUpdate(_ runtime.Object) (warnings admission.Warnings, err error) {
 	return r.validateReceiver()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Receiver) ValidateDelete() error {
-	return nil
+func (r *Receiver) ValidateDelete() (warnings admission.Warnings, err error) {
+	return admission.Warnings{}, nil
 }
 
-func (r *Receiver) validateReceiver() error {
+func (r *Receiver) validateReceiver() (warnings admission.Warnings, err error) {
 	var allErrs field.ErrorList
 	var credentials []map[string]interface{}
 
@@ -379,10 +380,10 @@ func (r *Receiver) validateReceiver() error {
 	}
 
 	if len(allErrs) == 0 {
-		return nil
+		return admission.Warnings{}, nil
 	}
 
-	return errors.NewInvalid(
+	return admission.Warnings{}, errors.NewInvalid(
 		schema.GroupKind{Group: "notification.kubesphere.io", Kind: "Receiver"},
 		r.Name, allErrs)
 }
