@@ -20,8 +20,8 @@ import (
 	"flag"
 	"os"
 
+	"github.com/kubesphere/notification-manager/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/controllers"
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"

@@ -4,8 +4,6 @@ REGISTRY?=kubesphere
 IMG ?= $(REGISTRY)/notification-manager-operator:$(VERSION)
 NM_IMG ?= $(REGISTRY)/notification-manager:$(VERSION)
 AMD64 ?= -amd64
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -69,7 +67,7 @@ undeploy:
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=controller-role webhook paths=./pkg/apis/v2beta2 paths=./controllers output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) rbac:roleName=controller-role webhook crd paths=./apis/... paths=./controllers output:crd:artifacts:config=config/crd/bases
 	cd config/manager && kustomize edit set image controller=${IMG} && cd ../../
 	kustomize build config/default | sed -e '/creationTimestamp/d' > config/bundle.yaml
 	kustomize build config/samples | sed -e '/creationTimestamp/d' > config/samples/bundle.yaml
@@ -85,7 +83,7 @@ vet:
 
 # Generate code
 generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/apis/v2beta2"
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./apis/v2beta2"
 
 helm: controller-gen
 	kustomize build config/helm | sed -e '/creationTimestamp/d' > helm/crds/bundle.yaml
@@ -130,7 +128,7 @@ ifeq (, $(shell which controller-gen))
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1 ;\
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen

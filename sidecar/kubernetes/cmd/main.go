@@ -19,12 +19,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/golang/glog"
 	"log"
 	"net/http"
 	"sync"
 
 	"github.com/emicklei/go-restful"
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

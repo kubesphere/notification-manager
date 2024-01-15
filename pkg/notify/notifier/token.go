@@ -5,10 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kubesphere/notification-manager/pkg/utils"
-
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 )
 
 type token struct {
@@ -20,14 +19,14 @@ type token struct {
 
 type AccessTokenService struct {
 	mutex  sync.Mutex
-	tokens map[string]token
+	tokens map[string]*token
 }
 
 var ats *AccessTokenService
 
 func init() {
 	ats = &AccessTokenService{
-		tokens: make(map[string]token),
+		tokens: make(map[string]*token),
 	}
 }
 
@@ -78,7 +77,7 @@ func (ats *AccessTokenService) GetToken(ctx context.Context, key string, getToke
 			ch <- err
 			return
 		} else {
-			ats.tokens[key] = token{
+			ats.tokens[key] = &token{
 				accessToken:   accessToken,
 				accessTokenAt: time.Now(),
 				expires:       expires,

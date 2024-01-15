@@ -5,11 +5,10 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/modern-go/reflect2"
-
-	"github.com/kubesphere/notification-manager/pkg/apis/v2beta2"
+	"github.com/kubesphere/notification-manager/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/constants"
 	"github.com/kubesphere/notification-manager/pkg/internal"
+	"github.com/modern-go/reflect2"
 )
 
 type Receiver struct {
