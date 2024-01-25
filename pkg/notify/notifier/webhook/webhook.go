@@ -180,25 +180,19 @@ func generateNotificationHistory(buf *bytes.Buffer, data *template.Data) error {
 		m[StartsAt] = alert.StartsAt
 		m[EndsAt] = alert.EndsAt
 		m[NotificationTime] = time.Now()
+		m[constants.AlertMessage] = alert.Message()
 
-		for k, v := range alert.Labels {
-			m[k] = v
-		}
-
-		for k, v := range alert.Annotations {
-			if k != RunbookURL && k != Message && k != Summary && k != SummaryCn {
+		if alert.Labels != nil {
+			for k, v := range alert.Labels {
 				m[k] = v
 			}
 		}
 
-		message := alert.Annotations[Message]
-		if message == "" {
-			message = alert.Annotations[Summary]
-			if message == "" {
-				message = alert.Annotations[SummaryCn]
+		if alert.Annotations != nil {
+			for _, p := range alert.Annotations.SortedPairs().DefaultFilter() {
+				m[p.Name] = p.Value
 			}
 		}
-		m[Message] = message
 
 		if err := utils.JsonEncode(buf, m); err != nil {
 			return err

@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	keysNeedToHiden = []string{"rule_id"}
+	labelNeedToHiden      = []string{"rule_id"}
+	annotationNeedToHiden = []string{"runbook_url", "message", "summary", "summary_cn"}
 )
 
 type Data struct {
@@ -82,6 +83,21 @@ type Pair struct {
 // Pairs is a list of key/value string pairs.
 type Pairs []Pair
 
+func (ps Pairs) DefaultFilter() Pairs {
+	return ps.Filter(append(labelNeedToHiden, annotationNeedToHiden...)...)
+}
+
+func (ps Pairs) Filter(keys ...string) Pairs {
+	for i := 0; i < len(ps); i++ {
+		if utils.StringInList(ps[i].Name, keys) {
+			ps = append(ps[:i], ps[i+1:]...)
+			i--
+		}
+	}
+
+	return ps
+}
+
 // Names returns a list of names of the pairs.
 func (ps Pairs) Names() []string {
 	ns := make([]string, 0, len(ps))
@@ -111,7 +127,7 @@ func (kv KV) SortedPairs() Pairs {
 		sortStart = 0
 	)
 	for k := range kv {
-		if utils.StringInList(k, keysNeedToHiden) {
+		if utils.StringInList(k, labelNeedToHiden) {
 			continue
 		}
 		if k == constants.AlertName {
@@ -176,6 +192,9 @@ type Alert struct {
 }
 
 func (a *Alert) Message() string {
+	if a.Annotations == nil {
+		return ""
+	}
 	message := a.Annotations[constants.AlertMessage]
 	if utils.StringIsNil(message) {
 		message = a.Annotations[constants.AlertSummary]
@@ -188,6 +207,9 @@ func (a *Alert) Message() string {
 }
 
 func (a *Alert) MessageCN() string {
+	if a.Annotations == nil {
+		return ""
+	}
 	message := a.Annotations[constants.AlertSummaryCN]
 	if utils.StringIsNil(message) {
 		message = a.Annotations[constants.AlertMessage]
