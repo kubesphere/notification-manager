@@ -9,11 +9,13 @@ data:
 
     {{ define "nm.default.text" }}{{ range .Alerts }}{{ template "nm.default.message" . }}
     {{ range .Labels.SortedPairs }}  {{ .Name | translate }}: {{ .Value }}
+    {{ end }}{{ range .Annotations.SortedPairs.Filter "runbook_url" "message" "summary" "summary_cn" }}  {{ .Name | translate }}: {{ .Value }}
     {{ end }}
     {{ end }}{{- end }}
 
     {{ define "nm.default.markdown" }}{{ range .Alerts }}### {{ template "nm.default.message" . }}
     {{ range .Labels.SortedPairs }}- {{ .Name | translate }}: {{ .Value }}
+    {{ end }}{{ range .Annotations.SortedPairs.Filter "runbook_url" "message" "summary" "summary_cn" }}- {{ .Name | translate }}: {{ .Value }}
     {{ end }}
     {{ end }}{{- end }}
 
@@ -26,12 +28,18 @@ data:
         - - tag: text
             text: '  {{ .Name | translate }}: {{ .Value }}'
         {{- end }}
+        {{ if ne (len .Annotations.SortedPairs.Filter) 0 }}
+        {{ range .Annotations.SortedPairs.Filter "runbook_url" "message" "summary" "summary_cn" }}
+        - - tag: text
+            text: '  {{ .Name | translate }}: {{ .Value }}'
+        {{- end }}
+        {{- end }}
         - - tag: text
             text: ' '
         {{- end }}
     {{- end }}
 
-    {{ define "nm.feishu.text" }}{{ range .Alerts }}{{ template "nm.default.message" . }}{{ "\n" }}{{ range .Labels.SortedPairs }}  {{ .Name | translate }}: {{ .Value }}{{ "\n" }}{{ end }}{{ "\n" }}{{ end }}{{- end }}
+    {{ define "nm.feishu.text" }}{{ range .Alerts }}{{ template "nm.default.message" . }}{{ "\n" }}{{ range .Labels.SortedPairs }}  {{ .Name | translate }}: {{ .Value }}{{ "\n" }}{{ end }}{{ range .Annotations.SortedPairs.Filter "runbook_url" "message" "summary" "summary_cn" }}  {{ .Name | translate }}: {{ .Value }}{{ "\n" }}{{ end }}{{ "\n" }}{{ end }}{{- end }}
 
     {{ define "nm.default.html" }}
       <html xmlns="http://www.w3.org/1999/xhtml" xmlns="http://www.w3.org/1999/xhtml" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
@@ -50,6 +58,7 @@ data:
                           <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;" valign="top">
                             <strong style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">{{ template "nm.default.message" . }}</strong><br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />
                             {{ range .Labels.SortedPairs }}&nbsp;&nbsp;{{ .Name | translate }}: {{ .Value }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
+                            {{ range .Annotations.SortedPairs.Filter "runbook_url" "message" "summary" "summary_cn" }}&nbsp;&nbsp;{{ .Name | translate }}: {{ .Value }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
                           </td>
                         </tr>
                       {{ end }}
