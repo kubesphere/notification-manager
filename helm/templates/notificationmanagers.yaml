@@ -8,12 +8,12 @@ spec:
   {{- if .Values.notificationmanager.replicas }}
   replicas: {{ .Values.notificationmanager.replicas }}
   {{- end}}
-  image: {{ .Values.notificationmanager.image.repo }}:{{ .Values.notificationmanager.image.tag }}
+  image: {{ include "global.imageRegistry" .}}{{ .Values.notificationmanager.image.repo }}:{{ .Values.notificationmanager.image.tag }}
   imagePullPolicy: {{ .Values.notificationmanager.image.pullPolicy }}
   serviceAccountName: notification-manager-sa
   portName: webhook
-  nodeSelector: 
-    {{- toYaml .Values.notificationmanager.nodeSelector | nindent 4 }}
+  nodeSelector:
+    {{- include "common.notificationmanager.nodeSelectors" . }}
   affinity: 
     {{- toYaml .Values.notificationmanager.affinity | nindent 4 }}
   tolerations: 
@@ -41,7 +41,7 @@ spec:
   {{- if .Values.kubesphere.image }}
       image: {{ .Values.kubesphere.image }}
   {{- else }}
-      image: kubesphere/notification-tenant-sidecar:{{ .Values.kubesphere.version }}
+      image: {{ include "global.imageRegistry" . }}{{ .Values.notificationmanager.sidecar.image.repo }}:{{ .Values.kubesphere.version }}
   {{- end }}
       name: tenant
       type: kubesphere
