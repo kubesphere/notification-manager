@@ -86,6 +86,8 @@ notificationmanager:
   groupLabels:
     - alertname
     - namespace
+    - cluster
+    - alerttype
   template:
     language: English
     languagePack:
