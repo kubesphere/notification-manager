@@ -21,7 +21,7 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=10
-        image: {{ .Values.operator.containers.proxy.image.repo }}:{{ .Values.operator.containers.proxy.image.tag }}
+        image: {{ include "global.imageRegistry" . }}{{ .Values.operator.containers.proxy.image.repo }}:{{ .Values.operator.containers.proxy.image.tag }}
         imagePullPolicy: {{ .Values.operator.containers.proxy.image.pullPolicy }}
         name: kube-rbac-proxy
         ports:
@@ -47,7 +47,7 @@ spec:
         - name: TZ
           value: {{ .Values.timezone }}
         {{- end }}
-        image: {{ .Values.operator.containers.operator.image.repo }}:{{ .Values.operator.containers.operator.image.tag }}
+        image: {{ include "global.imageRegistry" . }}{{ .Values.operator.containers.operator.image.repo }}:{{ .Values.operator.containers.operator.image.tag }}
         imagePullPolicy: {{ .Values.operator.containers.operator.image.pullPolicy }}
         name: notification-manager-operator
         ports:
@@ -68,7 +68,7 @@ spec:
       serviceAccount: notification-manager-sa
       serviceAccountName: notification-manager-sa
       nodeSelector:
-      {{- toYaml .Values.operator.nodeSelector | nindent 8 }}
+      {{- include "common.operator.nodeSelectors" . }}
       affinity:
       {{- toYaml .Values.operator.affinity | nindent 8 }}
       tolerations:

@@ -5,6 +5,10 @@ kubesphere:
   # supported version: v3.1.0, v3.2.0
   version: v3.2.0
 
+global:
+  imageRegistry: ""
+  nodeSelector: {}
+imageRegistryOverride: ""
 # value of notification-manager-operator
 operator: 
   containers:
@@ -52,6 +56,9 @@ notificationmanager:
     repo: kubesphere/notification-manager
     tag: v2.5.0-rc.1
     pullPolicy: IfNotPresent
+  sidecar:
+    image:
+      repo: kubesphere/notification-tenant-sidecar
   replicas: 1
   resources:
     limits:
