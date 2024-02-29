@@ -9,8 +9,9 @@
 
 
 {{- define "global.imageRegistry" -}}
-  {{- if .Values.global.imageRegistry -}}
-    {{- printf "%s/" .Values.global.imageRegistry -}}
+{{- $registry := default .Values.global.imageRegistry .Values.imageRegistryOverride }}
+  {{- if $registry -}}
+    {{- printf "%s/" $registry -}}
   {{- end -}}
 {{- end -}}
 

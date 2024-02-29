@@ -8,7 +8,7 @@ kubesphere:
 global:
   imageRegistry: ""
   nodeSelector: {}
-
+imageRegistryOverride: ""
 # value of notification-manager-operator
 operator: 
   containers:
