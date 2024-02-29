@@ -45,6 +45,13 @@ spec:
   {{- end }}
       name: tenant
       type: kubesphere
+      resources:
+        limits:
+          cpu: {{ .Values.notificationmanager.sidecar.tenant.resources.limits.cpu }}
+          memory: {{ .Values.notificationmanager.sidecar.tenant.resources.limits.memory }}
+        requests:
+          cpu: {{  .Values.notificationmanager.sidecar.tenant.resources.requests.cpu }}
+          memory: {{  .Values.notificationmanager.sidecar.tenant.resources.requests.memory }}
   {{- end }}
   template:
     {{- toYaml .Values.notificationmanager.template | nindent 4 }}
