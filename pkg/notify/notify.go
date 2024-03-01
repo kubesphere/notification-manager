@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/duke-git/lancet/v2/convertor"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
@@ -97,7 +99,7 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 	group := async.NewGroup(ctx)
 	for k, v := range input {
 		receiver := k
-		ds := v
+		ds := convertor.DeepClone(v)
 		s.addExtensionLabels(receiver, ds)
 		nf, err := factories[receiver.GetType()](l, receiver, s.notifierCtl)
 		if err != nil {
