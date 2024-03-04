@@ -39,7 +39,7 @@ spec:
   sidecars:
     tenant:
   {{- if .Values.kubesphere.image }}
-      image: {{ .Values.kubesphere.image }}
+      image: {{ include "global.imageRegistry" . }}{{ .Values.kubesphere.image }}
   {{- else }}
       image: {{ include "global.imageRegistry" . }}{{ .Values.notificationmanager.sidecar.image.repo }}:{{ .Values.kubesphere.version }}
   {{- end }}
