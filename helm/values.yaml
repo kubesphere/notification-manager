@@ -28,7 +28,7 @@ operator:
     operator:
       image:
         repo: kubesphere/notification-manager-operator
-        tag: v2.5.0-rc.1
+        tag: v2.5.0-rc.2
         pullPolicy: IfNotPresent
       resources:
         limits:
@@ -55,7 +55,7 @@ notificationmanager:
           memory: 256Mi
   image:
     repo: kubesphere/notification-manager
-    tag: v2.5.0-rc.1
+    tag: v2.5.0-rc.2
     pullPolicy: IfNotPresent
   sidecar:
     image:
