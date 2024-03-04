@@ -203,6 +203,9 @@ func (n *Notifier) send(ctx context.Context, to, subject, body string) error {
 	if err != nil {
 		return err
 	}
+	if conn == nil {
+		return utils.Errorf("failed to connect to %s", addr)
+	}
 
 	c, err := smtp.NewClient(conn, n.receiver.SmartHost.Host)
 	if err != nil {
