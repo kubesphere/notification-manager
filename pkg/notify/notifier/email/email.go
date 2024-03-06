@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/modern-go/reflect2"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/kubesphere/notification-manager/pkg/async"
@@ -203,7 +205,7 @@ func (n *Notifier) send(ctx context.Context, to, subject, body string) error {
 	if err != nil {
 		return err
 	}
-	if conn == nil {
+	if reflect2.IsNil(conn) {
 		return utils.Errorf("failed to connect to %s", addr)
 	}
 
