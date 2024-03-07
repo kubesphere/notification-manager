@@ -89,26 +89,29 @@ func (b *Backend) reload() {
 		klog.Errorf("list namespaces error, %s", err.Error())
 	}
 
+	var items []iamv1beta1.SubjectAccessReview
+
 	m := make(map[string]map[string]string)
 	for _, namespace := range namespaces {
 		for _, user := range users {
-			allow, err := b.canAccess(user, namespace)
-			if err != nil {
-				klog.Errorf("get access view for user %s, namespace %s error, %s", err.Error())
-				return
+			sar := iamv1beta1.SubjectAccessReview{
+				Spec: iamv1beta1.SubjectAccessReviewSpec{
+					ResourceAttributes: &iamv1beta1.ResourceAttributes{
+						Namespace: namespace,
+						Verb:      "get",
+						Group:     "notification.kubesphere.io",
+						Version:   "v2beta2",
+						Resource:  "receivenotification",
+					},
+					NonResourceAttributes: nil,
+					User:                  user,       // "X-Remote-User" request header
+					Groups:                []string{}, // "X-Remote-Group" request header
+				},
 			}
-
-			if allow {
-				array, ok := m[namespace]
-				if !ok {
-					array = make(map[string]string)
-				}
-				array[user] = ""
-				m[namespace] = array
-			}
+			items = append(items, sar)
 		}
 	}
-
+	b.batchRequest(items, m)
 	b.tenants = m
 }
 
@@ -174,4 +177,41 @@ func (b *Backend) canAccess(user, namespace string) (bool, error) {
 	}
 
 	return subjectAccessReview.Status.Allowed, nil
+}
+
+func (b *Backend) batchRequest(subjectAccessReviews []iamv1beta1.SubjectAccessReview, m map[string]map[string]string) {
+
+	batchSize := 500
+	for i := 0; i < len(subjectAccessReviews); i += batchSize {
+		items := subjectAccessReviews[i:minimum(i+batchSize, len(subjectAccessReviews))]
+		list := &iamv1beta1.SubjectAccessReviewList{
+			Items: items,
+		}
+		if err := b.ksClient.Post().AbsPath("/kapis/iam.kubesphere.io/v1beta1/subjectaccessreviews").
+			Body(list).
+			Do(context.Background()).
+			Into(list); err != nil {
+			klog.Errorf("get access view error: %s", err.Error())
+			return
+		}
+		for _, item := range items {
+			if item.Status.Allowed {
+				ns := item.Spec.ResourceAttributes.Namespace
+				user := item.Spec.User
+				array, ok := m[ns]
+				if !ok {
+					array = make(map[string]string)
+				}
+				array[user] = ""
+				m[ns] = array
+			}
+		}
+	}
+}
+
+func minimum(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
