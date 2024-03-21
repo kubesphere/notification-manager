@@ -1,3 +1,24 @@
+## v2.5.0 / 2024-03-21
+
+### FEATURES
+
+-  Support sending notification history without adaptor(#227). @wanjunlei
+-  New tenant sidecar for kubesphere v4.0.0(#231). @wanjunlei
+
+### Enhancements
+
+- Add receiver name to the notification(#235). @wanjunlei
+- Add annotation of alert to the notification(#238). @wanjunlei  
+- Update go version to 1.20(#236). @wanjunlei
+
+### Deprecations
+
+- Delete the v2beta1 version of the CRD(#230). @wanjunlei
+
+### Bugfix
+
+- Fix a bug that notification manager will crash when the smtp server is not available(#245). @Gentleelephant
+
 ## v2.4.0 / 2023-09-20
 
 ### FEATURES

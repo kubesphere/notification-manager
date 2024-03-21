@@ -17,6 +17,8 @@ This page describes the release process and the currently planned schedule for u
 | v2.3.0-rc.0    | 2023-02-07             | leiwanjun (GitHub: @leiwanjun)      |
 | v2.3.0         | 2023-04-12             | leiwanjun (GitHub: @leiwanjun)      |
 | v2.4.0         | 2023-09-20             | leiwanjun (GitHub: @leiwanjun)      |
+| v2.5.0         | 2024-03-21             | leiwanjun (GitHub: @leiwanjun)      |
+
 
 # How to cut a new release
 
