@@ -42,10 +42,13 @@ const (
 )
 
 func (ls *LabelSelector) Matches(label map[string]string) (bool, error) {
+	if label == nil {
+		return false, nil
+	}
+
 	selector := &metav1.LabelSelector{
 		MatchLabels: ls.MatchLabels,
 	}
-
 	for _, requirement := range ls.MatchExpressions {
 		if requirement.Operator != LabelSelectorOpMatch {
 			selector.MatchExpressions = append(selector.MatchExpressions, metav1.LabelSelectorRequirement{
@@ -54,11 +57,9 @@ func (ls *LabelSelector) Matches(label map[string]string) (bool, error) {
 				Values:   requirement.Values,
 			})
 		} else {
-			if v, ok := label[requirement.Key]; ok {
-				match, err := regexp.MatchString(requirement.RegexValue, v)
-				if err != nil || !match {
-					return false, err
-				}
+			match, err := regexp.MatchString(requirement.RegexValue, label[requirement.Key])
+			if !match {
+				return false, err
 			}
 		}
 	}
