@@ -26,6 +26,7 @@ const (
 	DiscordContent = "content"
 	DiscordEmbed   = "embed"
 
+	Cluster   = "cluster"
 	Namespace = "namespace"
 
 	AlertFiring   = "firing"

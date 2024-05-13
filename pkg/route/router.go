@@ -2,6 +2,8 @@ package route
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -51,25 +53,30 @@ func (s *routeStage) Exec(ctx context.Context, l log.Logger, data interface{}) (
 		return ctx, nil, err
 	}
 
-	// Grouping alerts by namespace
+	// Grouping alerts by cluster and namespace
 	alertMap := make(map[string][]*template.Alert)
 	for _, alert := range input {
 		ns := alert.Labels[constants.Namespace]
-		as := alertMap[ns]
+		cluster := alert.Labels[constants.Cluster]
+		key := fmt.Sprintf("%s|%s", cluster, ns)
+		as := alertMap[key]
 		as = append(as, alert)
-		alertMap[ns] = as
+		alertMap[key] = as
 	}
 
 	m := make(map[string]*packet)
 	routePolicy := s.notifierCtl.GetRoutePolicy()
-	for ns, alerts := range alertMap {
+	for key, alerts := range alertMap {
 		flag := false
+		pair := strings.Split(key, "|")
+		cluster := pair[0]
+		ns := pair[1]
 		var tenantRcvs []internal.Receiver
 		for _, alert := range alerts {
 			rcvs := s.rcvsFromRouter(alert, routers)
 			if routePolicy == RouterPolicyAll || (routePolicy == RouterFirst && len(rcvs) == 0) {
 				if len(tenantRcvs) == 0 && !flag {
-					tenantRcvs = s.notifierCtl.RcvsFromNs(&ns)
+					tenantRcvs = s.notifierCtl.RcvsFromNs(cluster, &ns)
 					flag = true
 				}
 				rcvs = append(rcvs, tenantRcvs...)

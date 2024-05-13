@@ -505,7 +505,7 @@ func (c *Controller) receiverChanged(t *task) {
 	_ = level.Info(c.logger).Log("msg", "Receiver changed", "op", t.op, "name", receiver.Name)
 }
 
-func (c *Controller) tenantIDFromNs(namespace string) ([]string, error) {
+func (c *Controller) tenantIDFromNs(cluster, namespace string) ([]string, error) {
 	tenantIDs := make([]string, 0)
 	// Use namespace as TenantID directly if tenantSidecar not provided.
 	if !c.tenantSidecar {
@@ -514,7 +514,8 @@ func (c *Controller) tenantIDFromNs(namespace string) ([]string, error) {
 	}
 
 	p := make(map[string]string)
-	p["namespace"] = namespace
+	p[constants.Cluster] = cluster
+	p[constants.Namespace] = namespace
 	u, err := utils.UrlWithParameters(tenantSidecarURL, p)
 	if err != nil {
 		return nil, err
@@ -536,7 +537,7 @@ func (c *Controller) tenantIDFromNs(namespace string) ([]string, error) {
 		return nil, err
 	}
 
-	_ = level.Debug(c.logger).Log("msg", "get tenants from namespace", "namespace", namespace, "tenant", utils.ArrayToString(res, ","))
+	_ = level.Debug(c.logger).Log("msg", "get tenants from namespace", "cluster", cluster, "namespace", namespace, "tenant", utils.ArrayToString(res, ","))
 
 	return res, nil
 }
@@ -580,13 +581,13 @@ func getMatchedConfig(r internal.Receiver, configs map[string]map[string]interna
 	}
 }
 
-func (c *Controller) RcvsFromNs(namespace *string) []internal.Receiver {
+func (c *Controller) RcvsFromNs(cluster string, namespace *string) []internal.Receiver {
 
 	// Global receiver should receive all notifications.
 	tenants := []string{globalTenantID}
 	if namespace != nil && len(*namespace) > 0 {
 		// Get all tenants which need to receive the notifications in this namespace.
-		tenantIDs, err := c.tenantIDFromNs(*namespace)
+		tenantIDs, err := c.tenantIDFromNs(cluster, *namespace)
 		if err != nil {
 			_ = level.Error(c.logger).Log("msg", "get tenantID error", "err", err, "namespace", *namespace)
 		} else {
