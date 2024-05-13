@@ -66,6 +66,11 @@ func (h *HttpHandler) Alert(w http.ResponseWriter, r *http.Request) {
 		if v := alert.Labels["cluster"]; v == "" {
 			alert.Labels["cluster"] = cluster
 		}
+
+		if alert.Labels["alerttype"] == "metric" {
+			alert.Annotations["alerttime"] = time.Now().Local().String()
+		}
+
 		alert.ID = utils.Hash(alert)
 		if err := h.alerts.Push(alert); err != nil {
 			_ = level.Error(h.logger).Log("msg", "push alert error", "error", err.Error())
