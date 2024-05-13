@@ -29,12 +29,18 @@ import (
 	"k8s.io/klog"
 )
 
+const (
+	defaultInterval  = time.Minute * 5
+	defaultBatchSize = 500
+)
+
 var (
 	waitHandlerGroup sync.WaitGroup
 	host             string
 	username         string
 	password         string
 	interval         time.Duration
+	batchSize        int
 
 	b *Backend
 )
@@ -50,7 +56,8 @@ func AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&host, "host", "ks-apiserver.kubesphere-system", "the host of kubesphere apiserver")
 	fs.StringVar(&username, "username", "", "the username of kubesphere")
 	fs.StringVar(&password, "password", "", "the password of kubesphere")
-	fs.DurationVar(&interval, "interval", time.Minute*5, "interval to reload")
+	fs.DurationVar(&interval, "interval", defaultInterval, "interval to reload")
+	fs.IntVar(&batchSize, "batchSize", defaultBatchSize, "interval to reload")
 }
 
 func NewServerCommand() *cobra.Command {
@@ -73,7 +80,7 @@ func Run() error {
 	})
 
 	var err error
-	b, err = NewBackend(host, username, password, interval)
+	b, err = NewBackend(host, username, password, interval, batchSize)
 	if err != nil {
 		return err
 	}
@@ -113,8 +120,9 @@ func handler(req *restful.Request, resp *restful.Response) {
 	waitHandlerGroup.Add(1)
 	defer waitHandlerGroup.Done()
 
+	cluster := req.QueryParameter("cluster")
 	ns := req.QueryParameter("namespace")
-	tenants := b.FromNamespace(ns)
+	tenants := b.FromNamespace(cluster, ns)
 	if tenants == nil {
 		responseWithHeaderAndEntity(resp, http.StatusNotFound, "")
 		return
