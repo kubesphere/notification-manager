@@ -1,3 +1,30 @@
+## v2.5.2 / 2024-05-14
+
+### Enhancements
+
+- support to get tenant info from multiple cluster (#263) @wanjunlei
+- trim space (#267) @Gentleelephant
+- update template (#264) @Gentleelephant
+- update helm template (#266) @wanjunlei
+- add alerttime to metric alert (#265) @wanjunlei
+
+### Bugfix
+
+- Fix Typo in documentation (#262) @mohamed-rafraf
+
+### Update
+
+- Bump google.golang.org/protobuf from 1.30.0 to 1.33.0 (#252) @dependabot
+- Bump google.golang.org/protobuf from 1.31.0 to 1.33.0 in /sidecar/kubesphere/4.0.0 (#253) @dependabot
+- Bump golang.org/x/net from 0.17.0 to 0.23.0 in /sidecar/kubesphere/4.0.0 (#260) @dependabot
+- Bump golang.org/x/net from 0.17.0 to 0.23.0 (#261) @dependabot
+
+## v2.5.1 / 2024-04-03
+
+### Bugfix
+
+- fix bug regex silence will silence all alerts(#257). @wanjunlei
+
 ## v2.5.0 / 2024-03-21
 
 ### FEATURES
