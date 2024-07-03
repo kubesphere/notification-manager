@@ -2,7 +2,7 @@
 # Use of this source code is governed by a Apache license
 # that can be found in the LICENSE file.
 
-IMG ?= kubesphere/notification-tenant-sidecar:v4.0.1
+IMG ?= kubesphere/notification-tenant-sidecar:v4.0.2
 AMD64 ?= -amd64
 
 all: docker-build

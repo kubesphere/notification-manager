@@ -50,7 +50,7 @@ func NewBackend(host, username, password string, interval time.Duration, batchSi
 
 func (b *Backend) FromNamespace(cluster, ns string) []string {
 	cm, ok := b.tenants[cluster]
-	if !ok {
+	if !ok || cm == nil {
 		return nil
 	}
 
@@ -92,7 +92,9 @@ func (b *Backend) reload() {
 	for _, cluster := range clusters {
 		m, err := getTenantInfoFromCluster(cluster, users)
 		if err != nil {
-			return
+			klog.Errorf("get tenant info from %s error, %s", cluster, err.Error())
+			tenants[cluster] = b.tenants[cluster]
+			continue
 		}
 
 		tenants[cluster] = m
