@@ -2,7 +2,6 @@ package template
 
 import (
 	"sort"
-	"time"
 
 	"github.com/kubesphere/notification-manager/pkg/utils"
 
@@ -185,8 +184,8 @@ type Alert struct {
 	Labels      KV     `json:"labels"`
 	Annotations KV     `json:"annotations"`
 
-	StartsAt time.Time `json:"startsAt,omitempty"`
-	EndsAt   time.Time `json:"endsAt,omitempty"`
+	StartsAt string `json:"startsAt,omitempty"`
+	EndsAt   string `json:"endsAt,omitempty"`
 
 	NotifySuccessful bool
 }
