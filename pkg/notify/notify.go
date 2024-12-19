@@ -75,11 +75,14 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 	_ = level.Debug(l).Log("msg", "Start notify stage", "seq", ctx.Value("seq"))
 
 	input := data.(map[internal.Receiver][]*template.Data)
-	alertMap := make(map[string]*template.Alert)
-	for _, dataList := range input {
-		for _, d := range dataList {
+	alertMap := make(map[string][]*template.Alert)
+	for r, dataList := range input {
+		receiver := r
+		ds := convertor.DeepClone(dataList)
+		s.addExtensionLabels(receiver, ds)
+		for _, d := range ds {
 			for _, alert := range d.Alerts {
-				alertMap[alert.ID] = alert
+				alertMap[alert.ID] = append(alertMap[alert.ID], alert)
 			}
 		}
 	}
@@ -91,7 +94,9 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 
 		for _, alert := range alerts {
 			if a := alertMap[alert.ID]; a != nil {
-				a.NotifySuccessful = true
+				for _, t := range a {
+					t.NotifySuccessful = true
+				}
 			}
 		}
 	}
@@ -125,7 +130,9 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 func (s *notifyStage) addExtensionLabels(receiver internal.Receiver, data []*template.Data) {
 	for _, d := range data {
 		for _, alert := range d.Alerts {
-			alert.Labels[constants.ReceiverName] = receiver.GetName()
+			if alert.Labels[constants.ReceiverName] == "" {
+				alert.Labels[constants.ReceiverName] = receiver.GetName()
+			}
 		}
 	}
 }
