@@ -133,6 +133,9 @@ func (s *notifyStage) addExtensionLabels(receiver internal.Receiver, data []*tem
 			if alert.Labels[constants.ReceiverName] == "" {
 				alert.Labels[constants.ReceiverName] = receiver.GetName()
 			}
+			if alert.Labels[constants.ReceiverType] == "" {
+				alert.Labels[constants.ReceiverType] = receiver.GetType()
+			}
 		}
 	}
 }
