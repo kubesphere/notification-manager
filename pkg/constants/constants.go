@@ -40,7 +40,7 @@ const (
 	AlertSummaryCN = "summaryCn"
 
 	ReceiverName = "receiver"
-	ReceiverType = "receiver-type"
+	ReceiverType = "receiver_type"
 
 	Verify       = "verify"
 	Notification = "notification"
