@@ -41,13 +41,11 @@ func (s *historyStage) Exec(ctx context.Context, l log.Logger, data interface{})
 
 	_ = level.Debug(l).Log("msg", "Start history stage", "seq", ctx.Value("seq"))
 
-	input := data.(map[string][]*template.Alert)
+	input := data.(map[string]*template.Alert)
 	d := &template.Data{}
 	for _, alert := range input {
-		for _, t := range alert {
-			if t.NotifySuccessful {
-				d.Alerts = append(d.Alerts, t)
-			}
+		if alert.NotifySuccessful {
+			d.Alerts = append(d.Alerts, alert)
 		}
 	}
 
