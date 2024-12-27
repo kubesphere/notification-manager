@@ -161,8 +161,8 @@ func (h *HttpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 			Annotations: template.KV{
 				constants.AlertMessage: "Congratulations, your notification configuration is correct!",
 			},
-			StartsAt: time.Now(),
-			EndsAt:   time.Now(),
+			StartsAt: time.Now().String(),
+			EndsAt:   time.Now().String(),
 		},
 	}
 
