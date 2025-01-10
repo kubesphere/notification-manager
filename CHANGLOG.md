@@ -25,7 +25,6 @@
 
 - fix bug regex silence will silence all alerts(#257). @wanjunlei
 
-
 ## v2.5.0 / 2024-03-21
 
 ### FEATURES

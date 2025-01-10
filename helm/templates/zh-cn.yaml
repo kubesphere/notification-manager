@@ -35,8 +35,10 @@ data:
         rule_level: "规则级别"
         name: "名称"
         receiver: "接收者"
+        receiver_type: "接收者类型"
         workload_type: "工作负载类型"
         rule_type: "规则类型"
+        reason: "原因"
 kind: ConfigMap
 metadata:
   name: zh-cn

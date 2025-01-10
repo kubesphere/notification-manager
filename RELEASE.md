@@ -21,7 +21,6 @@ This page describes the release process and the currently planned schedule for u
 | v2.5.1         | 2024-04-03             | leiwanjun (GitHub: @leiwanjun)      |
 | v2.5.2         | 2024-04-14             | leiwanjun (GitHub: @leiwanjun)      |
 
-
 # How to cut a new release
 
 > This guide is strongly based on the [Prometheus release instructions](https://github.com/prometheus/prometheus/blob/master/RELEASE.md).

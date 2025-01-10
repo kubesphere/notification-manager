@@ -2,6 +2,8 @@ package notify
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/duke-git/lancet/v2/convertor"
@@ -77,7 +79,8 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 	input := data.(map[internal.Receiver][]*template.Data)
 	alertMap := make(map[string]*template.Alert)
 	for _, dataList := range input {
-		for _, d := range dataList {
+		ds := convertor.DeepClone(dataList)
+		for _, d := range ds {
 			for _, alert := range d.Alerts {
 				alertMap[alert.ID] = alert
 			}
@@ -100,6 +103,7 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 	for k, v := range input {
 		receiver := k
 		ds := convertor.DeepClone(v)
+		setReceiverList(ds, receiver, alertMap)
 		s.addExtensionLabels(receiver, ds)
 		nf, err := factories[receiver.GetType()](l, receiver, s.notifierCtl)
 		if err != nil {
@@ -109,6 +113,7 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 			})
 			continue
 		}
+
 		nf.SetSentSuccessfulHandler(&handler)
 
 		for _, d := range ds {
@@ -118,14 +123,31 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 			})
 		}
 	}
-
 	return ctx, alertMap, group.Wait()
+}
+
+func setReceiverList(alertData []*template.Data, receiver internal.Receiver, alertMap map[string]*template.Alert) {
+	for _, ds := range alertData {
+		for _, alert := range ds.Alerts {
+			if _, ok := alertMap[alert.ID]; ok {
+				if receiverLabel, ok := alertMap[alert.ID].Labels[fmt.Sprintf("%s_receiver_list", receiver.GetType())]; ok {
+					receivers := strings.Split(receiverLabel, ",")
+					receivers = append(receivers, receiver.GetName())
+					alertMap[alert.ID].Labels[fmt.Sprintf("%s_receiver_list", receiver.GetType())] = strings.Join(receivers, ",")
+				} else {
+					alertMap[alert.ID].Labels[fmt.Sprintf("%s_receiver_list", receiver.GetType())] = receiver.GetName()
+				}
+			}
+		}
+	}
 }
 
 func (s *notifyStage) addExtensionLabels(receiver internal.Receiver, data []*template.Data) {
 	for _, d := range data {
 		for _, alert := range d.Alerts {
-			alert.Labels[constants.ReceiverName] = receiver.GetName()
+			if alert.Labels[constants.ReceiverName] == "" {
+				alert.Labels[constants.ReceiverName] = receiver.GetName()
+			}
 		}
 	}
 }
