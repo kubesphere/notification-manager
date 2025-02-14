@@ -46,7 +46,7 @@ func NewReceiver(tenantID string, obj *v2beta2.Receiver) internal.Receiver {
 	return r
 }
 
-func (r *Receiver) SetConfig(c internal.Config) {
+func (r *Receiver) SetConfig(_ internal.Config) {
 	return
 }
 
@@ -72,11 +72,19 @@ func (r *Receiver) Clone() internal.Receiver {
 	return out
 }
 
+func (r *Receiver) GetChannels() (string, interface{}) {
+	if r.Webhook == nil {
+		return "", nil
+	} else {
+		return r.GetType(), r.Webhook.ToString()
+	}
+}
+
 type Config struct {
 	*internal.Common
 }
 
-func NewConfig(obj *v2beta2.Config) internal.Config {
+func NewConfig(_ *v2beta2.Config) internal.Config {
 	return nil
 }
 

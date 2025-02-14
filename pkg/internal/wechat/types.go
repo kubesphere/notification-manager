@@ -113,6 +113,31 @@ func (r *Receiver) Clone() internal.Receiver {
 	return out
 }
 
+func (r *Receiver) GetChannels() (string, interface{}) {
+	m := map[string]interface{}{}
+	if r.ChatBot != nil {
+		m["chatbot"] = r.ChatBot.Webhook.ToString()
+	}
+
+	if len(r.ToUser) > 0 {
+		m["user"] = r.ToUser
+	}
+
+	if len(r.ToParty) > 0 {
+		m["party"] = r.ToParty
+	}
+
+	if len(r.ToTag) > 0 {
+		m["tag"] = r.ToTag
+	}
+
+	if len(m) == 0 {
+		return "", nil
+	} else {
+		return r.Type, m
+	}
+}
+
 type Config struct {
 	*internal.Common
 	APISecret *v2beta2.Credential `json:"apiSecret,omitempty"`

@@ -18,6 +18,7 @@ type Receiver interface {
 	Clone() Receiver
 	GetHash() string
 	SetHash(h string)
+	GetChannels() (string, interface{})
 }
 
 type Config interface {

@@ -2,11 +2,8 @@ package notify
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"sync"
-
-	"github.com/duke-git/lancet/v2/convertor"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -79,10 +76,9 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 	input := data.(map[internal.Receiver][]*template.Data)
 	alertMap := make(map[string]*template.Alert)
 	for _, dataList := range input {
-		ds := convertor.DeepClone(dataList)
-		for _, d := range ds {
+		for _, d := range dataList {
 			for _, alert := range d.Alerts {
-				alertMap[alert.ID] = alert
+				alertMap[alert.ID] = alert.Clone()
 			}
 		}
 	}
@@ -95,6 +91,9 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 		for _, alert := range alerts {
 			if a := alertMap[alert.ID]; a != nil {
 				a.NotifySuccessful = true
+				if a.NotificationTime.IsZero() {
+					a.NotificationTime = time.Now()
+				}
 			}
 		}
 	}
@@ -102,9 +101,8 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 	group := async.NewGroup(ctx)
 	for k, v := range input {
 		receiver := k
-		ds := convertor.DeepClone(v)
-		setReceiverList(ds, receiver, alertMap)
-		s.addExtensionLabels(receiver, ds)
+		ds := v
+		setReceiver(ds, receiver, alertMap)
 		nf, err := factories[receiver.GetType()](l, receiver, s.notifierCtl)
 		if err != nil {
 			e := err
@@ -113,41 +111,55 @@ func (s *notifyStage) Exec(ctx context.Context, l log.Logger, data interface{}) 
 			})
 			continue
 		}
-
 		nf.SetSentSuccessfulHandler(&handler)
 
 		for _, d := range ds {
-			alert := d
+			alert := d.Clone()
+			s.addExtensionLabels(receiver, alert)
 			group.Add(func(stopCh chan interface{}) {
 				stopCh <- nf.Notify(ctx, alert)
 			})
 		}
 	}
+
 	return ctx, alertMap, group.Wait()
 }
 
-func setReceiverList(alertData []*template.Data, receiver internal.Receiver, alertMap map[string]*template.Alert) {
+func setReceiver(alertData []*template.Data, receiver internal.Receiver, alertMap map[string]*template.Alert) {
+	if receiver.GetName() == "" {
+		return
+	}
+
+	k, v := receiver.GetChannels()
+	if k == "" {
+		return
+	}
+
 	for _, ds := range alertData {
 		for _, alert := range ds.Alerts {
 			if _, ok := alertMap[alert.ID]; ok {
-				if receiverLabel, ok := alertMap[alert.ID].Labels[fmt.Sprintf("%s_receiver_list", receiver.GetType())]; ok {
-					receivers := strings.Split(receiverLabel, ",")
-					receivers = append(receivers, receiver.GetName())
-					alertMap[alert.ID].Labels[fmt.Sprintf("%s_receiver_list", receiver.GetType())] = strings.Join(receivers, ",")
+				if alertMap[alert.ID].Receiver == nil {
+					alertMap[alert.ID].Receiver = map[string]map[string]interface{}{}
+				}
+				if item, ok := alertMap[alert.ID].Receiver[receiver.GetName()]; ok {
+					item[k] = v
+					alertMap[alert.ID].Receiver[receiver.GetName()] = item
 				} else {
-					alertMap[alert.ID].Labels[fmt.Sprintf("%s_receiver_list", receiver.GetType())] = receiver.GetName()
+					alertMap[alert.ID].Receiver[receiver.GetName()] = map[string]interface{}{k: v}
 				}
 			}
 		}
 	}
 }
 
-func (s *notifyStage) addExtensionLabels(receiver internal.Receiver, data []*template.Data) {
-	for _, d := range data {
-		for _, alert := range d.Alerts {
-			if alert.Labels[constants.ReceiverName] == "" {
-				alert.Labels[constants.ReceiverName] = receiver.GetName()
-			}
+func (s *notifyStage) addExtensionLabels(receiver internal.Receiver, data *template.Data) {
+	if receiver.GetName() == "" {
+		return
+	}
+
+	for _, alert := range data.Alerts {
+		if alert.Labels[constants.ReceiverName] == "" {
+			alert.Labels[constants.ReceiverName] = receiver.GetName()
 		}
 	}
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	json "github.com/json-iterator/go"
 	"github.com/kubesphere/notification-manager/pkg/async"
 	"github.com/kubesphere/notification-manager/pkg/constants"
 	"github.com/kubesphere/notification-manager/pkg/controller"
@@ -21,7 +22,6 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/notify/notifier"
 	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -57,7 +57,7 @@ type Message struct {
 
 type messageContent struct {
 	Post interface{} `json:"post,omitempty"`
-	Text interface{} `json:"text,omitempty"`
+	Text string      `json:"text,omitempty"`
 }
 
 type Response struct {
@@ -141,7 +141,6 @@ func (n *Notifier) SetSentSuccessfulHandler(h *func([]*template.Alert)) {
 }
 
 func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
-
 	content, err := n.tmpl.Text(n.receiver.TmplName, data)
 	if err != nil {
 		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: generate message error", "error", err.Error())
@@ -177,24 +176,22 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 }
 
 func (n *Notifier) sendToChatBot(ctx context.Context, content string) error {
-
 	keywords := ""
 	if len(n.receiver.ChatBot.Keywords) != 0 {
 		keywords = fmt.Sprintf("[Keywords] %s", utils.ArrayToString(n.receiver.ChatBot.Keywords, ","))
 	}
 
-	message := &Message{}
+	message := &Message{MsgType: n.receiver.TmplType}
 	if n.receiver.TmplType == constants.Post {
-
 		post := make(map[string]interface{})
-		if err := yaml.Unmarshal([]byte(content), &post); err != nil {
+		if err := json.Unmarshal([]byte(content), &post); err != nil {
 			_ = level.Error(n.logger).Log("msg", "FeishuNotifier: unmarshal failed", "error", err)
 			return err
 		}
 
 		if len(keywords) > 0 {
 			for k, v := range post {
-				p := v.(map[interface{}]interface{})
+				p := v.(map[string]interface{})
 				items := p["content"].([]interface{})
 				items = append(items, []interface{}{
 					map[string]string{
@@ -207,10 +204,8 @@ func (n *Notifier) sendToChatBot(ctx context.Context, content string) error {
 			}
 		}
 
-		message.MsgType = constants.Post
 		message.Content.Post = post
 	} else if n.receiver.TmplType == constants.Text {
-		message.MsgType = constants.Text
 		message.Content.Text = content
 		if len(keywords) > 0 {
 			message.Content.Text = fmt.Sprintf("%s\n\n%s", content, keywords)
@@ -300,20 +295,15 @@ func (n *Notifier) sendToChatBot(ctx context.Context, content string) error {
 }
 
 func (n *Notifier) batchSend(ctx context.Context, content string) error {
-
-	message := &Message{}
+	message := &Message{MsgType: n.receiver.TmplType}
 	if n.receiver.TmplType == constants.Post {
-
 		post := make(map[string]interface{})
-		if err := yaml.Unmarshal([]byte(content), &post); err != nil {
+		if err := json.Unmarshal([]byte(content), &post); err != nil {
 			_ = level.Error(n.logger).Log("msg", "FeishuNotifier: unmarshal failed", "error", err)
 			return err
 		}
-
-		message.MsgType = constants.Post
 		message.Content.Post = post
 	} else if n.receiver.TmplType == constants.Text {
-		message.MsgType = constants.Text
 		message.Content.Text = content
 	} else {
 		_ = level.Error(n.logger).Log("msg", "FeishuNotifier: unknown message type", "type", n.receiver.TmplType)

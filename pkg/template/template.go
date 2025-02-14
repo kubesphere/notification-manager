@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	tmplhtml "html/template"
-	"io/ioutil"
+	"io"
+	"os"
 	"regexp"
 	"strings"
 	tmpltext "text/template"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	json "github.com/json-iterator/go"
 	"github.com/kubesphere/notification-manager/pkg/utils"
 )
 
@@ -89,6 +91,16 @@ func New(language string, languagePack []string) (*Template, error) {
 		}
 	}
 
+	funcMap["escape"] = func(s string) (string, error) {
+		bs, err := json.Marshal(s)
+		if err != nil {
+			return "", err
+		}
+		ns := strings.TrimPrefix(string(bs), "\"")
+		ns = strings.TrimSuffix(ns, "\"")
+		return ns, nil
+	}
+
 	t.text = t.text.Funcs(funcMap)
 	t.html = t.html.Funcs(funcMap)
 
@@ -127,8 +139,11 @@ func (t *Template) ParserText(text ...string) (*Template, error) {
 func (t *Template) ParserFile(paths ...string) (*Template, error) {
 	var files []string
 	for _, path := range paths {
-
-		b, err := ioutil.ReadFile(path)
+		f, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		b, err := io.ReadAll(f)
 		if err != nil {
 			return nil, err
 		}

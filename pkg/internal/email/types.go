@@ -93,6 +93,10 @@ func (r *Receiver) Clone() internal.Receiver {
 	}
 }
 
+func (r *Receiver) GetChannels() (string, interface{}) {
+	return r.GetType(), r.To
+}
+
 type Config struct {
 	*internal.Common
 	From         string              `json:"from,omitempty"`

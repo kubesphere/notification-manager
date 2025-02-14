@@ -1,9 +1,11 @@
 package v2beta2
 
 import (
+	"fmt"
+	"regexp"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"regexp"
 )
 
 type LabelSelector struct {
@@ -111,4 +113,30 @@ func LabelMatchSelector(label map[string]string, selector *LabelSelector) bool {
 	}
 
 	return ok
+}
+
+type ValueSource struct {
+	// Selects a key of a secret in the pod's namespace
+	// +optional
+	SecretKeyRef *SecretKeySelector `json:"secretKeyRef,omitempty" protobuf:"bytes,4,opt,name=secretKeyRef"`
+}
+
+type Credential struct {
+	// +optional
+	Value     string       `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
+	ValueFrom *ValueSource `json:"valueFrom,omitempty" protobuf:"bytes,3,opt,name=valueFrom"`
+}
+
+func (c *Credential) ToString() string {
+	if len(c.Value) > 0 {
+		return c.Value
+	}
+
+	if c.ValueFrom != nil {
+		if c.ValueFrom.SecretKeyRef != nil {
+			return fmt.Sprintf("%s/%s/%s", c.ValueFrom.SecretKeyRef.Namespace, c.ValueFrom.SecretKeyRef.Name, c.ValueFrom.SecretKeyRef.Key)
+		}
+	}
+
+	return ""
 }

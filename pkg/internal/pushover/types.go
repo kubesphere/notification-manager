@@ -98,6 +98,15 @@ func (r *Receiver) Clone() internal.Receiver {
 	}
 }
 
+func (r *Receiver) GetChannels() (string, interface{}) {
+	m := make(map[string]interface{})
+	for _, profile := range r.Profiles {
+		m[*profile.UserKey] = profile.Devices
+	}
+
+	return r.Type, m
+}
+
 type Config struct {
 	*internal.Common
 	// The token of a Pushover application.

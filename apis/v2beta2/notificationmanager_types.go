@@ -51,18 +51,6 @@ type ConfigmapKeySelector struct {
 	Key string `json:"key,omitempty" protobuf:"bytes,2,opt,name=key"`
 }
 
-type ValueSource struct {
-	// Selects a key of a secret in the pod's namespace
-	// +optional
-	SecretKeyRef *SecretKeySelector `json:"secretKeyRef,omitempty" protobuf:"bytes,4,opt,name=secretKeyRef"`
-}
-
-type Credential struct {
-	// +optional
-	Value     string       `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
-	ValueFrom *ValueSource `json:"valueFrom,omitempty" protobuf:"bytes,3,opt,name=valueFrom"`
-}
-
 // Sidecar defines a sidecar container which will be added to the notification manager deployment pod.
 type Sidecar struct {
 	// The type of sidecar, it can be specified to any value.

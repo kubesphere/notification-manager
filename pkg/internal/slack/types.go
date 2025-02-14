@@ -79,6 +79,10 @@ func (r *Receiver) Clone() internal.Receiver {
 	}
 }
 
+func (r *Receiver) GetChannels() (string, interface{}) {
+	return r.Type, r.Channels
+}
+
 type Config struct {
 	*internal.Common
 	// The token of user or bot.
