@@ -18,24 +18,49 @@ data:
     {{ end }}
     {{ end }}{{- end }}
 
+    {{ define "nm.feishu.message" }}{{ if ne (len .Status) 0 }}[{{ .Status | translate }}] {{ end }}{{ . | message | escape }}{{ end }}
     {{ define "nm.feishu.post" }}
-    en_us:
-      content:
-        {{ range .Alerts }}
-        - - tag: text
-            text: "{{ template "nm.default.message" . }}"{{ range .Labels.SortedPairs }}
-        - - tag: text
-            text: '  {{ .Name | translate }}: {{ .Value }}'
-        {{- end }}
-        {{ if ne (len .Annotations.SortedPairs.Filter) 0 }}
-        {{ range .Annotations.SortedPairs.Filter "runbook_url" "message" "summary" "summary_cn" }}
-        - - tag: text
-            text: '  {{ .Name | translate }}: {{ .Value }}'
-        {{- end }}
-        {{- end }}
-        - - tag: text
-            text: ' '
-        {{- end }}
+    {
+      "en_us": {
+        "content": [
+          {{- range $index, $alert := .Alerts }}
+          {{- if ne $index  0 }}
+          {{- "," }}
+          {{- end }}
+          [
+            {
+              "tag": "text",
+              "text": "{{ template "nm.feishu.message" $alert }}"
+          }
+        ],
+        {{ range $alert.Labels.SortedPairs -}}
+        [
+          {
+            "tag": "text",
+              "text": "  {{ .Name | translate }}: {{ .Value }}"
+              }
+          ],
+          {{ end -}}
+          {{- if ne (len $alert.Annotations.SortedPairs.Filter) 0 -}}
+          {{- range $alert.Annotations.SortedPairs.Filter "runbook_url" "message" "summary" "summary_cn" -}}
+          [
+            {
+              "tag": "text",
+              "text": "  {{ .Name | translate }}: {{ .Value }}"
+            }
+          ],
+          {{ end -}}
+          {{ end -}}
+          [
+            {
+              "tag": "text",
+              "text": "  "
+            }
+          ]
+          {{- end }}
+        ]
+      }
+    }
     {{- end }}
 
     {{ define "nm.feishu.text" }}{{ range .Alerts }}{{ template "nm.default.message" . }}{{ "\n" }}{{ range .Labels.SortedPairs }}  {{ .Name | translate }}: {{ .Value }}{{ "\n" }}{{ end }}{{ range .Annotations.SortedPairs.Filter "runbook_url" "message" "summary" "summary_cn" }}  {{ .Name | translate }}: {{ .Value }}{{ "\n" }}{{ end }}{{ "\n" }}{{ end }}{{- end }}

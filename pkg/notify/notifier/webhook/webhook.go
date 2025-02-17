@@ -24,15 +24,6 @@ import (
 
 const (
 	DefaultSendTimeout = time.Second * 5
-
-	Status           = "status"
-	StartsAt         = "startsAt"
-	EndsAt           = "endsAt"
-	NotificationTime = "notificationTime"
-	RunbookURL       = "runbook_url"
-	Message          = "message"
-	Summary          = "summary"
-	SummaryCn        = "summaryCn"
 )
 
 type Notifier struct {
@@ -97,15 +88,10 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 	}()
 
 	var buf bytes.Buffer
-	if n.tmpl.Transform(n.receiver.TmplName) == constants.DefaultWebhookTemplate {
+	if n.tmpl.Transform(n.receiver.TmplName) == constants.DefaultWebhookTemplate ||
+		n.tmpl.Transform(n.receiver.TmplName) == constants.DefaultHistoryTemplate {
 		if err := utils.JsonEncode(&buf, data); err != nil {
 			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: encode message error", "error", err.Error())
-			return err
-		}
-	} else if n.tmpl.Transform(n.receiver.TmplName) == constants.DefaultHistoryTemplate {
-		// just for notification history
-		if err := generateNotificationHistory(&buf, data); err != nil {
-			_ = level.Error(n.logger).Log("msg", "WebhookNotifier: generate notification history error", "error", err.Error())
 			return err
 		}
 	} else {
@@ -170,35 +156,6 @@ func (n *Notifier) Notify(ctx context.Context, data *template.Data) error {
 	}
 
 	_ = level.Debug(n.logger).Log("msg", "WebhookNotifier: send message", "to", n.receiver.URL)
-	return nil
-}
-
-func generateNotificationHistory(buf *bytes.Buffer, data *template.Data) error {
-	for _, alert := range data.Alerts {
-		m := make(map[string]interface{})
-		m[Status] = alert.Status
-		m[StartsAt] = alert.StartsAt
-		m[EndsAt] = alert.EndsAt
-		m[NotificationTime] = time.Now()
-		m[constants.AlertMessage] = alert.Message()
-
-		if alert.Labels != nil {
-			for k, v := range alert.Labels {
-				m[k] = v
-			}
-		}
-
-		if alert.Annotations != nil {
-			for _, p := range alert.Annotations.SortedPairs().DefaultFilter() {
-				m[p.Name] = p.Value
-			}
-		}
-
-		if err := utils.JsonEncode(buf, m); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 

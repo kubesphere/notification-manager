@@ -85,6 +85,10 @@ func (r *Receiver) Clone() internal.Receiver {
 	}
 }
 
+func (r *Receiver) GetChannels() (string, interface{}) {
+	return r.Type, r.PhoneNumbers
+}
+
 type Config struct {
 	*internal.Common
 	// The default sms provider

@@ -134,6 +134,23 @@ func (r *Receiver) Clone() internal.Receiver {
 	}
 }
 
+func (r *Receiver) GetChannels() (string, interface{}) {
+	m := map[string]interface{}{}
+	if r.ChatBot != nil {
+		m["chatbot"] = r.ChatBot.Webhook.ToString()
+	}
+
+	if len(r.ChatIDs) > 0 {
+		m["chat"] = r.ChatIDs
+	}
+
+	if len(m) == 0 {
+		return "", nil
+	} else {
+		return r.GetType(), m
+	}
+}
+
 type Config struct {
 	*internal.Common
 	AppKey    *v2beta2.Credential `json:"appKey,omitempty"`

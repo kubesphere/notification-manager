@@ -75,6 +75,21 @@ func (d *Data) Status() string {
 	}
 }
 
+func (d *Data) Clone() *Data {
+	nd := &Data{
+		Alerts:            nil,
+		GroupLabels:       d.GroupLabels.Clone(),
+		CommonLabels:      d.CommonLabels.Clone(),
+		CommonAnnotations: d.CommonAnnotations.Clone(),
+	}
+
+	for _, a := range d.Alerts {
+		nd.Alerts = append(nd.Alerts, a.Clone())
+	}
+
+	return nd
+}
+
 // Pair is a key/value string pair.
 type Pair struct {
 	Name, Value string
@@ -188,7 +203,9 @@ type Alert struct {
 	StartsAt time.Time `json:"startsAt,omitempty"`
 	EndsAt   time.Time `json:"endsAt,omitempty"`
 
-	NotifySuccessful bool
+	NotifySuccessful bool                              `json:"-"`
+	NotificationTime time.Time                         `json:"notificationTime,omitempty"`
+	Receiver         map[string]map[string]interface{} `json:"receiver,omitempty"`
 }
 
 func (a *Alert) Message() string {
@@ -244,4 +261,17 @@ func (as Alerts) Resolved() []*Alert {
 		}
 	}
 	return res
+}
+
+func (a *Alert) Clone() *Alert {
+	return &Alert{
+		ID:               a.ID,
+		Status:           a.Status,
+		StartsAt:         a.StartsAt,
+		EndsAt:           a.EndsAt,
+		NotificationTime: a.NotificationTime,
+		Labels:           a.Labels.Clone(),
+		Annotations:      a.Annotations.Clone(),
+		Receiver:         a.Receiver,
+	}
 }
