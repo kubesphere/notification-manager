@@ -3,12 +3,22 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/golang/glog"
-	"github.com/json-iterator/go"
-	"github.com/prometheus/alertmanager/template"
 	"sync"
 	"time"
+
+	"github.com/golang/glog"
+	jsoniter "github.com/json-iterator/go"
+	"github.com/prometheus/alertmanager/template"
 )
+
+type Cluster struct {
+	Department string `yaml:"department"`
+	Equipment  string `yaml:"equipment"`
+}
+
+type Config struct {
+	Clusters map[string]*Cluster `yaml:"clusters"`
+}
 
 type Alert struct {
 	*template.Alert
@@ -42,14 +52,24 @@ func NewAlerts(data []byte) ([]*Alert, error) {
 
 	var as []*Alert
 	for _, a := range d.Alerts {
+		alert := &Alert{
+			Alert: &template.Alert{
+				Status:       a.Status,
+				Labels:       a.Labels,
+				Annotations:  a.Annotations,
+				StartsAt:     a.StartsAt,
+				EndsAt:       a.EndsAt,
+				GeneratorURL: a.GeneratorURL,
+				Fingerprint:  a.Fingerprint,
+			},
+			TraceInfo: &TraceInfo{ReceivedTime: time.Now()},
+		}
+
 		for k, v := range d.CommonLabels {
-			a.Labels[k] = v
+			alert.Labels[k] = v
 		}
-		alert := Alert{
-			&a,
-			&TraceInfo{ReceivedTime: time.Now()},
-		}
-		as = append(as, &alert)
+
+		as = append(as, alert)
 	}
 
 	return as, nil

@@ -5,6 +5,7 @@
     {
       "status": "firing",
       "labels": {
+        "cluster": "saas#host_d3",
         "alertname": "CPUThrottlingHigh",
         "container": "calico-kube-controllers",
         "namespace": "kube-system",
@@ -24,6 +25,7 @@
     {
       "status": "firing",
       "labels": {
+        "cluster": "member",
         "alertname": "CPUThrottlingHigh",
         "container": "csi-qingcloud",
         "namespace": "kube-system",
@@ -43,6 +45,7 @@
     {
       "status": "firing",
       "labels": {
+        "cluster": "host",
         "alertname": "CPUThrottlingHigh",
         "container": "csi-qingcloud",
         "namespace": "kube-system",

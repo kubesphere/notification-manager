@@ -1,3 +1,19 @@
+apiVersion: v1
+data:
+  config.yaml: |2
+    departments:
+      host: 
+        department: d1
+        equipment: paas
+      member: 
+        department: d2
+        equipment: iaas
+kind: ConfigMap
+metadata:
+  name: notification-adapter-config
+  namespace: kubesphere-monitoring-system
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,6 +37,8 @@ spec:
             - --ip=socket-server.kubesphere-monitoring-system
           imagePullPolicy: Always
           volumeMounts:
+            - name: config
+              mountPath: /etc/notification-adapter/
             - mountPath: /etc/localtime
               name: host-time
           lifecycle:
@@ -49,6 +67,10 @@ spec:
               cpu: 20m
               memory: 50Mi
       volumes:
+        - name: config
+          configMap:
+            name: notification-adapter-config
+            defaultMode: 420
         - hostPath:
             path: /etc/localtime
             type: ""

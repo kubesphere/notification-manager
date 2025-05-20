@@ -21,6 +21,16 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
+	"log"
+	"net"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/emicklei/go-restful"
 	"github.com/golang/glog"
 	"github.com/prometheus/common/model"
@@ -28,17 +38,12 @@ import (
 	"github.com/spf13/pflag"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
-	"io/ioutil"
-	"log"
-	"net"
-	"net/http"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
+	"gopkg.in/yaml.v2"
 )
 
 const (
+	ConfigFileName = "/etc/notification-adapter/config.yaml"
+
 	TivoliAlertUnknown  = 1
 	TivoliAlertError    = 3
 	TivoliAlertCritical = 4
@@ -98,10 +103,28 @@ func Run() error {
 		glog.Errorf("FLAG: --%s=%q", flag.Name, flag.Value)
 	})
 
+	f, err := os.Open(ConfigFileName)
+	if err != nil {
+		glog.Errorf("open config file failed: %v", err)
+		return err
+	}
+
+	bs, err := io.ReadAll(f)
+	if err != nil {
+		glog.Errorf("read config file failed: %v", err)
+		return err
+	}
+
+	config := &Config{}
+	if err := yaml.Unmarshal(bs, config); err != nil {
+		glog.Errorf("unmarshal config file failed: %v", err)
+		return err
+	}
+
 	ch = make(chan *Alert, chanLen)
 	si = NewStatisticsInfo(ch)
 
-	go work()
+	go work(config)
 
 	return httpserver()
 }
@@ -136,7 +159,7 @@ func httpserver() error {
 	return nil
 }
 
-func work() {
+func work(c *Config) {
 	routinesChan := make(chan interface{}, goroutinesNum)
 
 	for {
@@ -161,7 +184,7 @@ func work() {
 
 			stopCh := make(chan interface{}, 1)
 			go func() {
-				sendMessage(alert)
+				sendMessage(c, alert)
 				close(stopCh)
 			}()
 
@@ -205,7 +228,7 @@ func handler(req *restful.Request, resp *restful.Response) {
 	waitHandlerGroup.Add(1)
 	defer waitHandlerGroup.Done()
 
-	body, err := ioutil.ReadAll(req.Request.Body)
+	body, err := io.ReadAll(req.Request.Body)
 	if err != nil {
 		glog.Errorf("read request body error, %s", err)
 		err := resp.WriteHeaderAndEntity(http.StatusBadRequest, "")
@@ -235,12 +258,13 @@ func handler(req *restful.Request, resp *restful.Response) {
 	}
 }
 
-func sendMessage(alert *Alert) {
+func sendMessage(c *Config, alert *Alert) {
 
-	msg := getMessage(alert)
+	msg := getMessage(c, alert)
 	if len(msg) == 0 {
 		return
 	}
+	fmt.Println(msg)
 
 	addr := fmt.Sprintf("%s:%d", ip, port)
 	conn, err := net.DialTimeout("tcp", addr, sendTimeout)
@@ -255,7 +279,7 @@ func sendMessage(alert *Alert) {
 	}()
 
 	reader := transform.NewReader(bytes.NewReader([]byte(msg)), simplifiedchinese.GBK.NewEncoder())
-	bs, err := ioutil.ReadAll(reader)
+	bs, err := io.ReadAll(reader)
 	if err != nil {
 		glog.Errorf("transform msg error, %s", err.Error())
 		return
@@ -280,7 +304,7 @@ func sendMessage(alert *Alert) {
 	return
 }
 
-func getMessage(alert *Alert) string {
+func getMessage(c *Config, alert *Alert) string {
 
 	level := TivoliAlertUnknown
 	if t, ok := alert.Labels["severity"]; ok {
@@ -310,24 +334,37 @@ func getMessage(alert *Alert) string {
 		}
 	}
 
+	if department == "" {
+		cc := c.Clusters[cluster]
+		if cc != nil {
+			department = cc.Department
+			cluster = fmt.Sprintf("%s#%s", cc.Equipment, cluster)
+		}
+	}
+
+	message := alert.Annotations["message"]
+	if message == "" {
+		message = alert.Annotations["summary"]
+	}
+
 	return fmt.Sprintf("%s#%s#%d#%s#%s#%s#%s#%d\n",
 		cluster,
 		department,
 		model.LabelsToSignature(alert.Labels),
 		alert.Labels["alertname"],
 		alert.Labels["namespace"],
-		alert.Annotations["message"],
+		message,
 		alert.Annotations["summaryCn"],
 		level)
 }
 
-//readiness
+// readiness
 func readiness(_ *restful.Request, resp *restful.Response) {
 
 	responseWithHeaderAndEntity(resp, http.StatusOK, "")
 }
 
-//preStop
+// preStop
 func preStop(_ *restful.Request, resp *restful.Response) {
 
 	waitHandlerGroup.Wait()
@@ -337,12 +374,12 @@ func preStop(_ *restful.Request, resp *restful.Response) {
 	glog.Flush()
 }
 
-//get statistics fresh time
+// get statistics fresh time
 func statisticsFreshTimeGet(_ *restful.Request, resp *restful.Response) {
 	responseWithJson(resp, si.FreshTime)
 }
 
-//set statistics fresh time
+// set statistics fresh time
 func statisticsFreshTimeUpdate(req *restful.Request, resp *restful.Response) {
 
 	s := req.QueryParameter("freshTime")
@@ -356,12 +393,12 @@ func statisticsFreshTimeUpdate(req *restful.Request, resp *restful.Response) {
 	responseWithJson(resp, "Success")
 }
 
-//get statistics status
+// get statistics status
 func statisticsStatusGet(_ *restful.Request, resp *restful.Response) {
 	responseWithJson(resp, si.Enable)
 }
 
-//set statistics status
+// set statistics status
 func statisticsStatusUpdate(req *restful.Request, resp *restful.Response) {
 
 	enable := req.QueryParameter("enable")
@@ -375,7 +412,7 @@ func statisticsStatusUpdate(req *restful.Request, resp *restful.Response) {
 	responseWithJson(resp, "Success")
 }
 
-//get statistics info
+// get statistics info
 func statisticsInfo(_ *restful.Request, resp *restful.Response) {
 	responseWithJson(resp, si.Print())
 }

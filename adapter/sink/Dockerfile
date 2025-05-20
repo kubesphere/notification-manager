@@ -6,10 +6,11 @@
 # Use of this source code is governed by a Apache license
 # that can be found in the LICENSE file.
 
-FROM golang:1.13 as notification-adapter
+FROM golang:1.16 AS notification-adapter
 
 COPY cmd/main.go /
 COPY cmd/types.go /
+COPY go.* /
 WORKDIR /
 ENV GOPROXY=https://goproxy.io
 RUN CGO_ENABLED=0 GO111MODULE=on go build -i -ldflags '-w -s' -o notification-adapter main.go types.go
