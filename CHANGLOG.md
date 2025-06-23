@@ -1,3 +1,8 @@
+## v2.5.3 / 2025-03-10
+
+### Bugfix
+- update template (#280) @Gentleelephant
+
 ## v2.5.2 / 2024-05-14
 
 ### Enhancements
