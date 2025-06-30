@@ -1,3 +1,10 @@
+## v2.6.0 / 2025-06-30
+
+### Enhancements
+
+- update actions/cache to v4 (#293) @wanjunlei
+- update template (#296) @wanjunlei
+
 ## v2.5.2 / 2024-05-14
 
 ### Enhancements
