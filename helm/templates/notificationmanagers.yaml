@@ -8,7 +8,7 @@ spec:
   {{- if .Values.notificationmanager.replicas }}
   replicas: {{ .Values.notificationmanager.replicas }}
   {{- end}}
-  image: {{ include "global.imageRegistry" .}}{{ .Values.notificationmanager.image.repo }}:{{ .Values.notificationmanager.image.tag }}
+  image: {{ include "global.imageRegistry" .}}{{ .Values.notificationmanager.image.repo }}:{{ .Values.notificationmanager.image.tag | default (printf "v%s" .Chart.AppVersion) }}
   imagePullPolicy: {{ .Values.notificationmanager.image.pullPolicy }}
   serviceAccountName: notification-manager-sa
   portName: webhook
