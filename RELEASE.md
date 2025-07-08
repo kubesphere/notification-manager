@@ -20,6 +20,7 @@ This page describes the release process and the currently planned schedule for u
 | v2.5.0         | 2024-03-21             | leiwanjun (GitHub: @leiwanjun)      |
 | v2.5.1         | 2024-04-03             | leiwanjun (GitHub: @leiwanjun)      |
 | v2.5.2         | 2024-04-14             | leiwanjun (GitHub: @leiwanjun)      |
+| v2.6.0         | 2025-06-30             | Gentleelephant (GitHub: @Gentleelephant) |
 
 # How to cut a new release
 
