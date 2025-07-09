@@ -47,7 +47,7 @@ spec:
         - name: TZ
           value: {{ .Values.timezone }}
         {{- end }}
-        image: {{ include "global.imageRegistry" . }}{{ .Values.operator.containers.operator.image.repo }}:{{ .Values.operator.containers.operator.image.tag }}
+        image: {{ include "global.imageRegistry" . }}{{ .Values.operator.containers.operator.image.repo }}:{{ .Values.operator.containers.operator.image.tag | default (printf "v%s" .Chart.AppVersion) }}
         imagePullPolicy: {{ .Values.operator.containers.operator.image.pullPolicy }}
         name: notification-manager-operator
         ports:
