@@ -37,7 +37,7 @@ data:
         [
           {
             "tag": "text",
-              "text": "  {{ .Name | translate }}: {{ .Value }}"
+              "text": "  {{ .Name | translate }}: {{ .Value | escape }}"
               }
           ],
           {{ end -}}
@@ -46,7 +46,7 @@ data:
           [
             {
               "tag": "text",
-              "text": "  {{ .Name | translate }}: {{ .Value }}"
+              "text": "  {{ .Name | translate }}: {{ .Value | escape }}"
             }
           ],
           {{ end -}}
