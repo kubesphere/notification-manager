@@ -14,11 +14,6 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kubesphere/notification-manager/apis/v2beta2"
-	"github.com/kubesphere/notification-manager/pkg/constants"
-	"github.com/kubesphere/notification-manager/pkg/internal"
-	"github.com/kubesphere/notification-manager/pkg/template"
-	"github.com/kubesphere/notification-manager/pkg/utils"
 	"github.com/modern-go/reflect2"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -31,6 +26,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	kconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/yaml"
+
+	"github.com/kubesphere/notification-manager/apis/v2beta2"
+	"github.com/kubesphere/notification-manager/pkg/constants"
+	"github.com/kubesphere/notification-manager/pkg/internal"
+	"github.com/kubesphere/notification-manager/pkg/template"
+	"github.com/kubesphere/notification-manager/pkg/utils"
 )
 
 const (

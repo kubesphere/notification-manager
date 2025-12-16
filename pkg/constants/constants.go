@@ -38,6 +38,11 @@ const (
 	AlertMessage   = "message"
 	AlertSummary   = "summary"
 	AlertSummaryCN = "summaryCn"
+	RuleLevel      = "rule_level"
+
+	RuleLevelGlobal    = "global"
+	RuleLevelCluster   = "cluster"
+	RuleLevelNamespace = "namespace"
 
 	ReceiverName = "receiver"
 

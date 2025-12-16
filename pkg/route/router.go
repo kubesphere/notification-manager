@@ -7,6 +7,8 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/modern-go/reflect2"
+
 	"github.com/kubesphere/notification-manager/apis/v2beta2"
 	"github.com/kubesphere/notification-manager/pkg/constants"
 	"github.com/kubesphere/notification-manager/pkg/controller"
@@ -14,12 +16,11 @@ import (
 	"github.com/kubesphere/notification-manager/pkg/stage"
 	"github.com/kubesphere/notification-manager/pkg/template"
 	"github.com/kubesphere/notification-manager/pkg/utils"
-	"github.com/modern-go/reflect2"
 )
 
 const (
-	RouterPolicyAll = "All"
-	RouterFirst     = "RouterFirst"
+	RouterFirst = "RouterFirst"
+	RouterOnly  = "RouterOnly"
 )
 
 type routeStage struct {
@@ -56,9 +57,14 @@ func (s *routeStage) Exec(ctx context.Context, l log.Logger, data interface{}) (
 	// Grouping alerts by cluster and namespace
 	alertMap := make(map[string][]*template.Alert)
 	for _, alert := range input {
-		ns := alert.Labels[constants.Namespace]
-		cluster := alert.Labels[constants.Cluster]
-		key := fmt.Sprintf("%s|%s", cluster, ns)
+		key := ""
+		rl := alert.Labels[constants.RuleLevel]
+		if rl == constants.RuleLevelNamespace {
+			ns := alert.Labels[constants.Namespace]
+			cluster := alert.Labels[constants.Cluster]
+			key = fmt.Sprintf("%s|%s", cluster, ns)
+		}
+
 		as := alertMap[key]
 		as = append(as, alert)
 		alertMap[key] = as
@@ -67,18 +73,19 @@ func (s *routeStage) Exec(ctx context.Context, l log.Logger, data interface{}) (
 	m := make(map[string]*packet)
 	routePolicy := s.notifierCtl.GetRoutePolicy()
 	for key, alerts := range alertMap {
-		flag := false
-		pair := strings.Split(key, "|")
-		cluster := pair[0]
-		ns := pair[1]
 		var tenantRcvs []internal.Receiver
+		if routePolicy != RouterOnly {
+			pair := strings.Split(key, "|")
+			cluster := pair[0]
+			ns := ""
+			if len(pair) > 1 {
+				ns = pair[1]
+			}
+			tenantRcvs = s.notifierCtl.RcvsFromNs(cluster, &ns)
+		}
 		for _, alert := range alerts {
 			rcvs := s.rcvsFromRouter(alert, routers)
-			if routePolicy == RouterPolicyAll || (routePolicy == RouterFirst && len(rcvs) == 0) {
-				if len(tenantRcvs) == 0 && !flag {
-					tenantRcvs = s.notifierCtl.RcvsFromNs(cluster, &ns)
-					flag = true
-				}
+			if !(routePolicy == RouterFirst && len(rcvs) != 0) {
 				rcvs = append(rcvs, tenantRcvs...)
 			}
 
