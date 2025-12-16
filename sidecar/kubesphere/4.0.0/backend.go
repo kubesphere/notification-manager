@@ -119,9 +119,9 @@ func getTenantInfoFromCluster(cluster string, users []string) (map[string][]stri
 					ResourceAttributes: &iamv1beta1.ResourceAttributes{
 						Namespace: namespace,
 						Verb:      "get",
-						Group:     "notification.kubesphere.io",
-						Version:   "v2beta2",
-						Resource:  "receivenotification",
+						Group:     "",
+						Version:   "v1",
+						Resource:  "pods",
 					},
 					NonResourceAttributes: nil,
 					User:                  user,       // "X-Remote-User" request header
