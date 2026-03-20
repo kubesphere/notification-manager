@@ -1,3 +1,9 @@
+## v2.6.1 / 2026-03-20
+
+### Enhancements
+
+- Optimize the alarm tenant matching mechanism (#302) @wanjunlei
+
 ## v2.6.0 / 2025-06-30
 
 ### Enhancements
