@@ -1,59 +1,1110 @@
 {
-  "receiver": "Default",
-  "status": "firing",
   "alerts": [
     {
       "status": "firing",
       "labels": {
-        "alertname": "KubeContainerWaiting",
-        "container": "container-ztj830",
-        "namespace": "t1",
-        "pod": "s2i-1-viafnz-5474c8b5b7-px7kz",
-        "prometheus": "kubesphere-monitoring-system/k8s",
-        "severity": "warning"
+        "cluster": "cluster1",
+        "alertname": "alert1",
+        "namespace": "namespace1",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
       },
       "annotations": {
-        "message": "Pod t1/s2i-1-viafnz-5474c8b5b7-px7kz container container-ztj830 has been in waiting state for longer than 1 hour.",
-        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontainerwaiting"
-      },
-      "startsAt": "2020-02-26T07:49:04.989876849Z",
-      "endsAt": "0001-01-01T00:00:00Z",
-      "generatorURL": "http://prometheus-k8s-1:9090/graph?g0.expr=sum+by%28namespace%2C+pod%2C+container%29+%28kube_pod_container_status_waiting_reason%7Bjob%3D%22kube-state-metrics%22%7D%29+%3E+0\u0026g0.tab=1",
-      "fingerprint": "eb4aaaee1917a07b"
+        "message": "message"
+      }
     },
     {
       "status": "firing",
       "labels": {
-        "alertname": "KubeContainerWaiting",
-        "container": "container-ztj830",
-        "namespace": "t1",
-        "pod": "s2i-1-viafnz-89f49c678-2mzsm",
-        "prometheus": "kubesphere-monitoring-system/k8s",
-        "severity": "warning"
+        "cluster": "host",
+        "alertname": "HighCPUUsage",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "global"
       },
       "annotations": {
-        "message": "Pod t1/s2i-1-viafnz-89f49c678-2mzsm container container-ztj830 has been in waiting state for longer than 1 hour.",
-        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontainerwaiting"
+        "message": "CPU usage has exceeded 90% for 5 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "PodCrashLooping",
+        "namespace": "default",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "namespace"
       },
-      "startsAt": "2020-02-26T07:49:04.989876849Z",
-      "endsAt": "0001-01-01T00:00:00Z",
-      "generatorURL": "http://prometheus-k8s-1:9090/graph?g0.expr=sum+by%28namespace%2C+pod%2C+container%29+%28kube_pod_container_status_waiting_reason%7Bjob%3D%22kube-state-metrics%22%7D%29+%3E+0\u0026g0.tab=1",
-      "fingerprint": "838279128e4c0505"
+      "annotations": {
+        "message": "Pod frontend is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "MemoryPressure",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 85%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "DiskFull",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Disk usage on /var is at 95%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "NetworkLatency",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Network latency between zones is high"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 85% for 10 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "monitoring",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod grafana is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 80%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /data is at 98%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Network latency spike detected"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Prometheus service is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 92% for 5 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "kube-system",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod coredns is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 88%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /var/lib is at 96%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "High network latency to database"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "DNS service is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 88% for 15 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "monitoring",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod alertmanager is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 92%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /tmp is at 99%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Network packet loss detected"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Alertmanager service is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 95% for 5 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "kube-system",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod kube-proxy is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 85%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /opt is at 97%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "High latency to external API"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Kubernetes API service is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 90% for 20 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "monitoring",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod prometheus is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 90%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /home is at 94%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "High latency between data centers"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Grafana service is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 87% for 25 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "kube-system",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod etcd is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 82%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /var/log is at 93%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Network congestion detected"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Dashboard service is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 93% for 8 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "monitoring",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod node-exporter is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 87%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /usr is at 91%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "High latency to storage system"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Metrics service is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 89% for 12 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "kube-system",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod scheduler is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 84%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /var/lib/docker is at 96%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "High latency to authentication service"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Logging service is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 94% for 6 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "monitoring",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod blackbox-exporter is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 89%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /var/cache is at 92%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "High latency to monitoring system"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Alerting service is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 91% for 9 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "kube-system",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod controller-manager is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 86%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /var/spool is at 95%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "High latency to backup service"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Ingress controller is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 96% for 4 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "monitoring",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod kube-state-metrics is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 91%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /var/tmp is at 98%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "High latency to configuration service"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Configuration service is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 97% for 3 minutes"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "PodCrashLooping",
+        "namespace": "kube-system",
+        "alerttype": "logs",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "Pod flannel is crash looping"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "MemoryPressure",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Node memory usage is above 83%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "DiskFull",
+        "namespace": "monitoring",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "Disk usage on /mnt/data is at 90%"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "host",
+        "alertname": "NetworkLatency",
+        "namespace": "production",
+        "alerttype": "metrics",
+        "severity": "warning",
+        "rule_level": "global"
+      },
+      "annotations": {
+        "message": "High latency to cache service"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "dev",
+        "alertname": "ServiceDown",
+        "namespace": "kube-system",
+        "alerttype": "metrics",
+        "severity": "critical",
+        "rule_level": "namespace"
+      },
+      "annotations": {
+        "message": "Certificate service is down"
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "cluster": "test",
+        "alertname": "HighCPUUsage",
+        "namespace": "default",
+        "alerttype": "metrics",
+        "severity": "error",
+        "rule_level": "cluster"
+      },
+      "annotations": {
+        "message": "CPU usage has exceeded 99% for 2 minutes"
+      }
     }
-  ],
-  "groupLabels": {
-    "alertname": "KubeContainerWaiting",
-    "namespace": "t1"
-  },
-  "commonLabels": {
-    "alertname": "KubeContainerWaiting",
-    "container": "container-ztj830",
-    "namespace": "t1",
-    "prometheus": "kubesphere-monitoring-system/k8s",
-    "severity": "warning"
-  },
-  "commonAnnotations": {
-    "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontainerwaiting"
-  },
-  "externalURL": "http://alertmanager-main-0:9093"
+  ]
 }
