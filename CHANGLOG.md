@@ -1,3 +1,13 @@
+## v2.7.0 / 2026-06-08
+
+### Enhancements
+
+- update actions/cache to v4 (#294) @wanjunlei
+- update template (#296) @wanjunlei
+- update image tag handling to default to chart app version (#299) @Gentleelephant
+- Optimize the alarm tenant matching mechanism (#302) @wanjunlei
+- feat(helm): support global image pull secrets (#305) @Gentleelephant
+
 ## v2.6.0 / 2025-06-30
 
 ### Enhancements
