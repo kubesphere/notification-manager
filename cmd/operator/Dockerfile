@@ -1,7 +1,8 @@
-ARG GOPROXY="https://goproxy.io"
+ARG GOPROXY="https://proxy.golang.org,direct"
 # Build the manager binary
-FROM golang:1.20 as builder
+FROM golang:1.20 AS builder
 ARG GOPROXY
+ENV GOPROXY=${GOPROXY}
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -10,7 +11,7 @@ COPY go.sum go.sum
 
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN GOPROXY=$GOPROXY go mod download
+RUN go mod download
 
 # Copy the go source
 COPY cmd/operator/main.go main.go
@@ -19,7 +20,7 @@ COPY pkg/ pkg/
 COPY apis/ apis/
 
 # Build
-RUN GOPROXY=$GOPROXY CGO_ENABLED=0 GO111MODULE=on go build -a -o notification-manager-operator main.go
+RUN CGO_ENABLED=0 GO111MODULE=on go build -a -o notification-manager-operator main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
